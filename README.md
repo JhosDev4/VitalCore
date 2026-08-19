@@ -1,4 +1,9 @@
 # VitalCore
+> ## 🚧 Development Notice
+> **VitalCore is currently under active development.**
+> This project is **not yet fully completed**, and some features, hardware integrations, designs, and system functionalities are still being developed, tested, and improved.
+> The information and features presented in this repository may change as development continues. Some features may not yet be fully functional or may be modified in future updates.
+> This repository represents the **current development version of VitalCore** and is intended to document the progress of the project.
 
 **VitalCore** is a healthcare monitoring and patient management system designed to assist healthcare personnel in recording patient information, measuring vital signs, and managing health service records.
 

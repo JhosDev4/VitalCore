@@ -107,95 +107,6 @@ Current hardware includes:
 * Git
 * GitHub
 
-## System Architecture
-
-
-
-## Installation
-
-### Requirements
-
-Before running VitalCore, install:
-
-* XAMPP
-* PHP
-* MySQL
-* Git
-* A modern web browser
-
-For the hardware kiosk, a Raspberry Pi and the required sensors are also needed.
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/JhosDev4/VitalCore.git
-```
-
-### 2. Move the Project
-
-Place the project inside the XAMPP `htdocs` directory:
-
-```text
-C:\xampp\htdocs\Vitalcore
-```
-
-### 3. Create the Database
-
-Open:
-
-```text
-http://localhost/phpmyadmin
-```
-
-Create a database named:
-
-```text
-vitalcore_db
-```
-
-Import the database structure from:
-
-```text
-req/data.sql
-```
-
-### 4. Configure the Database
-
-Create your local `db_conn.php` file and configure the MySQL connection for your environment.
-
-Example:
-
-```php
-<?php
-
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "vitalcore_db";
-
-$conn = mysqli_connect($host, $user, $pass, $dbname);
-
-if (!$conn) {
-    die("Connection Failed: " . mysqli_connect_error());
-}
-?>
-```
-
-### 5. Start XAMPP
-
-Start:
-
-```text
-Apache
-MySQL
-```
-
-Then open:
-
-```text
-http://localhost/Vitalcore/
-```
-
 ## Project Structure
 
 ```text
@@ -249,7 +160,7 @@ The project focuses on:
 * 
 ## Developer
 
-**Jhoshua Laurito**
+**Jhoshua Concepcion Laurito**
 
 Computer Engineering Student
 Philippines

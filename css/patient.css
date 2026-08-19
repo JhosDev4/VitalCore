@@ -1,0 +1,262 @@
+
+    :root {
+      --sidebar-width: 260px;
+      --primary-blue: #1e40af;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --indigo: #6366f1;
+      --sky: #0ea5e9;
+      --orange: #f97316;
+    }
+
+    body {
+      background-color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      min-height: 100vh;
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .main-content {
+      margin-left: var(--sidebar-width);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-link-custom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: #64748b;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .nav-link-custom:hover {
+      background: #f8fafc;
+      color: #475569;
+    }
+
+    .nav-link-active {
+      background: #1e40af;
+      color: white;
+    }
+
+    .nav-link-active:hover {
+      background: #1e3a8a;
+      color: white;
+    }
+
+    .sub-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: #64748b;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .sub-nav-link.active {
+      color: #1e40af;
+      font-weight: 500;
+      background: #eff6ff;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .profile-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .profile-deco {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 260px;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #10b981;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      position: relative;
+    }
+
+    .avatar-status {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 3px solid white;
+    }
+
+    .vital-card {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 16px;
+      transition: box-shadow 0.2s;
+    }
+
+    .vital-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .vital-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .chart-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 20px;
+    }
+
+    .body-diagram {
+      position: relative;
+      width: 100%;
+      height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .marker {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .vital-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .vital-item:last-child {
+      border-bottom: none;
+    }
+
+    .vital-item-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .health-score-ring {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin: 0 auto;
+    }
+
+    .health-score-ring svg {
+      transform: rotate(-90deg);
+    }
+
+    .health-score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .search-box {
+      position: relative;
+      max-width: 320px;
+    }
+
+    .search-box input {
+      padding-left: 36px;
+      padding-right: 40px;
+    }
+
+    .search-box .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
+
+    .search-box .cmd-icon {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 2px 4px;
+      color: #94a3b8;
+      font-size: 10px;
+    }
+
+    .footer-text {
+      color: #64748b;
+      font-size: 14px;
+      padding: 16px;
+      text-align: center;
+    }

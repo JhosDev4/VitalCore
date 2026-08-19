@@ -1,0 +1,988 @@
+/* ==========================
+   PAGE LOAD ANIMATION
+========================== */
+
+body{
+    background:#f4f7fc;
+    font-family:'Segoe UI',sans-serif;
+    animation:pageLoad .6s ease;
+}
+
+@keyframes pageLoad{
+    from{
+        opacity:0;
+    }
+    to{
+        opacity:1;
+    }
+}
+
+/* Top Mobile Navbar */
+.navbar {
+    background-color: #ffffff !important;
+}
+
+/* Sidebar */
+.sidebar{
+    background-color:#ffffff !important;
+    min-height:100vh;
+    height:100vh;
+    position:sticky;
+    top:0;
+    box-shadow:2px 0 20px rgba(0,0,0,.02);
+    z-index:100;
+
+    animation:sidebarSlide .7s ease;
+}
+
+@keyframes sidebarSlide{
+    from{
+        opacity:0;
+        transform:translateX(-40px);
+    }
+    to{
+        opacity:1;
+        transform:translateX(0);
+    }
+}
+
+.sidebar .nav-link{
+    color:#5c6873;
+    padding:.75rem 1.25rem;
+    border-radius:12px;
+    margin-bottom:5px;
+    font-weight:500;
+    transition:all .25s ease;
+    position:relative;
+    overflow:hidden;
+}
+
+.sidebar .nav-link:active{
+    transform:scale(.97);
+}
+
+.sidebar .nav-link:hover{
+    background:#f8f9fa;
+    transform:translateX(5px);
+    color:#111;
+}
+
+/* Active Link Style */
+.sidebar .nav-link.active{
+    background:#0a49c4 !important;
+    color:#fff !important;
+    font-weight:600;
+    box-shadow:0 8px 20px rgba(10,73,196,.25);
+}
+
+.sidebar .nav-link.active i,
+.sidebar .nav-link.active span{
+    color:#fff !important;
+}
+
+/* Shine Effect */
+.sidebar .nav-link::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:-120%;
+    width:100%;
+    height:100%;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.25),
+        transparent
+    );
+    transition:.5s;
+}
+
+.sidebar .nav-link:hover::before{
+    left:120%;
+}
+
+.logo-section{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:.75rem .5rem;
+    margin-bottom:1rem;
+
+    animation:fadeDown .6s ease;
+}
+
+.sidebar-logo{
+    width:45px;
+    height:45px;
+    border-radius:50%;
+    object-fit:cover;
+}
+
+.sidebar-brand{
+    color:#0d6efd;
+    font-weight:700;
+    font-size:1.25rem;
+    letter-spacing:-0.5px;
+}
+
+.sidebar-heading{
+    font-size:.75rem;
+    color:#a0aec0;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    padding:1rem 1.25rem .5rem;
+}
+
+/* Active Link Style */
+.sidebar .nav-link.active{
+    background:#0a49c4 !important;
+    color:#fff !important;
+    font-weight:600;
+    box-shadow:0 8px 20px rgba(10,73,196,.25);
+}
+
+.sidebar .nav-link.active i,
+.sidebar .nav-link.active span {
+    color: #ffffff !important;
+}
+
+/* Submenu */
+.sidebar-submenu{
+    margin-left:18px;
+    border-left:2px solid #ffffff;
+    padding-left:15px;
+}
+
+.sidebar-submenu a{
+    display:block;
+    padding:8px 0;
+    text-decoration:none;
+    color:#6c757d;
+    font-size:15px;
+}
+
+.sidebar-submenu a.active{
+    color:#2949d3;
+    font-weight:600;
+}
+
+/* Content */
+main{
+    background:#f4f7fc;
+}
+
+/* Patient Cards */
+.patient-card{
+    border:none;
+    border-radius:14px;
+    box-shadow:0 4px 20px rgba(0,0,0,.05);
+    transition:.3s;
+}
+
+.patient-card:hover{
+    transform:translateY(-3px);
+}
+
+.patient-card .card-body{
+    padding:1.5rem;
+}
+
+.patient-card h6{
+    color:#1e2a4a;
+    font-size:1.1rem;
+}
+
+.patient-card small,
+.patient-card p{
+    color:#6c757d;
+}
+
+/* Fixed: Circle action buttons inside card dropdowns */
+.patient-card .dropdown button {
+    width:36px;
+    height:36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* Total Patients Badge */
+.badge.bg-primary{
+    background:#eef2ff !important;
+    color:#4f46e5 !important;
+    border:1px solid #4f46e5;
+    font-weight:500;
+    padding:.5rem .8rem;
+}
+
+/* Patient Grid Header & Menu Button */
+.patient-grid-header{
+    display:flex;
+    align-items:center;
+    gap:16px;
+}
+
+.patient-title{
+    color:#1e2a4a;
+    font-size:1.6rem;
+    margin-bottom:0;
+}
+.patient-menu-btn{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    padding:10px 18px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+
+    color:#475569;
+    font-size:.95rem;
+    font-weight:600;
+    line-height:1;
+
+    box-shadow:
+        0 4px 12px rgba(15,23,42,.04),
+        0 1px 2px rgba(15,23,42,.06);
+
+    transition:all .25s ease;
+
+    width:auto;
+    height:auto;
+}
+
+.patient-menu-btn i{
+    font-size:1.1rem;
+    color:#0d6efd;
+    transition:all .25s ease;
+}
+
+
+.patient-menu-btn:hover{
+    background:#f8fbff;
+    border-color:#bfd8ff;
+
+    color:#0d6efd;
+
+    transform:translateY(-3px);
+
+    box-shadow:
+        0 10px 25px rgba(13,110,253,.12),
+        0 4px 10px rgba(13,110,253,.08);
+}
+
+.patient-menu-btn:hover i{
+    transform:scale(1.1);
+}
+
+.patient-menu-btn:active{
+    transform:translateY(0);
+}
+
+.patient-menu-btn:focus{
+    outline:none;
+    box-shadow:
+        0 0 0 4px rgba(13,110,253,.12),
+        0 8px 20px rgba(13,110,253,.10);
+}
+.patient-dropdown{
+    min-width:260px;
+    border-radius:16px;
+    padding:10px;
+    margin-top:10px;
+    box-shadow:0 12px 30px rgba(0,0,0,.08) !important;
+}
+
+.patient-dropdown .dropdown-item{
+    border-radius:12px;
+    padding:12px 14px;
+    font-weight:500;
+    transition:all .25s ease;
+}
+
+.patient-dropdown .dropdown-item:hover{
+    background:#eef4ff;
+    color:#0d6efd;
+    transform:translateX(5px);
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px){
+    .sidebar{
+        width:280px !important;
+        background-color: #ffffff !important;
+    }
+
+    .logo-section{
+        justify-content:center;
+        padding-bottom:20px;
+    }
+
+    .sidebar-logo{
+        width:55px;
+        height:55px;
+    }
+
+    .sidebar-brand{
+        font-size:1.6rem;
+    }
+
+    main{
+        padding:20px !important;
+    }
+
+    .patient-card{
+        margin-bottom:10px;
+    }
+
+    .patient-card h6{
+        font-size:1rem;
+    }
+
+    .badge.bg-primary{
+        margin-top:10px;
+    }
+
+    .page-header{
+        flex-direction:column;
+        align-items:flex-start !important;
+        gap:10px;
+    }
+
+    .patient-grid-header{
+        width:100%;
+        justify-content:space-between;
+    }
+
+    .patient-title{
+        font-size:1.3rem;
+    }
+
+    .patient-menu-btn span{
+        display:none;
+    }
+}
+
+@media (max-width: 576px){
+    .logo-section{
+        gap:10px;
+    }
+
+    .sidebar-brand{
+        font-size:1.4rem;
+    }
+
+    .patient-card .card-body{
+        padding:1rem;
+    }
+
+    .patient-card p,
+    .patient-card small{
+        font-size:.85rem;
+    }
+
+    .patient-card h6{
+        font-size:.95rem;
+    }
+}
+
+.analytics-card,
+.patient-card,
+.stat-card{
+    border:none;
+    border-radius:14px;
+    box-shadow:0 4px 20px rgba(0,0,0,.05);
+    transition:.3s;
+}
+
+.analytics-card:hover,
+.patient-card:hover,
+.stat-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+.page-header{
+    animation:fadeHeader .8s ease;
+}
+
+@keyframes fadeHeader{
+    from{
+        opacity:0;
+        transform:translateY(-25px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+.patient-menu-btn{
+    animation:fadeHeader .9s ease;
+}
+.patient-card{
+    border:none;
+    border-radius:14px;
+    box-shadow:0 4px 20px rgba(0,0,0,.05);
+
+    opacity:0;
+    animation:fadeUp .7s ease forwards;
+}
+
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:translateY(25px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+.row > div:nth-child(1) .patient-card{
+    animation-delay:.1s;
+}
+
+.row > div:nth-child(2) .patient-card{
+    animation-delay:.2s;
+}
+
+.row > div:nth-child(3) .patient-card{
+    animation-delay:.3s;
+}
+
+.row > div:nth-child(4) .patient-card{
+    animation-delay:.4s;
+}
+
+.row > div:nth-child(5) .patient-card{
+    animation-delay:.5s;
+}
+.row > div:nth-child(6) .patient-card{
+    animation-delay:.6s;
+}
+.row > div:nth-child(7) .patient-card{
+    animation-delay:.7s;
+}
+.row > div:nth-child(8) .patient-card{
+    animation-delay:.8s;
+}
+.row > div:nth-child(9) .patient-card{
+    animation-delay:.9s;
+}
+.row > div:nth-child(10) .patient-card{
+    animation-delay:.10s;
+}
+.row > div:nth-child(11) .patient-card{
+    animation-delay:.11s;
+}
+
+/* =========================================================
+   VITALCORE COLLAPSIBLE SIDEBAR
+========================================================= */
+
+.sidebar > div:first-child {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Sidebar scrollbar */
+.sidebar > div:first-child::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar > div:first-child::-webkit-scrollbar-thumb {
+    background: #dbe3ef;
+    border-radius: 10px;
+}
+
+/* Parent collapse button */
+.sidebar-collapse-link {
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+/* Parent menu hover */
+.sidebar-collapse-link:hover {
+    transform: translateX(3px);
+}
+
+/* Chevron */
+.collapse-chevron {
+    font-size: .75rem;
+    color: #94a3b8;
+    transition: transform .3s ease;
+}
+
+/* Rotate chevron when menu is open */
+.sidebar-collapse-link[aria-expanded="true"] .collapse-chevron {
+    transform: rotate(180deg);
+    color: #0d6efd;
+}
+
+/* Open parent */
+.sidebar-collapse-link[aria-expanded="true"] {
+    color: #0d6efd;
+    background: #f8fbff;
+}
+
+/* Submenu */
+.sidebar-submenu {
+    list-style: none;
+    padding: 6px 0 6px 2.8rem;
+    margin: 0;
+}
+
+/* Submenu item */
+.sidebar-submenu li {
+    margin-bottom: 4px;
+}
+
+/* Submenu link */
+.sidebar-submenu-link {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 7px 10px;
+
+    color: #64748b;
+    text-decoration: none;
+
+    font-size: .86rem;
+    font-weight: 500;
+
+    border-radius: 7px;
+
+    transition: all .25s ease;
+}
+
+/* Hover */
+.sidebar-submenu-link:hover {
+    color: #0d6efd;
+    background: #f3f7ff;
+    transform: translateX(3px);
+}
+
+/* Dot */
+.submenu-dot {
+    color: #94a3b8;
+    font-size: .55rem;
+    margin-right: 8px;
+    transition: color .25s ease;
+}
+
+/* Dot hover */
+.sidebar-submenu-link:hover .submenu-dot {
+    color: #0d6efd;
+}
+
+/* Active submenu */
+.sidebar-submenu-link.active {
+    color: #0d6efd;
+    background: #eff6ff;
+    font-weight: 600;
+}
+
+.sidebar-submenu-link.active .submenu-dot {
+    color: #0d6efd;
+}
+
+/* Active parent */
+.active-parent {
+    color: #0d6efd !important;
+    background: #f8fbff;
+}
+
+/* =========================================================
+   VITALCORE - DARK MODE OVERRIDES
+   IMPORTANT:
+   These styles ONLY apply when body has .dark-mode
+========================================================= */
+
+
+/* =========================
+   PAGE / BODY
+========================= */
+
+body.dark-mode {
+    background: #0f172a !important;
+    color: #cbd5e1;
+}
+
+body.dark-mode main {
+    background-color: #0f172a !important;
+    color: #cbd5e1 !important;
+}
+
+
+/* =========================
+   SIDEBAR
+========================= */
+
+body.dark-mode .sidebar {
+    background-color: #111827 !important;
+    color: #cbd5e1 !important;
+    border-right: 1px solid #1e293b !important;
+}
+
+
+/* Sidebar normal links */
+
+body.dark-mode .sidebar .nav-link {
+    color: #cbd5e1 !important;
+}
+
+
+/* Sidebar hover */
+
+body.dark-mode .sidebar .nav-link:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* Active main sidebar item */
+
+body.dark-mode .sidebar .nav-link.active {
+    background-color: #0a49c4 !important;
+    color: #ffffff !important;
+}
+
+
+/* Active main sidebar icons */
+
+body.dark-mode .sidebar .nav-link.active i,
+body.dark-mode .sidebar .nav-link.active span {
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   OPEN PARENT MENU
+========================= */
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"] {
+    background-color: transparent !important;
+    color: #cbd5e1 !important;
+    box-shadow: none !important;
+}
+
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"]:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* Chevron */
+
+body.dark-mode .collapse-chevron {
+    color: #94a3b8 !important;
+}
+
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"] .collapse-chevron {
+    color: #60a5fa !important;
+}
+
+
+/* =========================
+   SIDEBAR SUBMENU
+========================= */
+
+body.dark-mode .sidebar-submenu {
+    border-left: 2px solid #334155 !important;
+}
+
+
+body.dark-mode .sidebar-submenu-link {
+    color: #cbd5e1 !important;
+}
+
+
+body.dark-mode .sidebar-submenu-link:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* Active submenu */
+
+body.dark-mode .sidebar .sidebar-submenu-link.active {
+    background: #1e293b !important;
+    color: #60a5fa !important;
+    font-weight: 600;
+    border: 1px solid #334155 !important;
+    box-shadow: none !important;
+}
+
+
+body.dark-mode .sidebar .sidebar-submenu-link.active i {
+    color: #60a5fa !important;
+}
+
+
+body.dark-mode .sidebar .sidebar-submenu-link.active .submenu-dot {
+    color: #60a5fa !important;
+}
+
+
+body.dark-mode .sidebar .sidebar-submenu-link.active:hover {
+    background: #263449 !important;
+    color: #93c5fd !important;
+}
+
+
+/* =========================
+   LOGO / BRAND
+========================= */
+
+body.dark-mode .sidebar-brand {
+    color: #60a5fa !important;
+}
+
+
+/* =========================
+   PAGE HEADER
+========================= */
+
+body.dark-mode .patient-title {
+    color: #f8fafc !important;
+}
+
+
+/* =========================
+   CATEGORY BUTTON
+========================= */
+
+body.dark-mode .patient-menu-btn {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+}
+
+
+body.dark-mode .patient-menu-btn i {
+    color: #60a5fa !important;
+}
+
+
+body.dark-mode .patient-menu-btn:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+    border-color: #475569 !important;
+}
+
+
+/* =========================
+   SEARCH BOX
+========================= */
+
+body.dark-mode #patientSearchInput {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+}
+
+
+body.dark-mode #patientSearchInput::placeholder {
+    color: #94a3b8 !important;
+}
+
+
+body.dark-mode #patientSearchInput:focus {
+    background-color: #111827 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, .20) !important;
+}
+
+
+/* =========================
+   TOTAL PATIENTS BADGE
+========================= */
+
+body.dark-mode .badge.bg-primary {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    border: none !important;
+}
+
+
+/* =========================
+   PATIENT CARD
+========================= */
+
+body.dark-mode .patient-card {
+    background-color: #111827 !important;
+    border: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+
+
+body.dark-mode .patient-card:hover {
+    background-color: #131d2e !important;
+    border-color: #3b82f6 !important;
+}
+
+
+/* Patient name */
+
+body.dark-mode .patient-card h6 {
+    color: #f8fafc !important;
+}
+
+
+/* Age / gender */
+
+body.dark-mode .patient-card small {
+    color: #cbd5e1 !important;
+}
+
+
+/* Patient code / address */
+
+body.dark-mode .patient-card p {
+    color: #cbd5e1 !important;
+}
+
+
+/* Divider */
+
+body.dark-mode .patient-card hr {
+    border-color: #334155 !important;
+    opacity: 1 !important;
+}
+
+
+/* Icons */
+
+body.dark-mode .patient-card p i {
+    color: #94a3b8 !important;
+}
+
+
+/* =========================
+   THREE DOT BUTTON
+========================= */
+
+body.dark-mode .patient-card .btn-light {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+}
+
+
+body.dark-mode .patient-card .btn-light:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   PATIENT CARD DROPDOWN
+========================= */
+
+body.dark-mode .patient-card .dropdown-menu {
+    background-color: #111827 !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,.35) !important;
+}
+
+
+body.dark-mode .patient-card .dropdown-item {
+    color: #e2e8f0 !important;
+}
+
+
+body.dark-mode .patient-card .dropdown-item:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+body.dark-mode .patient-card .dropdown-item.text-danger {
+    color: #fb7185 !important;
+}
+
+
+body.dark-mode .patient-card .dropdown-item.text-danger:hover {
+    background-color: rgba(244,63,94,.12) !important;
+}
+
+
+/* =========================
+   CATEGORY DROPDOWN
+========================= */
+
+body.dark-mode .patient-dropdown {
+    background-color: #111827 !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,.35) !important;
+}
+
+
+body.dark-mode .patient-dropdown .dropdown-item {
+    color: #e2e8f0 !important;
+}
+
+
+body.dark-mode .patient-dropdown .dropdown-item:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+body.dark-mode .sidebar .border-top {
+    border-color: #334155 !important;
+}
+
+
+body.dark-mode .sidebar .text-danger {
+    color: #fb7185 !important;
+}
+
+
+/* =========================
+   SIDEBAR SCROLLBAR
+========================= */
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-track {
+    background: #111827;
+}
+
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+}
+
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+
+/* =========================
+   MOBILE SIDEBAR
+========================= */
+
+@media (max-width: 768px) {
+
+    body.dark-mode .sidebar {
+        background-color: #111827 !important;
+    }
+
+}

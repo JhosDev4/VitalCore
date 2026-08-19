@@ -1,0 +1,949 @@
+/* =====================================================
+   GLOBAL
+===================================================== */
+
+:root{
+    --primary:#0d6efd;
+    --primary-dark:#0a58ca;
+    --secondary:#3d8bfd;
+    --light-green:#eaf3ff;
+    --background:#f5f8fc;
+    --border:#e3e9f1;
+    --text:#263238;
+    --muted:#7a8794;
+    --white:#ffffff;
+}
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:var(--background);
+    color:var(--text);
+    font-family:
+        "Segoe UI",
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
+}
+
+/* =====================================================
+   PAGE CONTAINER
+===================================================== */
+
+.page-container{
+    max-width:1550px;
+    margin:auto;
+    padding:28px;
+}
+
+/* =====================================================
+   TOP NAVIGATION
+===================================================== */
+
+.top-navigation{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:20px;
+}
+
+.breadcrumb-area{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--muted);
+    font-size:13px;
+}
+
+.breadcrumb-area i{
+    color:var(--primary);
+}
+
+.back-button{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+
+    background:white;
+    color:#59645f;
+
+    border:1px solid var(--border);
+
+    padding:9px 15px;
+
+    border-radius:12px;
+
+    text-decoration:none;
+
+    font-size:13px;
+    font-weight:600;
+
+    transition:.2s ease;
+}
+
+.back-button:hover{
+    color:var(--primary);
+    border-color:#b9ddc9;
+    background:var(--light-green);
+
+    transform:translateX(-2px);
+}
+
+/* =====================================================
+   HERO
+===================================================== */
+
+.hero-section{
+    position:relative;
+    overflow:hidden;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0b5ed7 0%,
+            #0d6efd 55%,
+            #3d8bfd 100%
+        );
+
+    border-radius:24px;
+
+    padding:30px 32px;
+
+    color:white;
+
+    box-shadow:
+        0 15px 35px rgba(13,110,253,.18);
+
+    margin-bottom:24px;
+}
+
+.hero-section::before{
+    content:"";
+
+    position:absolute;
+
+    width:280px;
+    height:280px;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.07);
+
+    right:-70px;
+    top:-130px;
+}
+
+.hero-section::after{
+    content:"";
+
+    position:absolute;
+
+    width:170px;
+    height:170px;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.05);
+
+    right:180px;
+    bottom:-130px;
+}
+
+.hero-content{
+    position:relative;
+    z-index:2;
+}
+
+.hero-icon{
+    width:55px;
+    height:55px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:15px;
+
+    background:rgba(255,255,255,.15);
+
+    font-size:26px;
+
+    margin-bottom:16px;
+}
+
+.hero-section h1{
+    font-size:30px;
+
+    font-weight:750;
+
+    margin:0 0 7px;
+}
+
+.hero-section p{
+    margin:0;
+
+    font-size:14px;
+
+    opacity:.86;
+}
+
+.hero-date{
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    margin-top:18px;
+
+    padding:8px 13px;
+
+    border-radius:30px;
+
+    background:rgba(255,255,255,.12);
+
+    font-size:12px;
+}
+
+/* =====================================================
+   STATISTICS
+===================================================== */
+
+.stat-card{
+    background:var(--white);
+
+    border:1px solid var(--border);
+
+    border-radius:18px;
+
+    padding:21px;
+
+    height:100%;
+
+    box-shadow:
+        0 6px 18px rgba(0,0,0,.035);
+
+    transition:.25s ease;
+}
+
+.stat-card:hover{
+    transform:translateY(-4px);
+
+    box-shadow:
+        0 12px 28px rgba(0,0,0,.07);
+}
+
+.stat-header{
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:18px;
+}
+
+.stat-title{
+    color:var(--muted);
+
+    font-size:11px;
+
+    font-weight:700;
+
+    letter-spacing:.6px;
+}
+
+.stat-icon{
+    width:43px;
+    height:43px;
+
+    border-radius:13px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:var(--light-green);
+
+    color:var(--primary);
+
+    font-size:19px;
+}
+
+.stat-number{
+    font-size:27px;
+
+    font-weight:750;
+
+    color:#26332c;
+}
+
+.stat-description{
+    color:var(--muted);
+
+    font-size:11px;
+
+    margin-top:5px;
+}
+
+/* =====================================================
+   RECORD CARD
+===================================================== */
+
+.records-card{
+    background:white;
+
+    border:1px solid var(--border);
+
+    border-radius:21px;
+
+    overflow:hidden;
+
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.045);
+
+    margin-top:24px;
+}
+
+/* =====================================================
+   RECORD HEADER
+===================================================== */
+
+.records-header{
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:15px;
+
+    padding:21px 23px;
+
+    border-bottom:1px solid var(--border);
+
+    flex-wrap:wrap;
+}
+
+.records-heading{
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+}
+
+.records-icon{
+    width:42px;
+    height:42px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:var(--light-green);
+
+    color:var(--primary);
+
+    border-radius:12px;
+
+    font-size:19px;
+}
+
+.records-heading h5{
+    margin:0;
+
+    font-size:17px;
+
+    font-weight:700;
+}
+
+.records-heading p{
+    margin:3px 0 0;
+
+    color:var(--muted);
+
+    font-size:11px;
+}
+
+/* =====================================================
+   SEARCH
+===================================================== */
+
+.search-wrapper{
+    position:relative;
+
+    width:290px;
+}
+
+.search-wrapper i{
+    position:absolute;
+
+    left:14px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    color:#9aa49f;
+
+    pointer-events:none;
+}
+
+.search-input{
+    width:100%;
+
+    background:#f7faf8;
+
+    border:1px solid var(--border);
+
+    border-radius:12px;
+
+    padding:10px 14px 10px 40px;
+
+    outline:none;
+
+    font-size:13px;
+
+    transition:.2s ease;
+}
+
+.search-input:focus{
+    background:white;
+
+    border-color:#76c69c;
+
+    box-shadow:
+        0 0 0 4px rgba(25,135,84,.08);
+}
+
+/* =====================================================
+   TABLE
+===================================================== */
+
+.table-wrapper{
+    overflow-x:auto;
+}
+
+.patient-table{
+    width:100%;
+
+    border-collapse:collapse;
+
+    margin:0;
+}
+
+.patient-table thead th{
+    background:#f8faf9;
+
+    color:#77827d;
+
+    padding:14px 20px;
+
+    border-bottom:1px solid var(--border);
+
+    font-size:10px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.7px;
+
+    font-weight:750;
+
+    white-space:nowrap;
+}
+
+.patient-table tbody tr{
+    transition:.2s ease;
+}
+
+.patient-table tbody tr:hover{
+    background:#fbfefc;
+}
+
+.patient-table tbody td{
+    padding:16px 20px;
+
+    border-bottom:1px solid #f0f2f1;
+
+    font-size:13px;
+
+    vertical-align:middle;
+}
+
+.patient-table tbody tr:last-child td{
+    border-bottom:none;
+}
+
+/* =====================================================
+   PATIENT NAME
+===================================================== */
+
+.patient-profile{
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    min-width:220px;
+}
+
+.patient-avatar{
+    width:43px;
+    height:43px;
+
+    flex-shrink:0;
+
+    border-radius:13px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+     background:
+        linear-gradient(
+            135deg,
+            #dceaff,
+            #bdd7ff
+        );
+
+    color:#0a58ca;
+
+    font-size:13px;
+
+    font-weight:750;
+}
+
+.patient-name{
+    color:#29332e;
+
+    font-weight:700;
+
+    font-size:13px;
+
+    margin-bottom:3px;
+}
+
+.patient-id{
+    color:#98a29d;
+
+    font-size:10px;
+}
+
+/* =====================================================
+   CODE
+===================================================== */
+
+.code-badge{
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    padding:6px 10px;
+
+    border-radius:8px;
+
+    background:#edf8f2;
+
+    border:1px solid #d8eee1;
+
+    color:var(--primary-dark);
+
+    font-size:11px;
+
+    font-weight:750;
+
+    letter-spacing:.4px;
+}
+
+/* =====================================================
+   LAST VISIT
+===================================================== */
+
+.visit-date{
+    color:#3c4641;
+
+    font-size:12px;
+
+    font-weight:650;
+}
+
+.visit-time{
+    color:#9aa39f;
+
+    font-size:10px;
+
+    margin-top:3px;
+}
+
+.no-record{
+    color:#9ba39f;
+
+    font-size:11px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:5px;
+}
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.status{
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    padding:6px 10px;
+
+    border-radius:30px;
+
+    font-size:10px;
+
+    font-weight:700;
+}
+
+.status-active{
+    color:#0a58ca;
+    background:#eaf3ff;
+}
+
+.status-none{
+    color:#8b7200;
+    background:#fff8d9;
+}
+
+.status-dot{
+    width:6px;
+    height:6px;
+
+    border-radius:50%;
+
+    background:currentColor;
+}
+
+/* =====================================================
+   HISTORY BUTTON
+===================================================== */
+
+.history-button{
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:7px;
+
+    background:#eaf8f0;
+
+    color:var(--primary-dark);
+
+    border:1px solid #d6eee0;
+
+    border-radius:10px;
+
+    padding:8px 13px;
+
+    text-decoration:none;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    transition:.2s ease;
+
+    white-space:nowrap;
+}
+
+.history-button:hover{
+    background:var(--primary);
+
+    color:white;
+
+    border-color:var(--primary);
+
+    transform:translateY(-1px);
+
+    box-shadow:
+        0 5px 12px rgba(25,135,84,.18);
+}
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.records-footer{
+    padding:14px 22px;
+
+    background:#fbfcfc;
+
+    border-top:1px solid var(--border);
+
+    color:var(--muted);
+
+    font-size:11px;
+}
+
+/* =====================================================
+   EMPTY STATE
+===================================================== */
+
+.empty-state{
+    text-align:center;
+
+    padding:65px 20px;
+}
+
+.empty-icon{
+    width:68px;
+    height:68px;
+
+    margin:0 auto 17px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:18px;
+
+    background:var(--light-green);
+
+    color:var(--primary);
+
+    font-size:28px;
+}
+
+.empty-state h5{
+    font-weight:700;
+
+    margin-bottom:6px;
+}
+
+.empty-state p{
+    color:var(--muted);
+
+    font-size:12px;
+
+    margin:0;
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:768px){
+
+    .page-container{
+        padding:15px;
+    }
+
+    .top-navigation{
+        align-items:flex-start;
+
+        gap:10px;
+    }
+
+    .breadcrumb-area{
+        display:none;
+    }
+
+    .hero-section{
+        padding:24px;
+
+        border-radius:19px;
+    }
+
+    .hero-section h1{
+        font-size:24px;
+    }
+
+    .search-wrapper{
+        width:100%;
+    }
+
+    .records-header{
+        align-items:stretch;
+    }
+
+    .patient-table thead{
+        display:none;
+    }
+
+    .patient-table,
+    .patient-table tbody,
+    .patient-table tr,
+    .patient-table td{
+        display:block;
+
+        width:100%;
+    }
+
+    .patient-table tbody tr{
+        padding:14px 18px;
+
+        border-bottom:1px solid var(--border);
+    }
+
+    .patient-table tbody td{
+        padding:7px 0;
+
+        border:none;
+
+        display:flex;
+
+        align-items:center;
+
+        justify-content:space-between;
+
+        gap:15px;
+    }
+
+    .patient-table tbody td:first-child{
+        display:block;
+
+        padding-bottom:12px;
+    }
+
+    .patient-table tbody td::before{
+        content:attr(data-label);
+
+        color:#9aa39f;
+
+        font-size:9px;
+
+        text-transform:uppercase;
+
+        font-weight:750;
+
+        letter-spacing:.5px;
+    }
+
+    .patient-table tbody td:first-child::before{
+        display:none;
+    }
+
+    .history-button{
+        width:100%;
+    }
+
+}
+/* =========================================
+   PATIENT TABLE — DIAGONAL FADE EFFECT
+========================================= */
+
+@keyframes tableRowDiagonal {
+    0% {
+        opacity: 0;
+        transform: translate(-35px, -25px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}
+
+/* Hide rows before animation */
+.patient-table tbody tr {
+    opacity: 0;
+}
+
+/* Animate each row */
+.patient-table tbody tr.table-row-visible {
+    animation: tableRowDiagonal 0.65s ease-out forwards;
+}
+
+/* =========================================================
+   PATIENT TABLE — TOP LEFT TO BOTTOM RIGHT ANIMATION
+========================================================= */
+
+#recordTable tbody tr {
+    opacity: 0;
+    transform: translate(-25px, -25px);
+    animation: tableRowFade 0.7s ease-out forwards;
+}
+
+/* Each row appears slightly after the previous row */
+#recordTable tbody tr:nth-child(1) {
+    animation-delay: 0.10s;
+}
+
+#recordTable tbody tr:nth-child(2) {
+    animation-delay: 0.20s;
+}
+
+#recordTable tbody tr:nth-child(3) {
+    animation-delay: 0.30s;
+}
+
+#recordTable tbody tr:nth-child(4) {
+    animation-delay: 0.40s;
+}
+
+#recordTable tbody tr:nth-child(5) {
+    animation-delay: 0.50s;
+}
+
+#recordTable tbody tr:nth-child(6) {
+    animation-delay: 0.60s;
+}
+
+#recordTable tbody tr:nth-child(7) {
+    animation-delay: 0.70s;
+}
+
+#recordTable tbody tr:nth-child(8) {
+    animation-delay: 0.80s;
+}
+
+#recordTable tbody tr:nth-child(9) {
+    animation-delay: 0.90s;
+}
+
+#recordTable tbody tr:nth-child(10) {
+    animation-delay: 1.00s;
+}
+
+#recordTable tbody tr:nth-child(11) {
+    animation-delay: 1.10s;
+}
+
+#recordTable tbody tr:nth-child(12) {
+    animation-delay: 1.20s;
+}
+
+#recordTable tbody tr:nth-child(13) {
+    animation-delay: 1.30s;
+}
+
+#recordTable tbody tr:nth-child(14) {
+    animation-delay: 1.40s;
+}
+
+#recordTable tbody tr:nth-child(15) {
+    animation-delay: 1.50s;
+}
+
+@keyframes tableRowFade {
+    from {
+        opacity: 0;
+        transform: translate(-25px, -25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+}

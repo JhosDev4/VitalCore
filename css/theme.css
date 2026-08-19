@@ -1,0 +1,1080 @@
+/* ===========================
+  DASHBOARD DARK MODE
+=========================== */
+
+body.dark-mode{
+    background:#0f172a;
+    color:#e2e8f0;
+}
+
+/* Sidebar */
+body.dark-mode .sidebar{
+    background:#111827 !important;
+    border-right:1px solid #1f2937;
+}
+
+body.dark-mode .sidebar-heading{
+    color:#64748b;
+}
+
+body.dark-mode .sidebar .nav-link{
+    color:#cbd5e1;
+}
+
+body.dark-mode .sidebar .nav-link:hover{
+    background:#1e293b;
+}
+
+body.dark-mode .sidebar-brand{
+    color:#60a5fa;
+}
+
+/* Cards */
+body.dark-mode .analytics-card,
+body.dark-mode .patient-card,
+body.dark-mode .placeholder-card{
+    background:#111827;
+    color:#f1f5f9;
+    border:1px solid #1f2937;
+}
+
+/* Tables */
+body.dark-mode .table th,
+body.dark-mode .table td{
+    color:#e2e8f0;
+}
+
+body.dark-mode .table{
+    --bs-table-bg:#111827;
+}
+
+/* Header */
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6{
+    color:#f8fafc !important;
+}
+
+body.dark-mode .text-dark{
+    color:#f8fafc !important;
+}
+
+body.dark-mode .text-muted{
+    color:#94a3b8 !important;
+}
+
+/* Date Badge */
+body.dark-mode .badge.bg-white{
+    background:#1e293b !important;
+    color:#e2e8f0 !important;
+    border-color:#334155 !important;
+}
+
+/* Dark Mode Button */
+body.dark-mode .darkmode-btn{
+    background:#1e293b;
+    color:#f8fafc;
+}
+
+/* Inputs */
+body.dark-mode input,
+body.dark-mode select{
+    background:#1e293b !important;
+    border-color:#334155 !important;
+    color:#f8fafc !important;
+}
+
+/* =====================================
+   ADMIN DASHBOARD DARK MODE
+===================================== */
+
+body.dark-mode main{
+    background:#0f172a;
+}
+
+/* Main Cards */
+body.dark-mode .stat-card,
+body.dark-mode .add-card,
+body.dark-mode .list-card,
+body.dark-mode .card{
+    background:#111827 !important;
+    color:#f8fafc !important;
+    border:1px solid #1f2937 !important;
+}
+
+/* Registration Header */
+body.dark-mode .card-header-custom h4,
+body.dark-mode .card-header-custom small{
+    color:#f8fafc !important;
+}
+
+/* Forms */
+body.dark-mode .form-control,
+body.dark-mode .form-select,
+body.dark-mode textarea{
+    background:#1e293b !important;
+    color:#f8fafc !important;
+    border-color:#334155 !important;
+}
+
+body.dark-mode .form-control::placeholder{
+    color:#94a3b8 !important;
+}
+
+body.dark-mode .input-group-text{
+    background:#1e293b !important;
+    color:#f8fafc !important;
+    border-color:#334155 !important;
+}
+
+/* Tables */
+body.dark-mode .table{
+    color:#f8fafc !important;
+    --bs-table-bg:#111827;
+}
+
+body.dark-mode .table-light{
+    --bs-table-bg:#1e293b !important;
+}
+
+body.dark-mode .table-hover tbody tr:hover{
+    background:#1e293b !important;
+}
+
+body.dark-mode thead th{
+    color:#cbd5e1 !important;
+}
+
+/* Modal */
+body.dark-mode .modal-content{
+    background:#111827;
+    color:#f8fafc;
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer{
+    border-color:#334155;
+}
+
+/* Success Box */
+body.dark-mode .success-box{
+    background:#0f172a;
+    border:1px solid #22c55e;
+    color:#f8fafc;
+}
+
+/* Pagination */
+body.dark-mode .btn-outline-secondary{
+    border-color:#475569;
+    color:#cbd5e1;
+}
+
+body.dark-mode .btn-outline-secondary:hover{
+    background:#334155;
+}
+
+/* =====================================
+   PATIENT LIST DARK MODE
+===================================== */
+
+/* Main area */
+body.dark-mode main{
+    background:#0f172a;
+}
+
+/* Patient cards */
+body.dark-mode .patient-card{
+    background:#111827 !important;
+    border:1px solid #1f2937 !important;
+    color:#f8fafc !important;
+}
+
+/* Card content */
+body.dark-mode .patient-card h6,
+body.dark-mode .patient-card p,
+body.dark-mode .patient-card small{
+    color:#e2e8f0 !important;
+}
+
+/* Divider */
+body.dark-mode hr{
+    border-color:#334155 !important;
+}
+
+/* Category button */
+body.dark-mode .patient-menu-btn{
+    background:#1e293b !important;
+    color:#f8fafc !important;
+    border:1px solid #334155 !important;
+}
+
+/* Dropdown */
+body.dark-mode .dropdown-menu,
+body.dark-mode .patient-dropdown{
+    background:#111827 !important;
+    border:1px solid #334155 !important;
+}
+
+body.dark-mode .dropdown-item{
+    color:#e2e8f0 !important;
+}
+
+body.dark-mode .dropdown-item:hover{
+    background:#1e293b !important;
+}
+
+/* Three dots button */
+body.dark-mode .btn-light{
+    background:#1e293b !important;
+    border-color:#334155 !important;
+    color:#f8fafc !important;
+}
+
+/* Total patient badge */
+body.dark-mode .badge.bg-primary{
+    background:#2563eb !important;
+}
+
+/* Load More */
+body.dark-mode .btn-outline-primary{
+    color:#60a5fa !important;
+    border-color:#60a5fa !important;
+}
+
+body.dark-mode .btn-outline-primary:hover{
+    background:#2563eb !important;
+    color:#fff !important;
+}
+
+/* Sidebar collapse links */
+body.dark-mode .collapse a{
+    color:#cbd5e1 !important;
+}
+
+body.dark-mode .collapse a.text-primary{
+    color:#60a5fa !important;
+}
+
+body.dark-mode .collapse a.text-secondary{
+    color:#94a3b8 !important;
+}
+
+/* Border top logout section */
+body.dark-mode .border-top{
+    border-color:#334155 !important;
+}
+
+/* ===========================
+   PATIENT LIST DARK MODE
+=========================== */
+
+body.dark-mode .patient-card,
+body.dark-mode .dropdown-menu,
+body.dark-mode .patient-dropdown{
+    background:#111827 !important;
+    border-color:#334155 !important;
+    color:#f8fafc !important;
+}
+
+body.dark-mode .dropdown-item{
+    color:#e2e8f0 !important;
+}
+
+body.dark-mode .dropdown-item:hover{
+    background:#1e293b !important;
+}
+
+body.dark-mode .patient-menu-btn{
+    background:#1e293b !important;
+    color:#f8fafc !important;
+    border-color:#334155 !important;
+}
+
+body.dark-mode .page-header{
+    border-color:#334155 !important;
+}
+
+/* ===========================
+   PATIENT VIEW DARK MODE
+=========================== */
+
+body.dark-mode .patient-top-card,
+body.dark-mode .card-custom,
+body.dark-mode .mini-vital-card,
+body.dark-mode .body-callout-card,
+body.dark-mode .vital-item,
+body.dark-mode .bg-white{
+    background:#111827 !important;
+    color:#f8fafc !important;
+    border-color:#334155 !important;
+}
+
+body.dark-mode .patient-name,
+body.dark-mode .patient-title,
+body.dark-mode .fw-bold,
+body.dark-mode .text-dark{
+    color:#f8fafc !important;
+}
+
+body.dark-mode .patient-meta,
+body.dark-mode .text-muted{
+    color:#94a3b8 !important;
+}
+
+body.dark-mode .border,
+body.dark-mode .border-end,
+body.dark-mode .border-top,
+body.dark-mode .border-bottom{
+    border-color:#334155 !important;
+}
+
+/* Charts Container */
+body.dark-mode canvas{
+    filter:brightness(.95);
+}
+
+/* Pagination */
+body.dark-mode .page-link{
+    background:#1e293b;
+    border-color:#334155;
+    color:#f8fafc;
+}
+
+body.dark-mode .page-item.active .page-link{
+    background:#2563eb;
+    border-color:#2563eb;
+}
+
+/* Bootstrap Cards */
+body.dark-mode .card{
+    background:#111827 !important;
+    color:#f8fafc !important;
+    border-color:#334155 !important;
+}
+
+/* Modal */
+body.dark-mode .modal-content{
+    background:#111827;
+    color:#f8fafc;
+}
+
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer{
+    border-color:#334155;
+}
+
+/* Input Groups */
+body.dark-mode .input-group-text{
+    background:#1e293b !important;
+    border-color:#334155 !important;
+    color:#f8fafc !important;
+}
+
+/* Table Header */
+body.dark-mode .table-light{
+    --bs-table-bg:#1e293b !important;
+    --bs-table-color:#f8fafc !important;
+}
+
+/* ===========================
+   DOCUMENT PAGE DARK MODE
+=========================== */
+
+/* Action Buttons */
+body.dark-mode .btn-success{
+    background:#16a34a;
+    border-color:#16a34a;
+}
+
+body.dark-mode .btn-primary{
+    background:#2563eb;
+    border-color:#2563eb;
+}
+
+/* Document Container */
+body.dark-mode .document-wrapper{
+    background:#ffffff !important;
+    color:#000000 !important;
+}
+
+/* Prevent dark mode from affecting PDF content */
+body.dark-mode .clinic-header,
+body.dark-mode .info-grid,
+body.dark-mode .health-score-box,
+body.dark-mode .vitals-table,
+body.dark-mode .notes-box,
+body.dark-mode .signature-section,
+body.dark-mode .doc-footer{
+    background:#ffffff !important;
+    color:#000000 !important;
+}
+
+/* =========================================================
+   DARK MODE — CLINIC REPORTS
+   ========================================================= */
+
+/*
+   Supports common dark-mode selectors used by theme.js.
+   If your theme.js adds .dark-mode to <body>, this will work.
+*/
+body.dark-mode,
+body.dark,
+body[data-theme="dark"],
+html.dark-mode body,
+html.dark body,
+html[data-theme="dark"] body {
+
+    --clinic-bg: #0f172a;
+    --clinic-card-bg: #111827;
+    --clinic-text-primary: #f8fafc;
+    --clinic-text-secondary: #cbd5e1;
+    --clinic-text-muted: #94a3b8;
+    --clinic-border: #334155;
+
+    color: var(--clinic-text-secondary);
+    background-color: var(--clinic-bg);
+}
+
+
+/* =========================================================
+   BODY
+   ========================================================= */
+
+body.dark-mode,
+body.dark,
+body[data-theme="dark"],
+html.dark-mode body,
+html.dark body,
+html[data-theme="dark"] body {
+    background-color: var(--clinic-bg);
+    color: var(--clinic-text-secondary);
+}
+
+
+/* =========================================================
+   HEADINGS
+   ========================================================= */
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5,
+body.dark-mode h6,
+body.dark h1,
+body.dark h2,
+body.dark h3,
+body.dark h4,
+body.dark h5,
+body.dark h6,
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] h4,
+body[data-theme="dark"] h5,
+body[data-theme="dark"] h6 {
+    color: #f8fafc !important;
+}
+
+
+/* =========================================================
+   DASHBOARD HEADER
+   ========================================================= */
+
+body.dark-mode .dashboard-header,
+body.dark .dashboard-header,
+body[data-theme="dark"] .dashboard-header {
+    border-bottom-color: #334155;
+}
+
+
+/* =========================================================
+   MAIN CARDS
+   ========================================================= */
+
+body.dark-mode .clinic-card,
+body.dark .clinic-card,
+body[data-theme="dark"] .clinic-card {
+    background-color: #111827 !important;
+    border-color: #334155 !important;
+    color: #cbd5e1;
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.30),
+        0 2px 4px -2px rgba(0, 0, 0, 0.30);
+}
+
+body.dark-mode .clinic-card:hover,
+body.dark .clinic-card:hover,
+body[data-theme="dark"] .clinic-card:hover {
+    box-shadow:
+        0 10px 20px -5px rgba(0, 0, 0, 0.40),
+        0 4px 8px -4px rgba(0, 0, 0, 0.35);
+}
+
+
+/* =========================================================
+   CARD HEADERS
+   ========================================================= */
+
+body.dark-mode .clinic-card-header,
+body.dark .clinic-card-header,
+body[data-theme="dark"] .clinic-card-header {
+    background-color: transparent !important;
+    border-bottom-color: #334155 !important;
+}
+
+body.dark-mode .clinic-card-header h5,
+body.dark .clinic-card-header h5,
+body[data-theme="dark"] .clinic-card-header h5 {
+    color: #f8fafc !important;
+}
+
+
+/* =========================================================
+   KPI CARDS
+   ========================================================= */
+
+body.dark-mode .stat-value,
+body.dark .stat-value,
+body[data-theme="dark"] .stat-value {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .stat-label,
+body.dark .stat-label,
+body[data-theme="dark"] .stat-label {
+    color: #94a3b8 !important;
+}
+
+
+/* =========================================================
+   DATE FILTER PILL
+   ========================================================= */
+
+body.dark-mode .date-pill,
+body.dark .date-pill,
+body[data-theme="dark"] .date-pill {
+    background-color: #111827 !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .date-pill .form-select,
+body.dark-mode .date-pill .form-control,
+body.dark .date-pill .form-select,
+body.dark .date-pill .form-control,
+body[data-theme="dark"] .date-pill .form-select,
+body[data-theme="dark"] .date-pill .form-control {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+}
+
+body.dark-mode .date-pill .form-select option,
+body.dark-mode .date-pill .form-control option,
+body.dark .date-pill .form-select option,
+body.dark .date-pill .form-control option,
+body[data-theme="dark"] .date-pill .form-select option,
+body[data-theme="dark"] .date-pill .form-control option {
+    background-color: #1e293b;
+    color: #f8fafc;
+}
+
+
+/* =========================================================
+   BACK BUTTON
+   ========================================================= */
+
+body.dark-mode .btn-outline-secondary,
+body.dark .btn-outline-secondary,
+body[data-theme="dark"] .btn-outline-secondary {
+    color: #cbd5e1 !important;
+    border-color: #475569 !important;
+}
+
+body.dark-mode .btn-outline-secondary:hover,
+body.dark .btn-outline-secondary:hover,
+body[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================================================
+   NEW PATIENT HIGHLIGHT BOX
+   ========================================================= */
+
+body.dark-mode .bg-light,
+body.dark .bg-light,
+body[data-theme="dark"] .bg-light {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .border,
+body.dark .border,
+body[data-theme="dark"] .border {
+    border-color: #334155 !important;
+}
+
+
+/* =========================================================
+   TEXT COLORS
+   Fix Bootstrap text-dark / text-secondary
+   ========================================================= */
+
+body.dark-mode .text-dark,
+body.dark .text-dark,
+body[data-theme="dark"] .text-dark {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .text-secondary,
+body.dark .text-secondary,
+body[data-theme="dark"] .text-secondary {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .text-muted,
+body.dark .text-muted,
+body[data-theme="dark"] .text-muted {
+    color: #94a3b8 !important;
+}
+
+
+/* =========================================================
+   GENDER TABLE
+   ========================================================= */
+
+body.dark-mode .table,
+body.dark .table,
+body[data-theme="dark"] .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: #cbd5e1;
+    --bs-table-border-color: #334155;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .table-light,
+body.dark .table-light,
+body[data-theme="dark"] .table-light {
+    --bs-table-bg: #1e293b !important;
+    --bs-table-color: #cbd5e1 !important;
+
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .table thead th,
+body.dark .table thead th,
+body[data-theme="dark"] .table thead th {
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .table tbody td,
+body.dark .table tbody td,
+body[data-theme="dark"] .table tbody td {
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+
+/* Bootstrap table hover in dark mode */
+body.dark-mode .table-hover > tbody > tr:hover > *,
+body.dark .table-hover > tbody > tr:hover > *,
+body[data-theme="dark"] .table-hover > tbody > tr:hover > * {
+    --bs-table-accent-bg: #1e293b;
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================================================
+   GENDER PROGRESS BAR
+   ========================================================= */
+
+body.dark-mode .gender-progress,
+body.dark .gender-progress,
+body[data-theme="dark"] .gender-progress {
+    background-color: #334155 !important;
+}
+
+
+/* =========================================================
+   SERVICE ITEMS
+   This fixes the WHITE boxes in your screenshot
+   ========================================================= */
+
+body.dark-mode .service-item-row,
+body.dark .service-item-row,
+body[data-theme="dark"] .service-item-row {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .service-item-row:hover,
+body.dark .service-item-row:hover,
+body[data-theme="dark"] .service-item-row:hover {
+    background-color: #273449 !important;
+    border-color: #475569 !important;
+}
+
+
+/* Service names */
+body.dark-mode .service-item-row .text-dark,
+body.dark .service-item-row .text-dark,
+body[data-theme="dark"] .service-item-row .text-dark {
+    color: #f8fafc !important;
+}
+
+
+/* Service descriptions */
+body.dark-mode .service-item-row .text-muted,
+body.dark .service-item-row .text-muted,
+body[data-theme="dark"] .service-item-row .text-muted {
+    color: #94a3b8 !important;
+}
+
+
+/* Service numbers */
+body.dark-mode .service-item-row .fw-bold,
+body.dark .service-item-row .fw-bold,
+body[data-theme="dark"] .service-item-row .fw-bold {
+    color: #f8fafc !important;
+}
+
+
+/* =========================================================
+   SERVICE PROGRESS
+   ========================================================= */
+
+body.dark-mode .service-progress,
+body.dark .service-progress,
+body[data-theme="dark"] .service-progress {
+    background-color: #334155 !important;
+}
+
+
+/* =========================================================
+   ADDRESS CARD
+   ========================================================= */
+
+body.dark-mode .clinic-card .clinic-card-body,
+body.dark .clinic-card .clinic-card-body,
+body[data-theme="dark"] .clinic-card .clinic-card-body {
+    color: #cbd5e1;
+}
+
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+
+body.dark-mode .badge.bg-light,
+body.dark .badge.bg-light,
+body[data-theme="dark"] .badge.bg-light {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #475569 !important;
+}
+
+
+/* =========================================================
+   INFO FOOTER
+   ========================================================= */
+
+body.dark-mode .border-top,
+body.dark .border-top,
+body[data-theme="dark"] .border-top {
+    border-top-color: #334155 !important;
+}
+
+
+/* =========================================================
+   FORM CONTROLS
+   ========================================================= */
+
+body.dark-mode .form-select,
+body.dark-mode .form-control,
+body.dark .form-select,
+body.dark .form-control,
+body[data-theme="dark"] .form-select,
+body[data-theme="dark"] .form-control {
+    background-color: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode .form-select:focus,
+body.dark-mode .form-control:focus,
+body.dark .form-select:focus,
+body.dark .form-control:focus,
+body[data-theme="dark"] .form-select:focus,
+body[data-theme="dark"] .form-control:focus {
+    background-color: #1e293b;
+    color: #ffffff;
+    border-color: var(--clinic-primary);
+    box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.20);
+}
+
+
+/* Calendar icon / date input */
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator,
+body.dark input[type="date"]::-webkit-calendar-picker-indicator,
+body[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+
+/* =========================================================
+   KPI ICON BACKGROUNDS
+   ========================================================= */
+
+body.dark-mode .metric-pill-primary,
+body.dark .metric-pill-primary,
+body[data-theme="dark"] .metric-pill-primary {
+    background-color: rgba(14, 165, 233, 0.15);
+}
+
+body.dark-mode .metric-pill-success,
+body.dark .metric-pill-success,
+body[data-theme="dark"] .metric-pill-success {
+    background-color: rgba(16, 185, 129, 0.15);
+}
+
+body.dark-mode .metric-pill-purple,
+body.dark .metric-pill-purple,
+body[data-theme="dark"] .metric-pill-purple {
+    background-color: rgba(139, 92, 246, 0.15);
+}
+
+body.dark-mode .metric-pill-warning,
+body.dark .metric-pill-warning,
+body[data-theme="dark"] .metric-pill-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+}
+
+
+/* =========================================================
+   SERVICE ICON BACKGROUNDS
+   ========================================================= */
+
+body.dark-mode .service-vital,
+body.dark .service-vital,
+body[data-theme="dark"] .service-vital {
+    background-color: rgba(14, 165, 233, 0.15);
+}
+
+body.dark-mode .service-prenatal,
+body.dark .service-prenatal,
+body[data-theme="dark"] .service-prenatal {
+    background-color: rgba(244, 63, 94, 0.15);
+}
+
+body.dark-mode .service-immunization,
+body.dark .service-immunization,
+body[data-theme="dark"] .service-immunization {
+    background-color: rgba(16, 185, 129, 0.15);
+}
+
+body.dark-mode .service-family,
+body.dark .service-family,
+body[data-theme="dark"] .service-family {
+    background-color: rgba(245, 158, 11, 0.15);
+}
+
+/* =====================================
+   PATIENT HISTORY PAGE DARK MODE
+===================================== */
+
+body.dark-mode .page-container{
+    background:#0f172a;
+}
+
+body.dark-mode .top-navigation{
+    background:#111827;
+    border-color:#334155;
+}
+
+body.dark-mode .breadcrumb-area,
+body.dark-mode .breadcrumb-area span{
+    color:#cbd5e1;
+}
+
+body.dark-mode .back-button{
+    background:#1e293b;
+    color:#f8fafc;
+    border:1px solid #334155;
+}
+
+body.dark-mode .back-button:hover{
+    background:#334155;
+}
+
+body.dark-mode .hero-section{
+    background:#111827;
+    color:#f8fafc;
+    border:1px solid #334155;
+}
+
+body.dark-mode .hero-section h1,
+body.dark-mode .hero-section p,
+body.dark-mode .hero-date{
+    color:#f8fafc !important;
+}
+
+body.dark-mode .stat-card{
+    background:#111827 !important;
+    color:#f8fafc !important;
+    border:1px solid #334155 !important;
+}
+
+body.dark-mode .stat-title{
+    color:#94a3b8 !important;
+}
+
+body.dark-mode .stat-number{
+    color:#ffffff !important;
+}
+
+body.dark-mode .stat-description{
+    color:#cbd5e1 !important;
+}
+
+body.dark-mode .records-card{
+    background:#111827 !important;
+    border:1px solid #334155 !important;
+    color:#f8fafc !important;
+}
+
+body.dark-mode .records-header{
+    border-bottom:1px solid #334155;
+}
+
+body.dark-mode .records-heading h5{
+    color:#f8fafc !important;
+}
+
+body.dark-mode .records-heading p{
+    color:#94a3b8 !important;
+}
+
+body.dark-mode .search-input{
+    background:#1e293b !important;
+    color:#f8fafc !important;
+    border:1px solid #334155 !important;
+}
+
+body.dark-mode .search-input::placeholder{
+    color:#94a3b8;
+}
+
+body.dark-mode .patient-table{
+    background:#111827;
+    color:#f8fafc;
+}
+
+body.dark-mode .patient-table thead{
+    background:#1e293b;
+}
+
+body.dark-mode .patient-table th{
+    color:#cbd5e1 !important;
+    border-color:#334155 !important;
+}
+
+body.dark-mode .patient-table td{
+    color:#f8fafc !important;
+    border-color:#334155 !important;
+}
+
+body.dark-mode .patient-table tr{
+    border-color:#334155 !important;
+}
+
+body.dark-mode .patient-table tbody tr:hover{
+    background:#1e293b !important;
+}
+
+body.dark-mode .patient-name{
+    color:#f8fafc !important;
+}
+
+body.dark-mode .patient-id{
+    color:#94a3b8 !important;
+}
+
+body.dark-mode .patient-avatar{
+    background:#2563eb;
+    color:#ffffff;
+}
+
+body.dark-mode .code-badge{
+    background:#1e293b;
+    color:#cbd5e1;
+    border:1px solid #334155;
+}
+
+body.dark-mode .visit-date{
+    color:#f8fafc;
+}
+
+body.dark-mode .visit-time{
+    color:#94a3b8;
+}
+
+body.dark-mode .no-record{
+    color:#94a3b8;
+}
+
+body.dark-mode .history-button{
+    background:#2563eb;
+    color:#ffffff !important;
+}
+
+body.dark-mode .history-button:hover{
+    background:#1d4ed8;
+}
+
+body.dark-mode .records-footer{
+    border-top:1px solid #334155;
+    color:#cbd5e1;
+}
+
+body.dark-mode .empty-state{
+    background:#111827;
+    color:#f8fafc;
+}
+
+body.dark-mode .empty-state p{
+    color:#94a3b8;
+}
+
+/* =========================================================
+   DARK MODE
+========================================================= */
+
+.dark-mode .modern-back-btn {
+    background: rgba(30, 35, 34, 0.85);
+    color: #5ee6a5;
+
+    border-color: rgba(94, 230, 165, 0.25);
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.dark-mode .modern-back-btn:hover {
+    background: #198754;
+    color: #fff;
+
+    border-color: #198754;
+
+    box-shadow:
+        0 7px 20px rgba(25, 135, 84, 0.35);
+}

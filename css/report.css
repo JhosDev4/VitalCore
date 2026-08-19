@@ -1,0 +1,556 @@
+    :root {
+            --clinic-bg: #f8fafc;
+            --clinic-card-bg: #ffffff;
+            --clinic-text-primary: #0f172a;
+            --clinic-text-secondary: #475569;
+            --clinic-text-muted: #94a3b8;
+            --clinic-border: #e2e8f0;
+            
+            /* Medical branding colors */
+            --clinic-primary: #0ea5e9;
+            --clinic-primary-light: #e0f2fe;
+            --clinic-success: #10b981;
+            --clinic-success-light: #d1fae5;
+            --clinic-warning: #f59e0b;
+            --clinic-warning-light: #fef3c7;
+            --clinic-danger: #f43f5e;
+            --clinic-danger-light: #ffe4e6;
+            --clinic-purple: #8b5cf6;
+            --clinic-purple-light: #f3e8ff;
+            
+            /* Demographics colors */
+            --gender-male: #2563eb;
+            --gender-male-light: #dbeafe;
+            --gender-female: #db2777;
+            --gender-female-light: #fce7f3;
+        }
+
+        body {
+            background-color: var(--clinic-bg);
+            color: var(--clinic-text-secondary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--clinic-text-primary);
+            font-weight: 700;
+        }
+
+        /* Clinic Dashboard Cards */
+        .clinic-card {
+            background-color: var(--clinic-card-bg);
+            border: 1px solid var(--clinic-border) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+            overflow: hidden;
+        }
+
+        .clinic-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* KPI Card Left Color Accents */
+        .kpi-card {
+            border-left: 5px solid var(--clinic-border) !important;
+        }
+        .kpi-total-patients { border-left-color: var(--clinic-primary) !important; }
+        .kpi-new-today { border-left-color: var(--clinic-success) !important; }
+        .kpi-measurements { border-left-color: var(--clinic-purple) !important; }
+        .kpi-yesterday { border-left-color: var(--clinic-warning) !important; }
+
+        .clinic-card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--clinic-border);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .clinic-card-body {
+            padding: 1.5rem;
+        }
+
+        /* KPI Indicators */
+        .metric-pill {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .metric-pill-primary { background-color: var(--clinic-primary-light); color: var(--clinic-primary); }
+        .metric-pill-success { background-color: var(--clinic-success-light); color: var(--clinic-success); }
+        .metric-pill-purple { background-color: var(--clinic-purple-light); color: var(--clinic-purple); }
+        .metric-pill-warning { background-color: var(--clinic-warning-light); color: var(--clinic-warning); }
+
+        .stat-value {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: var(--clinic-text-primary);
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--clinic-text-muted);
+            display: block;
+        }
+
+        /* Gender Distribution Visuals */
+        .gender-badge-male {
+            background-color: var(--gender-male-light);
+            color: var(--gender-male);
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .gender-badge-female {
+            background-color: var(--gender-female-light);
+            color: var(--gender-female);
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .gender-progress {
+            height: 14px;
+            border-radius: 999px;
+            background-color: #f1f5f9;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .gender-progress-male {
+            background-color: var(--gender-male);
+            transition: width 0.6s ease;
+        }
+
+        .gender-progress-female {
+            background-color: var(--gender-female);
+            transition: width 0.6s ease;
+        }
+
+        /* Clinic Services Layout */
+        .service-item-row {
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--clinic-border);
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+            margin-bottom: 0.85rem;
+        }
+
+        .service-item-row:hover {
+            border-color: #cbd5e1;
+            background-color: #f8fafc;
+            transform: translateX(3px);
+        }
+
+        .service-icon-wrapper {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        .service-vital { background-color: var(--clinic-primary-light); color: var(--clinic-primary); }
+        .service-prenatal { background-color: var(--clinic-danger-light); color: var(--clinic-danger); }
+        .service-immunization { background-color: var(--clinic-success-light); color: var(--clinic-success); }
+        .service-family { background-color: var(--clinic-warning-light); color: var(--clinic-warning); }
+
+        .service-progress {
+            height: 4px;
+            margin-top: 8px;
+            border-radius: 99px;
+            background-color: #f1f5f9;
+        }
+
+        /* General layout additions */
+        .dashboard-header {
+            border-bottom: 1px solid var(--clinic-border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .date-pill {
+            background-color: #ffffff;
+            border: 1px solid var(--clinic-border);
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--clinic-text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+
+        .text-accent-primary { color: var(--clinic-primary); }
+        .text-accent-success { color: var(--clinic-success); }
+
+/* =========================================================
+   CLINIC REPORTS — HEADER / FILTER
+   LIGHT MODE DEFAULT
+========================================================= */
+
+.dashboard-header {
+    position: sticky;
+    top: 0;
+    z-index: 1050;
+
+    background-color: var(--clinic-bg) !important;
+
+    padding-top: 18px;
+    padding-bottom: 18px;
+
+    margin-bottom: 24px;
+
+    border-bottom: 1px solid var(--clinic-border);
+
+    isolation: isolate;
+}
+
+/* Report title */
+.dashboard-header h1 {
+    color: var(--clinic-text-primary) !important;
+    margin-bottom: 5px !important;
+}
+
+/* Report description */
+.dashboard-header p {
+    color: var(--clinic-text-muted) !important;
+}
+
+/* Back button */
+.dashboard-header .btn-outline-secondary {
+    color: var(--clinic-text-secondary) !important;
+    border-color: var(--clinic-border) !important;
+    background-color: transparent !important;
+}
+
+.dashboard-header .btn-outline-secondary:hover {
+    background-color: #f1f5f9 !important;
+    color: var(--clinic-text-primary) !important;
+    border-color: #cbd5e1 !important;
+}
+
+
+/* =========================================================
+   FILTER PILL — LIGHT MODE
+========================================================= */
+
+.dashboard-header .date-pill {
+    background-color: #ffffff !important;
+    border-color: var(--clinic-border) !important;
+    color: var(--clinic-text-secondary) !important;
+}
+
+/* Filter select */
+.dashboard-header .form-select {
+    background-color: #ffffff !important;
+    color: var(--clinic-text-primary) !important;
+    border-color: var(--clinic-border) !important;
+}
+
+/* Filter date */
+.dashboard-header input[type="date"] {
+    background-color: #ffffff !important;
+    color: var(--clinic-text-primary) !important;
+    border-color: var(--clinic-border) !important;
+}
+
+/* Calendar icon */
+.dashboard-header input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: none;
+}
+
+/* Apply Filter */
+.dashboard-header .btn-primary {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+.dashboard-header .btn-primary:hover {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+}
+
+
+/* =========================================================
+   CLINIC REPORTS — DARK MODE
+========================================================= */
+
+body.dark-mode {
+    --clinic-bg: #0f172a;
+    --clinic-card-bg: #111827;
+    --clinic-text-primary: #f8fafc;
+    --clinic-text-secondary: #cbd5e1;
+    --clinic-text-muted: #94a3b8;
+    --clinic-border: #334155;
+}
+
+
+/* Body */
+body.dark-mode {
+    background-color: var(--clinic-bg);
+    color: var(--clinic-text-secondary);
+}
+
+
+/* Header */
+body.dark-mode .dashboard-header {
+    background-color: var(--clinic-bg) !important;
+    border-bottom-color: var(--clinic-border) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+/* Title */
+body.dark-mode .dashboard-header h1 {
+    color: #f8fafc !important;
+}
+
+/* Description */
+body.dark-mode .dashboard-header p {
+    color: #94a3b8 !important;
+}
+
+
+/* Back button */
+body.dark-mode .dashboard-header .btn-outline-secondary {
+    color: #cbd5e1 !important;
+    border-color: #475569 !important;
+    background-color: transparent !important;
+}
+
+body.dark-mode .dashboard-header .btn-outline-secondary:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+    border-color: #64748b !important;
+}
+
+
+/* Filter pill */
+body.dark-mode .dashboard-header .date-pill {
+    background-color: #111827 !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+
+/* Select */
+body.dark-mode .dashboard-header .form-select {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+}
+
+
+/* Date */
+body.dark-mode .dashboard-header input[type="date"] {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+}
+
+
+/* Calendar icon */
+body.dark-mode .dashboard-header input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}
+
+
+/* Apply button */
+body.dark-mode .dashboard-header .btn-primary {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .dashboard-header .btn-primary:hover {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+}
+
+
+/* =========================================================
+   DARK MODE — REPORT CARDS
+========================================================= */
+
+body.dark-mode .clinic-card {
+    background-color: #111827 !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+
+/* Card headers */
+body.dark-mode .clinic-card-header {
+    background-color: transparent !important;
+    border-bottom-color: #334155 !important;
+}
+
+body.dark-mode .clinic-card-header h5 {
+    color: #f8fafc !important;
+}
+
+
+/* KPI values */
+body.dark-mode .stat-value {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .stat-label {
+    color: #94a3b8 !important;
+}
+
+
+/* New patient cohort */
+body.dark-mode .bg-light {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+
+
+/* Tables */
+body.dark-mode .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: #cbd5e1;
+    --bs-table-border-color: #334155;
+
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .table-light {
+    --bs-table-bg: #1e293b !important;
+    --bs-table-color: #cbd5e1 !important;
+
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .table thead th {
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .table tbody td {
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+
+/* Table hover */
+body.dark-mode .table-hover > tbody > tr:hover > * {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* Gender progress */
+body.dark-mode .gender-progress {
+    background-color: #334155 !important;
+}
+
+
+/* Service rows */
+body.dark-mode .service-item-row {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .service-item-row:hover {
+    background-color: #273449 !important;
+    border-color: #475569 !important;
+}
+
+
+/* Service text */
+body.dark-mode .service-item-row .text-dark {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .service-item-row .text-muted {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .service-item-row .fw-bold {
+    color: #f8fafc !important;
+}
+
+
+/* Service progress */
+body.dark-mode .service-progress {
+    background-color: #334155 !important;
+}
+
+
+/* Badges */
+body.dark-mode .badge.bg-light {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #475569 !important;
+}
+
+
+/* Borders */
+body.dark-mode .border,
+body.dark-mode .border-top,
+body.dark-mode .border-bottom {
+    border-color: #334155 !important;
+}     
+
+.back-button{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+
+    background:white;
+    color:#59645f;
+
+    border:1px solid var(--border);
+
+    padding:9px 15px;
+
+    border-radius:12px;
+
+    text-decoration:none;
+
+    font-size:13px;
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.2s ease;
+}
+
+.back-button:hover{
+    color:var(--primary);
+    border-color:#b9ddc9;
+    background:var(--light-green);
+
+    transform:translateX(-2px);
+}
+
+.back-button i{
+    font-size:15px;
+
+    transition:.2s ease;
+}
+
+.back-button:hover i{
+    transform:translateX(-3px);
+}

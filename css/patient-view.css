@@ -1,0 +1,1331 @@
+:root {
+    --primary-blue: #0d6efd;
+    --vc-primary: #0a49c4;
+    --bg-light: #f4f7fc;
+    --border-color: #e2e8f0;
+}
+
+body {
+    background: var(--bg-light);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #334155;
+    overflow-x: hidden;
+}
+
+/* Top Mobile Navbar */
+.navbar {
+    background-color: #ffffff !important;
+}
+
+/* Sidebar */
+.sidebar {
+    background: #ffffff !important;
+    min-height: 100vh;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    box-shadow: 2px 0 20px rgba(0,0,0,.02);
+    z-index: 100;
+}
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: .75rem .5rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar-logo {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.sidebar-brand {
+    color: #0d6efd;
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: -.5px;
+}
+
+.sidebar-heading {
+    font-size: .75rem;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 1rem 1.25rem .5rem;
+}
+
+.sidebar .nav-link {
+    color: #5c6873;
+    padding: .75rem 1.25rem;
+    border-radius: 12px;
+    margin-bottom: 5px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.sidebar .nav-link:hover {
+    background:#f8f9fa;
+    color:#333;
+    transform:translateX(4px);
+}
+
+.sidebar .nav-link.active {
+    background: #0a49c4 !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(10,73,196,.25);
+}
+
+/* Ensures icons turn white in active links */
+.sidebar .nav-link.active i,
+.sidebar .nav-link.active span {
+    color: #ffffff !important;
+}
+
+/* Main Layout Setup */
+.main-content {
+    padding: 20px 24px;
+}
+
+/* Patient Top Card */
+.patient-top-card {
+    background: #ffffff;
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,.03);
+    display: flex;
+    align-items: center;
+    padding: 18px 28px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.patient-top-card:hover {
+    box-shadow: 0 8px 25px rgba(13,110,253,.07);
+}
+
+.patient-top-content {
+    display: flex;
+    align-items: center;
+    z-index: 2;
+}
+
+.patient-avatar-large {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #38c976, #2bbf69);
+    color: #fff;
+    font-size: 32px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(43,191,105,0.3);
+}
+
+.patient-id {
+    color: #2455ff;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.patient-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 2px 0 4px;
+    color: #162447;
+}
+
+.patient-meta {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.patient-meta i {
+    margin-right: 4px;
+}
+
+.patient-banner-design {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 380px;
+    height: 100%;
+    background:
+        linear-gradient(130deg, transparent 0%, transparent 45%, rgba(66,76,255,.85) 45%, rgba(66,76,255,.45) 60%, transparent 60%),
+        linear-gradient(120deg, transparent 55%, #1fd4d0 55%, #35e2dc 72%, transparent 72%);
+}
+
+/* Card General Styling & Hover Effects */
+.card-custom {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.02);
+    padding: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-custom:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+}
+
+/* Human Body Section */
+.body-figure-container {
+    position: relative;
+    height: 520px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    overflow: visible;
+}
+
+.body-callouts-wrapper {
+    left: 215px;
+    top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.body-callout-card {
+    width: 175px;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #edf2f7;
+    padding: 12px 14px;
+    box-shadow: 0 4px 14px rgba(15,23,42,.05);
+    transition: all 0.25s ease;
+}
+
+.body-callout-card:hover {
+    transform: translateX(4px);
+    border-color: #3b82f6;
+    box-shadow: 0 6px 16px rgba(59,130,246,0.12);
+}
+
+.body-callout-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+/* Animated Pulse Effect on SVG Nodes */
+@keyframes nodePulse {
+    0% { r: 4.5px; opacity: 1; }
+    50% { r: 7.5px; opacity: 0.6; }
+    100% { r: 4.5px; opacity: 1; }
+}
+
+.pulse-node-green { animation: nodePulse 2s infinite ease-in-out; stroke: rgba(16, 185, 129, 0.4); }
+.pulse-node-red { animation: nodePulse 2s infinite ease-in-out; stroke: rgba(239, 68, 68, 0.4); }
+.pulse-node-blue { animation: nodePulse 2s infinite ease-in-out; stroke: rgba(59, 130, 246, 0.4); }
+
+/* Mini Vital Cards Hover */
+.mini-vital-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.25s ease;
+}
+
+.mini-vital-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+}
+
+.mini-vital-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+/* Right Sidebar Vitals Item - STACKED FULL WIDTH */
+.vital-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 10px;
+    border-bottom: 1px dashed #f1f5f9;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.vital-item:hover {
+    background: #f8fafc;
+    transform: translateX(3px);
+}
+
+.vital-item:last-child {
+    border-bottom: none;
+}
+
+.vital-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+/* Gauge Center Positioning */
+.relative-chart-box {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.chart-center-val {
+    position: absolute;
+    top: 52%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .sidebar { background-color: #ffffff !important; }
+    .patient-top-content { flex-direction: column; text-align: center; }
+    .patient-avatar-large { margin-right: 0; margin-bottom: 12px; }
+    .patient-banner-design { display: none; }
+}
+
+/* Custom Pagination Styling */
+.custom-pagination .page-item .page-link {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #4a5568;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.custom-pagination .page-item.active .page-link {
+    background-color: #2949d3 !important;
+    border-color: #2949d3 !important;
+    color: #ffffff !important;
+}
+
+.custom-pagination .page-item .page-link:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #2d3748;
+}
+
+.custom-pagination .page-item.disabled .page-link {
+    background-color: #ffffff;
+    color: #cbd5e1;
+    border-color: #edf2f7;
+    cursor: not-allowed;
+}
+
+#patientMenu a {
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+#patientMenu a:hover {
+    transform: translateX(5px) scale(1.02);
+    color: #0a49c4 !important;
+}
+
+#patientMenu a{
+    position:relative;
+    overflow:hidden;
+}
+
+#patientMenu a::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:-120%;
+    width:100%;
+    height:100%;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(13,110,253,.15),
+        transparent
+    );
+    transition:.5s;
+}
+
+#patientMenu a:hover::before{
+    left:120%;
+}
+
+@media (max-width: 1400px){
+
+    .body-callouts-wrapper{
+        left:170px;
+    }
+
+    .body-callout-card{
+        width:150px;
+    }
+}
+@media (max-width: 992px){
+
+    .body-callouts-wrapper{
+        position:static;
+        margin-top:20px;
+    }
+
+    .body-figure-container{
+        flex-direction:column;
+        height:auto;
+    }
+}
+/* PAGE ENTRANCE ANIMATION */
+.fade-up{
+    opacity: 0;
+    transform: translate(-60px, -60px) scale(.95);
+    animation: dashboardFlow .9s cubic-bezier(.22,1,.36,1) forwards;
+}
+
+.fade-delay-1{ animation-delay: .1s; }
+.fade-delay-2{ animation-delay: .2s; }
+.fade-delay-3{ animation-delay: .3s; }
+.fade-delay-4{ animation-delay: .4s; }
+.fade-delay-5{ animation-delay: .5s; }
+
+@keyframes dashboardFlow{
+    0%{
+        opacity:0;
+        transform:translate(-60px,-60px) scale(.95);
+    }
+    100%{
+        opacity:1;
+        transform:translate(0,0) scale(1);
+    }
+}
+.sidebar{
+    animation: sidebarReveal .7s ease forwards;
+}
+
+@keyframes sidebarReveal{
+    from{
+        opacity:0;
+        transform:translateX(-80px);
+    }
+    to{
+        opacity:1;
+        transform:translateX(0);
+    }
+}
+.patient-top-card{
+    opacity:0;
+    animation: cardReveal .8s ease forwards;
+    animation-delay:.2s;
+}
+
+@keyframes cardReveal{
+    from{
+        opacity:0;
+        transform:translate(-40px,-20px);
+    }
+    to{
+        opacity:1;
+        transform:translate(0,0);
+    }
+}
+.card-custom{
+    opacity:0;
+    animation: cardFlow .8s ease forwards;
+}
+
+.card-custom:nth-child(1){
+    animation-delay:.3s;
+}
+
+.col-xl-3 .bg-white{
+    opacity:0;
+    animation: cardFlow .8s ease forwards;
+    animation-delay:.5s;
+}
+
+@keyframes cardFlow{
+    from{
+        opacity:0;
+        transform:translate(-50px,50px);
+    }
+    to{
+        opacity:1;
+        transform:translate(0,0);
+    }
+}
+.card-custom,
+.body-callout-card,
+.mini-vital-card,
+.vital-item{
+    transition:all .3s ease;
+}
+
+.card-custom:hover,
+.body-callout-card:hover,
+.mini-vital-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 15px 30px rgba(13,110,253,.10);
+}
+
+/* PAGE LOAD */
+body{
+    animation:pageLoad .5s ease;
+}
+
+@keyframes pageLoad{
+    from{
+        opacity:0;
+    }
+    to{
+        opacity:1;
+    }
+}
+
+/* SIDEBAR */
+.sidebar{
+    animation:sidebarSlide .6s ease;
+}
+
+@keyframes sidebarSlide{
+    from{
+        opacity:0;
+        transform:translateX(-30px);
+    }
+    to{
+        opacity:1;
+        transform:translateX(0);
+    }
+}
+
+/* PATIENT HEADER CARD */
+.patient-top-card{
+    opacity:0;
+    animation:fadeUp .7s ease forwards;
+    animation-delay:.1s;
+}
+
+/* MAIN CONTENT CARDS */
+.card-custom{
+    opacity:0;
+    animation:fadeUp .7s ease forwards;
+    animation-delay:.25s;
+}
+
+/* RIGHT VITALS PANEL */
+.col-xl-3 .bg-white{
+    opacity:0;
+    animation:fadeUp .7s ease forwards;
+    animation-delay:.4s;
+}
+
+/* BODY CALLOUTS */
+.body-callout-card{
+    opacity:0;
+    animation:fadeUp .6s ease forwards;
+}
+
+.body-callout-card:nth-child(1){ animation-delay:.5s; }
+.body-callout-card:nth-child(2){ animation-delay:.6s; }
+.body-callout-card:nth-child(3){ animation-delay:.7s; }
+.body-callout-card:nth-child(4){ animation-delay:.8s; }
+
+/* MINI VITAL CARDS */
+.mini-vital-card{
+    opacity:0;
+    animation:fadeUp .6s ease forwards;
+}
+
+.mini-vital-card:nth-child(1){
+    animation-delay:.7s;
+}
+
+.mini-vital-card:nth-child(2){
+    animation-delay:.8s;
+}
+
+/* VITAL SIGNS LIST */
+.vital-item{
+    opacity:0;
+    animation:rowFade .5s ease forwards;
+}
+
+.vital-item:nth-child(1){animation-delay:.5s;}
+.vital-item:nth-child(2){animation-delay:.55s;}
+.vital-item:nth-child(3){animation-delay:.6s;}
+.vital-item:nth-child(4){animation-delay:.65s;}
+.vital-item:nth-child(5){animation-delay:.7s;}
+.vital-item:nth-child(6){animation-delay:.75s;}
+.vital-item:nth-child(7){animation-delay:.8s;}
+.vital-item:nth-child(8){animation-delay:.85s;}
+
+/* REUSABLE ANIMATIONS */
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:translateY(-40px) scale(.97);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+}
+
+@keyframes rowFade{
+    from{
+        opacity:0;
+        transform:translateY(15px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+.patient-top-card,
+.card-custom,
+.body-callout-card,
+.mini-vital-card,
+.vital-item{
+    transition:all .3s ease;
+}
+
+.patient-top-card:hover,
+.card-custom:hover{
+    transform:translateY(-4px);
+    box-shadow:0 14px 30px rgba(0,0,0,.08);
+}
+
+.body-callout-card:hover,
+.mini-vital-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 20px rgba(13,110,253,.08);
+}
+
+.vital-item:hover{
+    background:#f8fbff;
+    transform:translateX(4px);
+}
+
+
+/* SIDEBAR SHINE EFFECT */
+.sidebar .nav-link{
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebar .nav-link::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:-120%;
+    width:100%;
+    height:100%;
+    background:linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,.35),
+        transparent
+    );
+    transition:.6s;
+    z-index:1;
+}
+
+.sidebar .nav-link:hover::before{
+    left:120%;
+}
+
+.sidebar .nav-link i,
+.sidebar .nav-link span{
+    position:relative;
+    z-index:2;
+}
+
+/* ========================================
+   BMI CATEGORY — Gradient Bar with Pin
+   ======================================== */
+
+.bmi-category-card {
+    min-height: 170px;
+}
+
+.bmi-current-val {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -0.5px;
+}
+
+.bmi-status-pill {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.bmi-pill-underweight { background: #dbeafe; color: #1d4ed8; }
+.bmi-pill-normal      { background: #d1fae5; color: #065f46; }
+.bmi-pill-overweight  { background: #fef3c7; color: #92400e; }
+.bmi-pill-obese       { background: #fee2e2; color: #991b1b; }
+
+/* The gradient bar track */
+.bmi-bar-track {
+    position: relative;
+    margin: 10px 0 6px;
+    height: 10px;
+    border-radius: 99px;
+    overflow: visible;
+}
+
+.bmi-bar-gradient {
+    width: 100%;
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(
+        to right,
+        #3b82f6   0%,   /* Underweight */
+        #10b981  28.3%, /* Normal start (18.5 mapped) */
+        #10b981  50%,   /* Normal end (25 mapped) */
+        #f59e0b  50%,   /* Overweight start */
+        #f59e0b  66.7%, /* Overweight end (30 mapped) */
+        #ef4444  66.7%  /* Obese */
+    );
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* Sliding pin marker */
+.bmi-bar-pin {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.bmi-pin-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #1e293b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    transition: left 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bmi-pin-label {
+    margin-top: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #1e293b;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1px 5px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    white-space: nowrap;
+}
+
+/* Zone label strip */
+.bmi-zone-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-top: 14px;
+    padding: 0 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+}
+
+/* Range number markers */
+.bmi-range-markers {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.58rem;
+    color: #94a3b8;
+    padding: 0 2px;
+    margin-top: 2px;
+}
+
+/* ========================================
+   HEART RATE — Live BPM Badge + Glow Chart
+   ======================================== */
+
+.heart-rate-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.heart-rate-card::before {
+    content: '';
+    position: absolute;
+    top: -30px;
+    right: -30px;
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, rgba(239,68,68,0.07) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* Live BPM badge with pulsing ring */
+.hr-live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    border-radius: 20px;
+    padding: 3px 10px 3px 6px;
+    position: relative;
+}
+
+.hr-live-val {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #e11d48;
+    line-height: 1;
+}
+
+.hr-live-val small {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #f43f5e;
+    margin-left: 1px;
+}
+
+/* Animated pulse ring */
+.hr-pulse-ring {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ef4444;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.hr-pulse-ring::after {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 2px solid #ef4444;
+    animation: hrRingPulse 1.4s ease-out infinite;
+}
+
+@keyframes hrRingPulse {
+    0%   { transform: scale(1);   opacity: 0.8; }
+    70%  { transform: scale(2.2); opacity: 0;   }
+    100% { transform: scale(2.2); opacity: 0;   }
+}
+
+
+    /* Reset default ul/li list style defaults */
+    .sidebar ul {
+        list-style-type: none !important;
+        padding-left: 0 !important;
+        margin: 0 !important;
+    }
+
+    .sidebar li {
+        list-style-type: none !important;
+    }
+
+    /* Submenu reset */
+    .sidebar .sidebar-submenu {
+        list-style-type: none !important;
+        padding: 6px 0 6px 2.8rem !important;
+        margin: 0 !important;
+    }
+
+    .sidebar .sidebar-submenu li {
+        list-style-type: none !important;
+    }
+
+    /* Standardize anchor text formatting */
+    .sidebar a {
+        text-decoration: none !important;
+    }
+
+    .sidebar .nav-link {
+        text-decoration: none !important;
+        color: #5c6873;
+        padding: .75rem 1.25rem;
+        border-radius: 12px;
+        margin-bottom: 5px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s ease;
+    }
+
+    .sidebar .nav-link:hover {
+        background: #f8f9fa;
+        color: #111;
+        transform: translateX(4px);
+    }
+
+    .sidebar .nav-link.active {
+        background: #0a49c4 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(10, 73, 196, .25);
+    }
+
+    /* Ensure white color on active items */
+    .sidebar .nav-link.active i,
+    .sidebar .nav-link.active span {
+        color: #ffffff !important;
+    }
+
+    /* Submenu items formatting */
+    .sidebar .sidebar-submenu-link {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 7px 10px;
+        color: #64748b !important;
+        font-size: .86rem;
+        font-weight: 500;
+        border-radius: 7px;
+        transition: all .25s ease;
+        text-decoration: none !important;
+    }
+
+    .sidebar .sidebar-submenu-link:hover {
+        color: #0d6efd !important;
+        background: #f3f7ff;
+        transform: translateX(3px);
+    }
+
+    /* Clean dot styling */
+    .sidebar .submenu-dot {
+        color: #94a3b8;
+        font-size: .55rem;
+        margin-right: 8px;
+        transition: color .25s ease;
+    }
+
+    .sidebar .sidebar-submenu-link:hover .submenu-dot {
+        color: #0d6efd;
+    }
+
+    /* Active Submenu styling (matching admin-dashboard.php) */
+    .sidebar .sidebar-submenu-link.active {
+        color: #0d6efd !important;
+        background: #eff6ff !important;
+        font-weight: 600;
+    }
+
+    .sidebar .sidebar-submenu-link.active .submenu-dot {
+        color: #0d6efd !important;
+    }
+
+    /* Chevron rotation handles */
+    .sidebar .collapse-chevron {
+        font-size: .75rem;
+        color: #94a3b8;
+        transition: transform .3s ease;
+    }
+
+    .sidebar .sidebar-collapse-link[aria-expanded="true"] .collapse-chevron {
+        transform: rotate(180deg);
+        color: #0d6efd;
+    }
+
+    .sidebar .active-parent {
+        color: #0d6efd !important;
+        background: #f8fbff;
+    }
+
+  /* =========================================================
+   DASHBOARD — DARK MODE OVERRIDES
+   IMPORTANT:
+   These styles ONLY apply when body has .dark-mode
+========================================================= */
+
+
+/* =========================
+   SIDEBAR
+========================= */
+
+body.dark-mode .sidebar {
+    background-color: #111827 !important;
+    color: #cbd5e1 !important;
+    border-right: 1px solid #1e293b !important;
+}
+
+body.dark-mode .sidebar .nav-link {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .sidebar .nav-link:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .sidebar .nav-link.active {
+    background-color: #0a49c4 !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .sidebar .nav-link.active i,
+body.dark-mode .sidebar .nav-link.active span {
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   SIDEBAR BRAND
+========================= */
+
+body.dark-mode .sidebar-brand {
+    color: #60a5fa !important;
+}
+
+
+/* =========================
+   SIDEBAR HEADING
+========================= */
+
+body.dark-mode .sidebar-heading {
+    color: #64748b !important;
+}
+
+
+/* =========================
+   COLLAPSIBLE MENU
+========================= */
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"] {
+    background-color: transparent !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"]:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .collapse-chevron {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"] .collapse-chevron {
+    color: #60a5fa !important;
+}
+
+
+/* =========================
+   SIDEBAR SUBMENU
+========================= */
+
+body.dark-mode .sidebar-submenu {
+    border-left: 2px solid #334155 !important;
+}
+
+body.dark-mode .sidebar-submenu-link {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .sidebar-submenu-link:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+body.dark-mode .sidebar-submenu-link.active {
+    background-color: #1e293b !important;
+    color: #60a5fa !important;
+    font-weight: 600;
+    border: 1px solid #334155;
+    box-shadow: none !important;
+}
+
+body.dark-mode .sidebar-submenu-link.active i {
+    color: #60a5fa !important;
+}
+
+body.dark-mode .sidebar-submenu-link.active .submenu-dot {
+    color: #60a5fa !important;
+}
+
+body.dark-mode .sidebar-submenu-link.active:hover {
+    background-color: #263449 !important;
+    color: #93c5fd !important;
+}
+
+
+/* =========================
+   MAIN CONTENT
+========================= */
+
+body.dark-mode main {
+    background-color: #0f172a !important;
+    color: #cbd5e1 !important;
+}
+
+
+/* =========================
+   DASHBOARD HEADER
+========================= */
+
+body.dark-mode .dashboard-header {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .dashboard-header h1,
+body.dark-mode .dashboard-header h2,
+body.dark-mode .dashboard-header h3 {
+    color: #f8fafc !important;
+}
+
+
+/* =========================
+   DASHBOARD CARDS
+========================= */
+
+body.dark-mode .analytics-card,
+body.dark-mode .patient-card {
+    background-color: #111827 !important;
+    border: 1px solid #334155 !important;
+    color: #f8fafc !important;
+}
+
+body.dark-mode .analytics-card:hover,
+body.dark-mode .patient-card:hover {
+    background-color: #131d2e !important;
+    border-color: #475569 !important;
+}
+
+
+/* =========================
+   CARD TEXT
+========================= */
+
+body.dark-mode .analytics-card h1,
+body.dark-mode .analytics-card h2,
+body.dark-mode .analytics-card h3,
+body.dark-mode .analytics-card h4,
+body.dark-mode .analytics-card h5,
+body.dark-mode .analytics-card h6,
+body.dark-mode .patient-card h1,
+body.dark-mode .patient-card h2,
+body.dark-mode .patient-card h3,
+body.dark-mode .patient-card h4,
+body.dark-mode .patient-card h5,
+body.dark-mode .patient-card h6 {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .analytics-card .text-dark,
+body.dark-mode .patient-card .text-dark {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .analytics-card .text-muted,
+body.dark-mode .patient-card .text-muted {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .analytics-card .text-secondary,
+body.dark-mode .patient-card .text-secondary {
+    color: #cbd5e1 !important;
+}
+
+
+/* =========================
+   TABLE
+========================= */
+
+body.dark-mode .table {
+    --bs-table-bg: transparent !important;
+    --bs-table-color: #e2e8f0 !important;
+    --bs-table-border-color: #334155 !important;
+
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .table th {
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .table td {
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .table tbody tr:hover {
+    background-color: #1e293b !important;
+}
+
+
+/* =========================
+   PATIENT SEARCH
+========================= */
+
+body.dark-mode #patientSearchInput {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+}
+
+body.dark-mode #patientSearchInput::placeholder {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode #patientSearchInput:focus {
+    background-color: #111827 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, .20) !important;
+}
+
+
+/* =========================
+   PATIENT CARD
+========================= */
+
+body.dark-mode .patient-card h6 {
+    color: #f8fafc !important;
+}
+
+body.dark-mode .patient-card small {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .patient-card p {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .patient-card hr {
+    border-color: #334155 !important;
+    opacity: 1 !important;
+}
+
+body.dark-mode .patient-card p i {
+    color: #94a3b8 !important;
+}
+
+
+/* =========================
+   THREE DOT BUTTON
+========================= */
+
+body.dark-mode .patient-card .btn-light {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border: 1px solid #334155 !important;
+}
+
+body.dark-mode .patient-card .btn-light:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   DROPDOWN
+========================= */
+
+body.dark-mode .patient-card .dropdown-menu,
+body.dark-mode .patient-dropdown {
+    background-color: #111827 !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,.35) !important;
+}
+
+body.dark-mode .patient-card .dropdown-item,
+body.dark-mode .patient-dropdown .dropdown-item {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .patient-card .dropdown-item:hover,
+body.dark-mode .patient-dropdown .dropdown-item:hover {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   PRIMARY BADGE
+========================= */
+
+body.dark-mode .badge.bg-primary {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+
+/* =========================
+   SIDEBAR LOGOUT
+========================= */
+
+body.dark-mode .sidebar .border-top {
+    border-color: #334155 !important;
+}
+
+body.dark-mode .sidebar .text-danger {
+    color: #fb7185 !important;
+}
+
+
+/* =========================
+   SIDEBAR SCROLLBAR
+========================= */
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar {
+    width: 5px;
+}
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-track {
+    background: #111827;
+}
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+}
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}

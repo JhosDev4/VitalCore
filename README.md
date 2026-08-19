@@ -104,31 +104,7 @@ Current hardware includes:
 
 ## System Architecture
 
-```text
-                    ┌─────────────────────┐
-                    │   Healthcare Staff  │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │   Admin Dashboard   │
-                    └──────────┬──────────┘
-                               │
-                               ▼
-                    ┌─────────────────────┐
-                    │       MySQL         │
-                    │      Database       │
-                    └──────────▲──────────┘
-                               │
-                               │
-                    ┌──────────┴──────────┐
-                    │                     │
-                    ▼                     ▼
-             ┌──────────────┐     ┌───────────────┐
-             │    Kiosk     │     │ Health Sensors│
-             │ Raspberry Pi │────▶│   & Devices   │
-             └──────────────┘     └───────────────┘
-```
+
 
 ## Installation
 
@@ -265,21 +241,7 @@ The project focuses on:
 * Raspberry Pi integration
 * Touchscreen kiosk interaction
 * Centralized health records
-
-## Future Improvements
-
-Planned improvements include:
-
-* Laravel backend migration
-* REST API integration
-* React-based dashboard
-* Improved authentication and authorization
-* Cloud deployment
-* Docker support
-* Improved sensor reliability
-* Automated reports
-* Mobile application integration
-
+* 
 ## Developer
 
 **Jhoshua Laurito**

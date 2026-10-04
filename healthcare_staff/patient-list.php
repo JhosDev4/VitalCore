@@ -1,11 +1,12 @@
-    <?php
-    session_start();
+<?php
 
-   /* =========================
-    SECURITY CHECK
-    ========================= */
+session_start();
 
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrator') {
+if (
+    !isset($_SESSION['staff_id']) ||
+    !isset($_SESSION['role']) ||
+    $_SESSION['role'] !== 'Staff'
+) {
     header("Location: ../login.php");
     exit();
 }
@@ -49,6 +50,20 @@
     <!DOCTYPE html>
    <html lang="en" translate="no">
     <head>
+    <!-- PRE-LOAD STAFF INDEPENDENT DARK MODE (PREVENTS SCREEN FLASH) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('staff_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
+
     <meta name="google" content="notranslate">    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -59,11 +74,62 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/patient-list.css">
     <link rel="stylesheet" href="../css/theme.css">
+
+    <!-- STAFF DARK MODE OVERRIDE STYLES -->
+    <style>
+        html.dark-mode, html[data-bs-theme="dark"],
+        body.dark-mode, body[data-bs-theme="dark"] {
+            background-color: #121824 !important;
+            color: #e2e8f0 !important;
+        }
+
+        html.dark-mode .sidebar, body.dark-mode .sidebar {
+            background-color: #1a202c !important;
+            border-color: #2d3748 !important;
+        }
+
+        html.dark-mode .card, body.dark-mode .card,
+        html.dark-mode .patient-card, body.dark-mode .patient-card,
+        html.dark-mode .modal-content, body.dark-mode .modal-content {
+            background-color: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+
+        html.dark-mode .table, body.dark-mode .table {
+            color: #cbd5e1 !important;
+        }
+
+        html.dark-mode .form-control, body.dark-mode .form-control,
+        html.dark-mode .form-select, body.dark-mode .form-select {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
+
+        html.dark-mode h1, html.dark-mode h2, html.dark-mode h3, html.dark-mode h4, html.dark-mode h5, html.dark-mode h6,
+        body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6,
+        html.dark-mode .text-dark, body.dark-mode .text-dark,
+        html.dark-mode .patient-title, body.dark-mode .patient-title {
+            color: #f8fafc !important;
+        }
+
+        html.dark-mode .dropdown-menu, body.dark-mode .dropdown-menu {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+        }
+
+        html.dark-mode .dropdown-item, body.dark-mode .dropdown-item {
+            color: #f1f5f9 !important;
+        }
+
+        html.dark-mode .dropdown-item:hover, body.dark-mode .dropdown-item:hover {
+            background-color: #334155 !important;
+        }
+    </style>
     </head>
 
     <body>
-
-
 
     <div class="container-fluid">
         <div class="row">
@@ -78,22 +144,7 @@
                 </div>
 
                 <div class="sidebar-menu-wrapper">
-                    
-                    <!-- SECTION: MAIN -->
-                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                        Main
-                    </small>
-
-                    <ul class="nav flex-column mb-3">
-                        <!-- Dashboard -->
-                        <li class="nav-item">
-                            <a class="nav-link" href="dashboard.php">
-                                <i class="bi bi-grid-1x2-fill me-2"></i>
-                                Dashboard
-                            </a>
-                        </li>
-                    </ul>
-
+                
                     <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
                     <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
                         Clinical Services
@@ -151,13 +202,13 @@
                             <div class="collapse" id="recordsMenu">
                                 <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                     <li class="py-1">
-                                        <a href="logs/patient-history.php" class="sidebar-submenu-link text-decoration-none">
+                                        <a href="patient-history.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-clock-history me-2"></i>
                                             Patient Records
                                         </a>
                                     </li>
                                     <li class="py-1">
-                                        <a href="logs/reports.php" class="sidebar-submenu-link text-decoration-none">
+                                        <a href="reports.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-file-earmark-bar-graph me-2"></i>
                                             Reports
                                         </a>
@@ -165,46 +216,31 @@
                                 </ul>
                             </div>
                         </li>
-                    </ul>
-
-                    <!-- SECTION: HARDWARE & SYSTEM -->
-                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                        Hardware & System
-                    </small>
-
-                    <ul class="nav flex-column mb-3">
-                        <!-- Administration -->
                         <li class="nav-item">
-                            <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                            data-bs-toggle="collapse"
-                            href="#adminMenu"
-                            role="button"
-                            aria-expanded="false"
-                            aria-controls="adminMenu">
-                                <span>
-                                    <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
-                                    Administration
-                                </span>
-                                <i class="bi bi-chevron-down collapse-chevron"></i>
-                            </a>
+                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
+                        data-bs-toggle="collapse"
+                        href="#adminMenu"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="adminMenu">
+                            <span>
+                                <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
+                                Administration
+                            </span>
+                            <i class="bi bi-chevron-down collapse-chevron"></i>
+                        </a>
 
-                            <div class="collapse" id="adminMenu">
-                                <ul class="sidebar-submenu list-unstyled ps-4 py-1">
-                                    <li class="py-1">
-                                        <a href="staff_accounts.php" class="sidebar-submenu-link text-decoration-none">
-                                            <i class="bi bi-person-gear me-2"></i>
-                                            User Management
-                                        </a>
-                                    </li>
-                                    <li class="py-1">
-                                        <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
-                                            <i class="bi bi-sliders me-2"></i>
-                                            Settings
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </li>
+                        <div class="collapse" id="adminMenu">
+                            <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                <li class="py-1">
+                                    <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-sliders me-2"></i>
+                                        Settings
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
                     </ul>
 
                 </div>
@@ -218,54 +254,62 @@
                 </a>
             </div>
         </nav>
+
             <!-- MAIN CONTENT -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
-               <div class="d-flex align-items-center justify-content-between flex-wrap mb-4 page-header">
+               <div class="d-flex align-items-center justify-content-between flex-wrap mb-4 page-header gap-3">
 
-                <div class="patient-grid-header d-flex align-items-center">
+                <!-- PATIENT GRID HEADER WITH CATEGORIES & DARK MODE ALIGNED SIDE-BY-SIDE -->
+                <div class="patient-grid-header d-flex align-items-center gap-2">
 
-                    <h4 class="fw-bold mb-0 patient-title">
+                    <h4 class="fw-bold mb-0 patient-title me-2">
                         Patient Grid
                     </h4>
 
+                    <!-- CATEGORIES DROPDOWN -->
                     <div class="dropdown">
                         <button class="btn patient-menu-btn"
                                 type="button"
                                 data-bs-toggle="dropdown"
                                 aria-expanded="false">
-
                             <i class="bi bi-list"></i>
                             <span>Categories</span>
-
                         </button>
 
                         <ul class="dropdown-menu patient-dropdown shadow border-0">
-
                             <li>
                                 <a class="dropdown-item" href="Service/vital-screening.php">
                                     <i class="bi bi-clipboard2-pulse-fill text-warning me-2"></i>
                                     Vital Screening Grid
                                 </a>
                             </li>
-
                             <li>
                                 <a class="dropdown-item" href="Service/prenatal.php">
                                     <i class="bi bi-heart-pulse-fill text-danger me-2"></i>
                                     Prenatal Grid
                                 </a>
                             </li>
-
+                            <li>
+                                <a class="dropdown-item" href="Service/child-immunization.php">
+                                    <i class="bi bi-shield-check text-success me-2"></i>
+                                    Child Immunization Grid
+                                </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item" href="Service/family-planning.php">
                                     <i class="bi bi-people-fill text-primary me-2"></i>
                                     Family Planning Grid
                                 </a>
                             </li>
-
-                           
                         </ul>
                     </div>
+
+                    <!-- DARK MODE BUTTON ALIGNED SIDE-BY-SIDE WITH CATEGORIES -->
+                    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" id="staffThemeToggleBtn" type="button">
+                        <i class="bi bi-moon-stars-fill" id="staffThemeIcon"></i>
+                        <span id="staffThemeText">Dark Mode</span>
+                    </button>
 
                 </div>
 
@@ -307,7 +351,7 @@
                                         </small>
                                     </div>
 
-                                     <a href="patient-view.php?id=<?= $row['id'] ?>">
+                                    <a href="patient-view.php?id=<?= $row['id'] ?>">
                                         <i class="bi bi-person-lines-fill"></i>
                                     </a>
 
@@ -340,7 +384,62 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../assets/js/theme.js"></script>
+
+<!-- INDEPENDENT STAFF DARK MODE LOGIC -->
+<script>
+function applyStaffThemeUI() {
+    const isDark = document.documentElement.classList.contains('dark-mode') || 
+                   document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const icon = document.getElementById('staffThemeIcon');
+    const text = document.getElementById('staffThemeText');
+    
+    if (isDark) {
+        if (icon) icon.className = 'bi bi-sun-fill text-warning';
+        if (text) text.textContent = 'Light Mode';
+    } else {
+        if (icon) icon.className = 'bi bi-moon-stars-fill';
+        if (text) text.textContent = 'Dark Mode';
+    }
+}
+
+function toggleStaffTheme() {
+    const isDark = document.documentElement.classList.contains('dark-mode') || 
+                   document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    const newIsDark = !isDark;
+    
+    if (newIsDark) {
+        document.documentElement.classList.add('dark-mode');
+        if (document.body) document.body.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+        if (document.body) document.body.setAttribute('data-bs-theme', 'dark');
+        localStorage.setItem('staff_theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark-mode');
+        if (document.body) document.body.classList.remove('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+        if (document.body) document.body.setAttribute('data-bs-theme', 'light');
+        localStorage.setItem('staff_theme', 'light');
+    }
+    applyStaffThemeUI();
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Sync body tag on page ready
+    const savedTheme = localStorage.getItem('staff_theme');
+    if (savedTheme === 'dark') {
+        if (document.body) {
+            document.body.classList.add('dark-mode');
+            document.body.setAttribute('data-bs-theme', 'dark');
+        }
+    }
+    applyStaffThemeUI();
+    
+    const btn = document.getElementById('staffThemeToggleBtn');
+    if (btn) {
+        btn.onclick = toggleStaffTheme;
+    }
+});
+</script>
 
 <script>
 document.getElementById('patientSearchInput').addEventListener('input', function () {
@@ -368,7 +467,6 @@ document.getElementById('patientSearchInput').addEventListener('input', function
 
 });
 </script>
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
 <script>
 (function applySystemSettings() {
     // 1. Theme / Dark Mode

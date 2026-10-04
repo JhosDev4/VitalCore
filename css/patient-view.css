@@ -1329,3 +1329,252 @@ body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb {
 body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb:hover {
     background: #475569;
 }
+
+/* =========================================
+   HEART RATE TREND
+========================================= */
+
+.heart-rate-number {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    color: #dc3545;
+}
+
+.heart-rate-number span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+
+/* BUILDING GRAPH */
+
+.hr-building-container {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 0 5px;
+}
+
+.hr-building {
+    height: 190px;
+    min-width: 420px;
+
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+
+    padding: 0 5px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+
+/* EACH BUILDING */
+
+.hr-building-column {
+    height: 100%;
+    min-width: 30px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+
+/* BAR */
+
+.hr-building-bar {
+    width: 26px;
+
+    border-radius: 5px 5px 2px 2px;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+
+    position: relative;
+
+    transition: all .25s ease;
+}
+
+
+/* BAR HOVER */
+
+.hr-building-bar:hover {
+    transform: translateY(-4px);
+    filter: brightness(.95);
+}
+
+
+/* BPM NUMBER */
+
+.hr-value {
+    position: absolute;
+
+    top: -21px;
+
+    font-size: 10px;
+    font-weight: 700;
+
+    color: #495057;
+
+    white-space: nowrap;
+}
+
+
+/* STATUS COLORS */
+
+.hr-low {
+    background: #ffc107;
+}
+
+.hr-normal {
+    background: #198754;
+}
+
+.hr-high {
+    background: #dc3545;
+}
+
+
+/* TIME */
+
+.hr-time {
+    margin-top: 6px;
+
+    font-size: 8px;
+
+    color: #6c757d;
+
+    white-space: nowrap;
+
+    transform: rotate(-35deg);
+}
+
+
+/* STAT BOX */
+
+.hr-stat-box {
+    background: #f8f9fa;
+
+    border-radius: 8px;
+
+    padding: 8px 4px;
+
+    text-align: center;
+
+    border: 1px solid #f0f0f0;
+}
+
+.hr-stat-box small {
+    display: block;
+
+    font-size: 9px;
+
+    color: #6c757d;
+
+    text-transform: uppercase;
+}
+
+.hr-stat-box strong {
+    display: block;
+
+    font-size: 18px;
+
+    line-height: 1.2;
+
+    color: #212529;
+}
+
+.hr-stat-box span {
+    font-size: 8px;
+
+    color: #6c757d;
+}
+
+
+/* INFORMATION */
+
+.hr-info {
+    background: #f8f9fa;
+
+    border-radius: 8px;
+
+    padding: 9px 10px;
+}
+
+.hr-info strong {
+    font-size: 12px;
+}
+
+.hr-info small {
+    font-size: 10px;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 575px) {
+
+    .heart-rate-number {
+        font-size: 36px;
+    }
+
+    .hr-building {
+        min-width: 360px;
+        gap: 6px;
+    }
+
+    .hr-building-bar {
+        width: 22px;
+    }
+}
+/* =========================================
+   HEART RATE STATISTICS - DARK MODE
+========================================= */
+
+.hr-stat-box {
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+}
+
+.hr-stat-box small {
+    color: #64748b;
+    display: block;
+}
+
+.hr-stat-box strong {
+    color: #1e293b;
+    display: block;
+    font-size: 1.4rem;
+}
+
+.hr-stat-box span {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+
+/* DARK MODE */
+[data-theme="dark"] .hr-stat-box {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+[data-theme="dark"] .hr-stat-box small {
+    color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .hr-stat-box strong {
+    color: #f8fafc !important;
+}
+
+[data-theme="dark"] .hr-stat-box span {
+    color: #94a3b8 !important;
+}

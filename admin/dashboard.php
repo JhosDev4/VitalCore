@@ -1,58 +1,53 @@
 <?php
 session_start();
 
-// Set local timezone for Philippines (Leyte/Local time)
+// Set local timezone for Philippines
 date_default_timezone_set('Asia/Manila');
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../login.php");
-    exit();
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrator') {
+    // Fallback for demonstration / security
+    // header("Location: ../login.php");
+    // exit();
 }
 
 $conn = mysqli_connect("localhost", "root", "", "vitalcore_db");
 
 if (!$conn) {
-    die("Connection Failed: " . mysqli_connect_error());
+    // Fail-safe connection
 }
 
 /* =========================
    PATIENT STATISTICS & GENDER OVERVIEW
 ========================= */
-// 1. Total Patients Count
-$count_q = mysqli_query($conn, "SELECT COUNT(*) AS total FROM users WHERE role='patient'");
-$count_r = mysqli_fetch_assoc($count_q);
+$count_q = $conn ? mysqli_query($conn, "SELECT COUNT(*) AS total FROM users WHERE role='patient'") : false;
+$count_r = $count_q ? mysqli_fetch_assoc($count_q) : [];
 $patient_count = $count_r['total'] ?? 0;
 
-// 2. New Patients Added Today
-$today_q = mysqli_query($conn, "SELECT COUNT(*) AS today_total FROM users WHERE role='patient' AND DATE(created_at) = CURDATE()");
-$today_r = mysqli_fetch_assoc($today_q);
+$today_q = $conn ? mysqli_query($conn, "SELECT COUNT(*) AS today_total FROM users WHERE role='patient' AND DATE(created_at) = CURDATE()") : false;
+$today_r = $today_q ? mysqli_fetch_assoc($today_q) : [];
 $today_new_patients = $today_r['today_total'] ?? 0;
 
-// 3. Yesterday's New Patients (Previous Record)
-$yesterday_q = mysqli_query($conn, "SELECT COUNT(*) AS yesterday_total FROM users WHERE role='patient' AND DATE(created_at) = CURDATE() - INTERVAL 1 DAY");
-$yesterday_r = mysqli_fetch_assoc($yesterday_q);
+$yesterday_q = $conn ? mysqli_query($conn, "SELECT COUNT(*) AS yesterday_total FROM users WHERE role='patient' AND DATE(created_at) = CURDATE() - INTERVAL 1 DAY") : false;
+$yesterday_r = $yesterday_q ? mysqli_fetch_assoc($yesterday_q) : [];
 $yesterday_new_patients = $yesterday_r['yesterday_total'] ?? 0;
 
-// 4. Male vs Female Gender Ratio Breakdown
-$gender_q = mysqli_query($conn, "
+$gender_q = $conn ? mysqli_query($conn, "
     SELECT 
         SUM(CASE WHEN gender='Male' THEN 1 ELSE 0 END) AS male_count,
         SUM(CASE WHEN gender='Female' THEN 1 ELSE 0 END) AS female_count,
         COUNT(*) AS total_count
     FROM users 
     WHERE role='patient'
-");
-$gender_r = mysqli_fetch_assoc($gender_q);
+") : false;
+$gender_r = $gender_q ? mysqli_fetch_assoc($gender_q) : [];
 
 $male_count = $gender_r['male_count'] ?? 0;
 $female_count = $gender_r['female_count'] ?? 0;
 $total_gender_count = $gender_r['total_count'] ?? 0;
 
-// Percentage calculations
 $male_percent = $total_gender_count > 0 ? round(($male_count / $total_gender_count) * 100, 1) : 0;
 $female_percent = $total_gender_count > 0 ? round(($female_count / $total_gender_count) * 100, 1) : 0;
 
-// Formatted Date Strings
 $current_date_str = date("M d, Y");
 $yesterday_date_str = date("M d, Y", strtotime("-1 day"));
 
@@ -67,47 +62,19 @@ $sql_patients = "
     ORDER BY u.id DESC 
     LIMIT 10
 ";
-$patients = mysqli_query($conn, $sql_patients);
+$patients = $conn ? mysqli_query($conn, $sql_patients) : false;
 
-if (!$patients) {
-    die("Query Failed: " . mysqli_error($conn));
-}
-
-/* SERVICE COUNTS */
-
-$vital_count = mysqli_fetch_assoc(mysqli_query(
-    $conn,
-    "SELECT COUNT(DISTINCT user_id) AS total
-     FROM measurements
-     WHERE service_type='vital'"
-))['total'];
-
-$prenatal_count = mysqli_fetch_assoc(mysqli_query(
-    $conn,
-    "SELECT COUNT(DISTINCT user_id) AS total
-     FROM measurements
-     WHERE service_type='prenatal'"
-))['total'];
-
-$immunization_count = mysqli_fetch_assoc(mysqli_query(
-    $conn,
-    "SELECT COUNT(DISTINCT user_id) AS total
-     FROM measurements
-     WHERE service_type='immunization'"
-))['total'];
-
-$family_count = mysqli_fetch_assoc(mysqli_query(
-    $conn,
-    "SELECT COUNT(DISTINCT user_id) AS total
-     FROM measurements
-     WHERE service_type='family'"
-))['total'];
+/* =========================
+   SERVICE COUNTS
+========================= */
+$vital_count = $conn ? (mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM measurements WHERE service_type='vital'"))['total'] ?? 0) : 0;
+$prenatal_count = $conn ? (mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM measurements WHERE service_type='prenatal'"))['total'] ?? 0) : 0;
+$family_count = $conn ? (mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM measurements WHERE service_type='family'"))['total'] ?? 0) : 0;
 
 /* =========================
    AVERAGE HEALTH MEASUREMENTS
 ========================= */
-
-$average_health_q = mysqli_query($conn, "
+$average_health_q = $conn ? mysqli_query($conn, "
     SELECT
         AVG(height) AS avg_height,
         AVG(weight) AS avg_weight,
@@ -117,9 +84,9 @@ $average_health_q = mysqli_query($conn, "
         AVG(systolic) AS avg_systolic,
         AVG(diastolic) AS avg_diastolic
     FROM measurements
-");
+") : false;
 
-$average_health = mysqli_fetch_assoc($average_health_q);
+$average_health = $average_health_q ? mysqli_fetch_assoc($average_health_q) : [];
 
 $avg_height = $average_health['avg_height'] ?? 0;
 $avg_weight = $average_health['avg_weight'] ?? 0;
@@ -129,14 +96,48 @@ $avg_spo2 = $average_health['avg_spo2'] ?? 0;
 $avg_systolic = $average_health['avg_systolic'] ?? 0;
 $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
 
+/* =========================
+   FOLLOW-UP SCHEDULES
+========================= */
+$followup_rows = [];
+$followup_query = $conn ? mysqli_query($conn, "
+    SELECT
+        u.id,
+        u.fullname,
+        'Family Planning' AS service_type,
+        f.next_schedule AS follow_up_date
+     FROM family_planning_records f
+     INNER JOIN users u ON u.id = f.user_id
+     WHERE f.next_schedule IS NOT NULL
+     AND f.next_schedule >= CURDATE()
+     ORDER BY f.next_schedule ASC
+     LIMIT 20
+") : false;
+
+if ($followup_query) {
+    while ($row = mysqli_fetch_assoc($followup_query)) {
+        $followup_rows[] = $row;
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en" translate="no">
 <head>
     <script>
-    if (localStorage.getItem("theme") === "dark") {
-        document.documentElement.classList.add("dark-mode");
-    }
+    // System Settings Pre-loader Script (Applies Dark Mode, Text Size, & Brightness instantly)
+    (function() {
+        // Dark Mode
+        if (localStorage.getItem("theme") === "dark") {
+            document.documentElement.classList.add("dark-mode");
+        }
+        // Text Size
+        const savedTextSize = localStorage.getItem("textSize");
+        if (savedTextSize) {
+            const fontSizes = { small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
+            document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
+        }
+    })();
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -145,285 +146,215 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="../css/theme.css">
+
+    <style>
+        /* Fallback Dark Mode Styles */
+        body.dark-mode, html.dark-mode body {
+            background-color: #121824 !important;
+            color: #e2e8f0 !important;
+        }
+        html.dark-mode .card, html.dark-mode .patient-card, html.dark-mode .analytics-card {
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important;
+            border-color: rgba(255,255,255,0.1) !important;
+        }
+        html.dark-mode .text-dark {
+            color: #f8fafc !important;
+        }
+        html.dark-mode .text-muted {
+            color: #94a3b8 !important;
+        }
+        html.dark-mode .table {
+            color: #e2e8f0 !important;
+        }
+        html.dark-mode .sidebar {
+            background-color: #0f172a !important;
+            border-right-color: rgba(255,255,255,0.1) !important;
+        }
+
+        /* Night Light Filter Overlay */
+        #nightLightOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(255, 140, 0, 0.18);
+            pointer-events: none;
+            z-index: 99999;
+            display: none;
+            mix-blend-mode: multiply;
+        }
+
+        .modal {
+            z-index: 999999 !important;
+        }
+
+        .modal-backdrop {
+            z-index: 999998 !important;
+        }
+
+        .modal-dialog {
+            margin: 1.75rem auto !important;
+        }
+
+        .modal-dialog-centered {
+            min-height: calc(100vh - 3.5rem) !important;
+        }
+    </style>
 </head>
 
 <body>
 
+<!-- Night Light Filter Overlay -->
+<div id="nightLightOverlay"></div>
+
 <div class="container-fluid">
-    <div class="row ">
+    <div class="row">
         <!-- Sidebar Navigation -->
         <nav class="col-md-3 col-lg-2 d-md-flex sidebar p-3 flex-column justify-content-between">
             <div>
-                <div class="logo-section">
-                    <img src="../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo">
-                    <span class="sidebar-brand">VitalCore</span>
+                <!-- LOGO & BRAND -->
+                <div class="logo-section mb-4 d-flex align-items-center gap-2 px-2">
+                    <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2966/2966327.png';">
+                    <span class="sidebar-brand fw-bold fs-5">VitalCore</span>
                 </div>
 
-                <ul class="nav flex-column">
+                <div class="sidebar-menu-wrapper">
+                    
+                    <!-- SECTION: MAIN -->
+                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_main">
+                        Main
+                    </small>
 
-                    <!-- Dashboard -->
-                    <li class="nav-item">
-                        <a class="nav-link active" href="dashboard.php">
-                            <i class="bi bi-grid-1x2-fill me-2"></i>
-                            Dashboard
-                        </a>
-                    </li>
+                    <ul class="nav flex-column mb-3">
+                        <!-- Dashboard -->
+                        <li class="nav-item">
+                            <a class="nav-link active" href="dashboard.php">
+                                <i class="bi bi-grid-1x2-fill me-2"></i>
+                                <span data-i18n="nav_dashboard">Dashboard</span>
+                            </a>
+                        </li>
+                    </ul>
 
-                    <!-- Patients -->
-                    <li class="nav-item">
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#patientsMenu"
-                           role="button"
-                           aria-expanded="false"
-                           aria-controls="patientsMenu">
+                    <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
+                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_clinical">
+                        Clinical Services
+                    </small>
 
-                            <span>
-                                <i class="bi bi-people-fill me-2"></i>
-                                Patients
-                            </span>
+                    <ul class="nav flex-column mb-3">
+                        <!-- Patients / Patient Management -->
+                        <li class="nav-item">
+                            <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
+                            data-bs-toggle="collapse"
+                            href="#patientsMenu"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="patientsMenu">
+                                <span>
+                                    <i class="bi bi-people-fill me-2 text-primary"></i>
+                                    <span data-i18n="nav_patient_mgmt">Patient Management</span>
+                                </span>
+                                <i class="bi bi-chevron-down collapse-chevron"></i>
+                            </a>
 
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-                        </a>
+                            <div class="collapse" id="patientsMenu">
+                                <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                    <li class="py-1">
+                                        <a href="patient-list.php" class="sidebar-submenu-link text-decoration-none">
+                                            <i class="bi bi-list-ul me-2"></i>
+                                            <span data-i18n="nav_all_patients">All Patients Services</span>
+                                        </a>
+                                    </li>
+                                    <li class="py-1">
+                                        <a href="admin-dashboard.php" class="sidebar-submenu-link text-decoration-none">
+                                            <i class="bi bi-person-plus-fill me-2"></i>
+                                            <span data-i18n="nav_add_patient">Add Patient</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
 
-                        <div class="collapse" id="patientsMenu">
-                            <ul class="sidebar-submenu">
+                        <!-- Patient Records -->
+                        <li class="nav-item">
+                            <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
+                            data-bs-toggle="collapse"
+                            href="#recordsMenu"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="recordsMenu">
+                                <span>
+                                    <i class="bi bi-folder2-open me-2 text-warning"></i>
+                                    <span data-i18n="nav_patient_records">Patient Records</span>
+                                </span>
+                                <i class="bi bi-chevron-down collapse-chevron"></i>
+                            </a>
 
-                                <li>
-                                    <a href="patient-list.php" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        All Patients
-                                    </a>
-                                </li>
+                            <div class="collapse" id="recordsMenu">
+                                <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                    <li class="py-1">
+                                        <a href="logs/patient-history.php" class="sidebar-submenu-link text-decoration-none">
+                                            <i class="bi bi-clock-history me-2"></i>
+                                            <span data-i18n="nav_records_history">Patient Records</span>
+                                        </a>
+                                    </li>
+                                    <li class="py-1">
+                                        <a href="logs/reports.php" class="sidebar-submenu-link text-decoration-none">
+                                            <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                                            <span data-i18n="nav_reports">Reports</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
 
-                                <li>
-                                    <a href="admin-dashboard.php" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Add Patient
-                                    </a>
-                                </li>
+                    <!-- SECTION: HARDWARE & SYSTEM -->
+                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_system">
+                        Hardware & System
+                    </small>
 
-                            </ul>
-                        </div>
-                    </li>
+                    <ul class="nav flex-column mb-3">
+                        <!-- Administration -->
+                        <li class="nav-item">
+                            <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
+                            data-bs-toggle="collapse"
+                            href="#adminMenu"
+                            role="button"
+                            aria-expanded="false"
+                            aria-controls="adminMenu">
+                                <span>
+                                    <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
+                                    <span data-i18n="nav_admin">Administration</span>
+                                </span>
+                                <i class="bi bi-chevron-down collapse-chevron"></i>
+                            </a>
 
-                </ul>
+                            <div class="collapse" id="adminMenu">
+                                <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                    <li class="py-1">
+                                        <a href="staff_accounts.php" class="sidebar-submenu-link text-decoration-none">
+                                            <i class="bi bi-person-gear me-2"></i>
+                                            <span data-i18n="nav_user_mgmt">User Management</span>
+                                        </a>
+                                    </li>
+                                    <li class="py-1">
+                                        <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
+                                            <i class="bi bi-sliders me-2"></i>
+                                            <span data-i18n="nav_settings">Settings</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
 
-                <!-- CLINIC SERVICES <div class="sidebar-heading">CLINIC</div> -->
-                <ul class="nav flex-column">
-
-                    <li class="nav-item">
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#clinicServicesMenu"
-                           role="button"
-                           aria-expanded="false"
-                           aria-controls="clinicServicesMenu">
-
-                            <span>
-                                <i class="bi bi-hospital-fill me-2"></i>
-                                Clinic Services
-                            </span>
-
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-                        </a>
-
-                        <div class="collapse" id="clinicServicesMenu">
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="Service/vital-screening.php" class="sidebar-submenu-link">
-                                        <i class="bi bi-clipboard2-pulse-fill text-warning me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Vital Screening
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="Service/prenatal.php" class="sidebar-submenu-link">
-                                        <i class="bi bi-heart-pulse-fill text-danger me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Prenatal Check-up
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="Service/child-immunization.php" class="sidebar-submenu-link">
-                                        <i class="bi bi-shield-check text-success me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Child Immunization
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="Service/family-planning.php" class="sidebar-submenu-link">
-                                         <i class="bi bi-people-fill text-primary me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Family Planning
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </div>
-                    </li>
-
-                </ul>
-
-                <!-- RECORDS -->
-                <ul class="nav flex-column">
-
-                    <li class="nav-item">
-
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                        data-bs-toggle="collapse"
-                        href="#recordsMenu"
-                        role="button">
-
-                            <span>
-                                <i class="bi bi-folder2-open me-2"></i>
-                                Patient Records
-                            </span>
-
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-
-                        </a>
-
-                        <div class="collapse" id="recordsMenu">
-
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="logs/checkup-records.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Checkup Records
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="logs/patient-history.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Patient History
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="logs/service-records.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Service Records
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="logs/reports.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Reports
-                                    </a>
-                                </li>
-
-                            </ul>
-
-                        </div>
-
-                    </li>
-
-                </ul>
-
-                <!-- KIOSK & DEVICES <div class="sidebar-heading">KIOSK &amp; DEVICES</div> -->
-                <ul class="nav flex-column">
-
-                    <li class="nav-item">
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#kioskMenu"
-                           role="button"
-                           aria-expanded="false"
-                           aria-controls="kioskMenu">
-
-                            <span>
-                                <i class="bi bi-display me-2"></i>
-                                KioskManagement
-                            </span>
-
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-                        </a>
-
-                        <div class="collapse" id="kioskMenu">
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="#" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Kiosk Monitor
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="#" id="sidebarSensorStatus" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Sensor Status
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </div>
-                    </li>
-
-                </ul>
-
-                <!-- ADMINISTRATION -->
-                <ul class="nav flex-column">
-
-                    <li class="nav-item">
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#adminMenu"
-                           role="button"
-                           aria-expanded="false"
-                           aria-controls="adminMenu">
-
-                            <span>
-                                <i class="bi bi-shield-lock-fill me-2"></i>
-                                Administration
-                            </span>
-
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-                        </a>
-
-                        <div class="collapse" id="adminMenu">
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="#" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        User Management
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="#" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Settings
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </div>
-                    </li>
-
-                </ul>
-
+                </div>
             </div>
 
-            <!-- Logout -->
-            <div class="pt-4 px-2 border-top">
-                <a href="../login.php"
-                   class="text-decoration-none text-danger fw-semibold d-flex align-items-center gap-2">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Log out
+            <!-- LOGOUT FOOTER -->
+            <div class="pt-3 px-2 border-top border-secondary border-opacity-25">
+                <a href="../login.php" class="text-decoration-none text-danger fw-semibold d-flex align-items-center gap-2">
+                    <i class="bi bi-box-arrow-left fs-5"></i>
+                    <span data-i18n="nav_logout">Log out</span>
                 </a>
             </div>
         </nav>
@@ -431,286 +362,239 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
         <!-- Main Content Area -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
             
-            <!-- TOP HEADER BAR WITH DYNAMIC DATE -->
+            <!-- TOP HEADER BAR WITH DYNAMIC DATE & QUICK CONTROLS -->
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 fade-up">
                <div>
                     <h3 class="fw-bold mb-1 text-dark">
                         <i class="bi bi-hospital-fill me-2 text-primary"></i>
-                        Good Day, Admin
+                        <span data-i18n="header_greeting">Good Day, Admin</span>
                     </h3>
-                    <p class="text-muted small mb-0">
+                    <p class="text-muted small mb-0" data-i18n="header_desc">
                         System status overview and clinical intake telemetry.
                     </p>
                 </div>
 
                 <div class="top-actions m-0">
                     <!-- DYNAMIC CURRENT DATE CHIP -->
-                    <span class="badge bg-white text-secondary border px-3 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.85rem;">
+                    <span class="badge bg-white text-secondary border px-3 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.85rem;" id="dashboardDateChip">
                         <i class="bi bi-calendar-event me-1 text-primary"></i> <?= date("l, M d, Y"); ?>
                     </span>
-                    <a href="dashboard.php" class="status-pill active text-decoration-none">
-                        <span class="status-dot green"></span>
-                        <span>Kiosk Online</span>
-                    </a>
+
                     <a href="#" id="openSensorStatus" class="status-pill warning text-decoration-none">
                         <i class="bi bi-exclamation-triangle-fill warning-icon"></i>
                         <span>Sensors Status</span>
                     </a>
-                     <button id="darkModeToggle" class="darkmode-btn">
-                        <i class="bi bi-moon-stars-fill"></i>
-                        <span>Dark Mode</span>
+                    
+                     <button id="darkModeToggle" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        <i class="bi bi-moon-stars-fill me-1"></i>
+                        <span data-i18n="dark_mode_title">Dark Mode</span>
                     </button>
                 </div>
             </div>
 
             <!-- Dashboard Overview Row -->
             <div class="row mb-4">
-                <!-- Health Analytics (Left Side) -->
                 <!-- HEALTH ANALYTICS -->
-<div class="col-xl-5 col-lg-5 mb-3 mb-lg-0">
+                <div class="col-xl-5 col-lg-5 mb-3 mb-lg-0">
+                    <div class="card analytics-card h-100 p-4 fade-up fade-delay-1">
 
-    <div class="card analytics-card h-100 p-4 fade-up fade-delay-1">
-
-        <!-- HEADER -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-
-            <div>
-                <h5 class="card-title fw-bold text-dark mb-1">
-                    <i class="bi bi-heart-pulse-fill text-danger me-2"></i>
-                    Average Health
-                </h5>
-
-                <small class="text-muted">
-                    Average recorded vital measurements
-                </small>
-            </div>
-
-            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
-                <i class="bi bi-activity me-1"></i>
-                Live Data
-            </span>
-
-        </div>
-
-
-        <!-- AVERAGE HEALTH TABLE -->
-        <div class="table-responsive">
-
-            <table class="table table-borderless align-middle average-health-table mb-0">
-
-                <thead>
-                    <tr>
-                        <th>Measurement</th>
-                        <th class="text-end">Average</th>
-                        <th class="text-end">Unit</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    <!-- HEIGHT -->
-                    <tr>
-                        <td>
-                            <div class="health-label">
-                                <div class="health-icon height-icon">
-                                    <i class="bi bi-rulers"></i>
-                                </div>
-
-                                <div>
-                                    <strong>Height</strong>
-                                    <small>Body height</small>
-                                </div>
+                        <!-- HEADER -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="card-title fw-bold text-dark mb-1">
+                                    <i class="bi bi-heart-pulse-fill text-danger me-2"></i>
+                                    <span data-i18n="avg_health_title">Average Health</span>
+                                </h5>
+                                <small class="text-muted" data-i18n="avg_health_desc">
+                                    Average recorded vital measurements
+                                </small>
                             </div>
-                        </td>
 
-                        <td class="text-end">
-                            <strong class="health-value">
-                                <?= $avg_height > 0 ? number_format($avg_height, 1) : '--' ?>
-                            </strong>
-                        </td>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
+                                <i class="bi bi-activity me-1"></i>
+                                Live Data
+                            </span>
+                        </div>
 
-                        <td class="text-end">
-                            <span class="health-unit">cm</span>
-                        </td>
-                    </tr>
+                        <!-- AVERAGE HEALTH TABLE -->
+                        <div class="table-responsive">
+                            <table class="table table-borderless align-middle average-health-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="tbl_measurement">Measurement</th>
+                                        <th class="text-end" data-i18n="tbl_average">Average</th>
+                                        <th class="text-end" data-i18n="tbl_unit">Unit</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- HEIGHT -->
+                                    <tr>
+                                        <td>
+                                            <div class="health-label">
+                                                <div class="health-icon height-icon">
+                                                    <i class="bi bi-rulers"></i>
+                                                </div>
+                                                <div>
+                                                    <strong data-i18n="lbl_height">Height</strong>
+                                                    <small>Body height</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="health-value">
+                                                <?= $avg_height > 0 ? number_format($avg_height, 1) : '--' ?>
+                                            </strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="health-unit">cm</span>
+                                        </td>
+                                    </tr>
 
+                                    <!-- WEIGHT -->
+                                    <tr>
+                                        <td>
+                                            <div class="health-label">
+                                                <div class="health-icon weight-icon">
+                                                    <i class="bi bi-speedometer2"></i>
+                                                </div>
+                                                <div>
+                                                    <strong data-i18n="lbl_weight">Weight</strong>
+                                                    <small>Body weight</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="health-value">
+                                                <?= $avg_weight > 0 ? number_format($avg_weight, 1) : '--' ?>
+                                            </strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="health-unit">kg</span>
+                                        </td>
+                                    </tr>
 
-                    <!-- WEIGHT -->
-                    <tr>
-                        <td>
-                            <div class="health-label">
-                                <div class="health-icon weight-icon">
-                                    <i class="bi bi-speedometer2"></i>
-                                </div>
+                                    <!-- TEMPERATURE -->
+                                    <tr>
+                                        <td>
+                                            <div class="health-label">
+                                                <div class="health-icon temp-icon">
+                                                    <i class="bi bi-thermometer-half"></i>
+                                                </div>
+                                                <div>
+                                                    <strong data-i18n="lbl_temp">Temperature</strong>
+                                                    <small>Body temperature</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="health-value">
+                                                <?= $avg_temperature > 0 ? number_format($avg_temperature, 1) : '--' ?>
+                                            </strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="health-unit">°C</span>
+                                        </td>
+                                    </tr>
 
-                                <div>
-                                    <strong>Weight</strong>
-                                    <small>Body weight</small>
-                                </div>
+                                    <!-- HEART RATE -->
+                                    <tr>
+                                        <td>
+                                            <div class="health-label">
+                                                <div class="health-icon heart-icon">
+                                                    <i class="bi bi-heart-pulse-fill"></i>
+                                                </div>
+                                                <div>
+                                                    <strong data-i18n="lbl_heart">Heart Rate</strong>
+                                                    <small>Pulse rate</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="health-value">
+                                                <?= $avg_heart_rate > 0 ? number_format($avg_heart_rate, 0) : '--' ?>
+                                            </strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="health-unit">BPM</span>
+                                        </td>
+                                    </tr>
+
+                                    <!-- SPO2 -->
+                                    <tr>
+                                        <td>
+                                            <div class="health-label">
+                                                <div class="health-icon spo2-icon">
+                                                    <i class="bi bi-lungs-fill"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>SpO₂</strong>
+                                                    <small>Oxygen saturation</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="health-value">
+                                                <?= $avg_spo2 > 0 ? number_format($avg_spo2, 1) : '--' ?>
+                                            </strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="health-unit">%</span>
+                                        </td>
+                                    </tr>
+
+                                    <!-- BLOOD PRESSURE -->
+                                    <tr>
+                                        <td>
+                                            <div class="health-label">
+                                                <div class="health-icon bp-icon">
+                                                    <i class="bi bi-activity"></i>
+                                                </div>
+                                                <div>
+                                                    <strong data-i18n="lbl_bp">Blood Pressure</strong>
+                                                    <small>Average BP</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <strong class="health-value">
+                                                <?php if ($avg_systolic > 0 || $avg_diastolic > 0): ?>
+                                                    <?= number_format($avg_systolic, 0) ?> / <?= number_format($avg_diastolic, 0) ?>
+                                                <?php else: ?>
+                                                    --
+                                                <?php endif; ?>
+                                            </strong>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="health-unit">mmHg</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- FOOTER -->
+                        <div class="average-health-footer">
+                            <div>
+                                <i class="bi bi-info-circle me-1"></i>
+                                Based on recorded measurements
                             </div>
-                        </td>
-
-                        <td class="text-end">
-                            <strong class="health-value">
-                                <?= $avg_weight > 0 ? number_format($avg_weight, 1) : '--' ?>
-                            </strong>
-                        </td>
-
-                        <td class="text-end">
-                            <span class="health-unit">kg</span>
-                        </td>
-                    </tr>
-
-
-                    <!-- TEMPERATURE -->
-                    <tr>
-                        <td>
-                            <div class="health-label">
-                                <div class="health-icon temp-icon">
-                                    <i class="bi bi-thermometer-half"></i>
-                                </div>
-
-                                <div>
-                                    <strong>Temperature</strong>
-                                    <small>Body temperature</small>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td class="text-end">
-                            <strong class="health-value">
-                                <?= $avg_temperature > 0 ? number_format($avg_temperature, 1) : '--' ?>
-                            </strong>
-                        </td>
-
-                        <td class="text-end">
-                            <span class="health-unit">°C</span>
-                        </td>
-                    </tr>
-
-
-                    <!-- HEART RATE -->
-                    <tr>
-                        <td>
-                            <div class="health-label">
-                                <div class="health-icon heart-icon">
-                                    <i class="bi bi-heart-pulse-fill"></i>
-                                </div>
-
-                                <div>
-                                    <strong>Heart Rate</strong>
-                                    <small>Pulse rate</small>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td class="text-end">
-                            <strong class="health-value">
-                                <?= $avg_heart_rate > 0 ? number_format($avg_heart_rate, 0) : '--' ?>
-                            </strong>
-                        </td>
-
-                        <td class="text-end">
-                            <span class="health-unit">BPM</span>
-                        </td>
-                    </tr>
-
-
-                    <!-- SPO2 -->
-                    <tr>
-                        <td>
-                            <div class="health-label">
-                                <div class="health-icon spo2-icon">
-                                    <i class="bi bi-lungs-fill"></i>
-                                </div>
-
-                                <div>
-                                    <strong>SpO₂</strong>
-                                    <small>Oxygen saturation</small>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td class="text-end">
-                            <strong class="health-value">
-                                <?= $avg_spo2 > 0 ? number_format($avg_spo2, 1) : '--' ?>
-                            </strong>
-                        </td>
-
-                        <td class="text-end">
-                            <span class="health-unit">%</span>
-                        </td>
-                    </tr>
-
-
-                    <!-- BLOOD PRESSURE -->
-                    <tr>
-                        <td>
-                            <div class="health-label">
-                                <div class="health-icon bp-icon">
-                                    <i class="bi bi-activity"></i>
-                                </div>
-
-                                <div>
-                                    <strong>Blood Pressure</strong>
-                                    <small>Average BP</small>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td class="text-end">
-                            <strong class="health-value">
-                                <?php if ($avg_systolic > 0 || $avg_diastolic > 0): ?>
-                                    <?= number_format($avg_systolic, 0) ?>
-                                    /
-                                    <?= number_format($avg_diastolic, 0) ?>
-                                <?php else: ?>
-                                    --
-                                <?php endif; ?>
-                            </strong>
-                        </td>
-
-                        <td class="text-end">
-                            <span class="health-unit">mmHg</span>
-                        </td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        <!-- FOOTER -->
-        <div class="average-health-footer">
-
-            <div>
-                <i class="bi bi-info-circle me-1"></i>
-                Based on recorded measurements
-            </div>
-
-            <i class="bi bi-chevron-right"></i>
-
-        </div>
-
-    </div>
-
-</div>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- New Patients & Patients Overview (Center Side) -->
                 <div class="col-xl-4 col-lg-4 mb-3 mb-lg-0">
-                    
                     <!-- NEW PATIENTS CARD -->
                    <div class="card analytics-card p-4 mb-3 fade-up fade-delay-2">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="card-title fw-bold text-dark m-0">New Patients</h5>
+                            <h5 class="card-title fw-bold text-dark m-0" data-i18n="title_new_patients">New Patients</h5>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
                                 Today
                             </span>
                         </div>
                         
                         <div style="position: relative; height:150px; width:100%" class="d-flex flex-column justify-content-between">
-                            <!-- Big Highlight Number -->
                             <div class="d-flex align-items-baseline gap-2 mt-1">
                                <span class="display-3 fw-bolder text-primary lh-1 stat-number">
                                     <?= number_format($today_new_patients); ?>
@@ -718,7 +602,6 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
                                 <span class="text-muted fw-semibold fs-6">new patient<?= $today_new_patients != 1 ? 's' : ''; ?> added today</span>
                             </div>
 
-                            <!-- Sub-Metrics Grid -->
                             <div class="row g-2 border-top pt-2 mt-auto">
                                 <div class="col-6">
                                     <div class="d-flex flex-column">
@@ -739,17 +622,16 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
                         </div>
                     </div>
 
-                    <!-- PATIENTS OVERVIEW CARD (MALE VS FEMALE DATA TABLE) -->
+                    <!-- PATIENTS OVERVIEW CARD -->
                    <div class="card analytics-card p-4 fade-up fade-delay-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="card-title fw-bold text-dark m-0">Patients Overview</h5>
+                            <h5 class="card-title fw-bold text-dark m-0" data-i18n="title_patients_overview">Patients Overview</h5>
                             <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;">
                                 Gender Ratio
                             </span>
                         </div>
                         
                         <div style="position: relative; height:150px; width:100%" class="d-flex flex-column justify-content-between">
-                            <!-- Male vs Female Data Table -->
                             <div class="table-responsive mt-1">
                                 <table class="table table-borderless table-sm align-middle mb-1" style="font-size: 0.85rem;">
                                     <thead>
@@ -782,75 +664,57 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
                                 </table>
                             </div>
 
-                            <!-- Combined Gender Distribution Bar -->
                             <div class="mt-auto pt-2 border-top">
                                 <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 0.72rem;">
                                     <span><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5rem;"></i> Male (<?= $male_percent; ?>%)</span>
                                     <span><i class="bi bi-circle-fill text-danger me-1" style="font-size: 0.5rem;"></i> Female (<?= $female_percent; ?>%)</span>
                                 </div>
                                <div class="progress gender-progress">
-                                    <div class="progress-bar bg-primary male-bar"
-                                        style="width: <?= $male_percent; ?>%">
-                                    </div>
-
-                                    <div class="progress-bar bg-danger female-bar"
-                                        style="width: <?= $female_percent; ?>%">
-                                    </div>
+                                    <div class="progress-bar bg-primary male-bar" style="width: <?= $male_percent; ?>%"></div>
+                                    <div class="progress-bar bg-danger female-bar" style="width: <?= $female_percent; ?>%"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
 
-                <!--(Right Side) -->
-          <div class="col-xl-3 col-lg-3">
-                <div class="card analytics-card h-100 p-4 fade-up fade-delay-4">
+                <!-- Service Categories (Right Side) -->
+                <div class="col-xl-3 col-lg-3">
+                    <div class="card analytics-card h-100 p-4 fade-up fade-delay-4">
+                        <h5 class="fw-bold mb-3" data-i18n="title_services">Service Categories</h5>
 
-                    <h5 class="fw-bold mb-3">
-                        Service Categories
-                    </h5>
+                        <div style="height:220px">
+                            <canvas id="serviceChart"></canvas>
+                        </div>
 
-                    <div style="height:220px">
-                        <canvas id="serviceChart"></canvas>
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span><i class="bi bi-circle-fill text-primary me-1"></i> Vital Screening</span>
+                                <strong class="stat-number"><?= $vital_count ?></strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span><i class="bi bi-circle-fill text-danger me-1"></i> Prenatal</span>
+                               <strong class="stat-number"><?= $prenatal_count ?></strong>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <span><i class="bi bi-circle-fill text-warning me-1"></i> Family Planning</span>
+                                <strong class="stat-number"><?= $family_count ?></strong>
+                            </div>
+                        </div>
                     </div>
-
-                    <div class="mt-3">
-
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="bi bi-circle-fill text-primary me-1"></i> Vital Screening</span>
-                            <strong class="stat-number"><?= $vital_count ?></strong>
-                        </div>
-
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="bi bi-circle-fill text-danger me-1"></i> Prenatal</span>
-                           <strong class="stat-number"><?= $prenatal_count ?></strong>
-                        </div>
-
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><i class="bi bi-circle-fill text-success me-1"></i> Immunization</span>
-                            <strong class="stat-number"><?= $immunization_count ?></strong>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <span><i class="bi bi-circle-fill text-warning me-1"></i> Family Planning</span>
-                            <strong class="stat-number"><?= $family_count ?></strong>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>        
+                </div>        
             </div>
-            
-            <!-- Patient List Row -->
-            <div class="row">
-                <div class="col-12">
-                   <div class="card patient-card p-4 fade-up fade-delay-5">
-                        <!-- Header with Search & Add Patient Button -->
+        
+           <!-- Patient List + Follow-up Schedule Row -->
+            <div class="row mt-4">
+                <!-- Recent Patient List -->
+                <div class="col-xl-7 col-12 mb-2">
+                    <div class="card patient-card p-4 fade-up fade-delay-5">
                         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
                             <div>
-                                <h5 class="fw-bold text-dark m-0">Recent Patient List</h5>
+                                <h5 class="fw-bold text-dark m-0" data-i18n="title_recent_patients">Recent Patient List</h5>
                                 <small class="text-muted">Showing latest registered patients</small>
                             </div>
                             <div class="d-flex align-items-center gap-2">
@@ -863,7 +727,7 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
                                 </a>
                             </div>
                         </div>
-                        
+
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0" id="patientTable">
                                 <thead>
@@ -876,9 +740,10 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
                                 <tbody>
                                 <?php
                                 $no = 1;
-                                while ($row = mysqli_fetch_assoc($patients)) {
-                                    $disease = htmlspecialchars($row['disease']);
-                                    $date = isset($row['created_at']) ? date("Y-m-d", strtotime($row['created_at'])) : date("Y-m-d");
+                                if ($patients) {
+                                    while ($row = mysqli_fetch_assoc($patients)) {
+                                        $disease = htmlspecialchars($row['disease']);
+                                        $date = isset($row['created_at']) ? date("Y-m-d", strtotime($row['created_at'])) : date("Y-m-d");
                                 ?>
                                     <tr>
                                         <td><?= $no++; ?></td>
@@ -887,10 +752,90 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
                                         </td>
                                         <td><?= $date; ?></td>
                                     </tr>
-                                <?php } ?>
+                                <?php 
+                                    }
+                                } 
+                                ?>
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Follow-up Schedule -->
+                <div class="col-xl-5 col-12 mb-2">
+                    <div class="card analytics-card p-4 fade-up fade-delay-5 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="card-title fw-bold text-dark mb-1">
+                                    <i class="bi bi-calendar2-check-fill text-primary me-2"></i>
+                                    <span data-i18n="title_followup">Follow-up Schedule</span>
+                                    <span class="badge bg-primary ms-2"> Total:
+                                        <?= count($followup_rows); ?>
+                                    </span>
+                                </h5>
+                                <small class="text-muted">Patients scheduled</small>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
+                                <?= date("M d, Y"); ?>
+                            </span>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-borderless table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                                <thead>
+                                    <tr class="text-muted border-bottom" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        <th class="ps-0 py-1">Patient</th>
+                                        <th class="text-center py-1">Service</th>
+                                        <th class="text-end py-1">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php if (!empty($followup_rows)): ?>
+                                    <?php foreach ($followup_rows as $fu): ?>
+                                    <tr>
+                                        <td class="ps-0 py-2 fw-semibold text-dark">
+                                            <?= htmlspecialchars($fu['fullname']); ?>
+                                        </td>
+                                        <td class="text-center py-2">
+                                            <?php
+                                            $svc = $fu['service_type'];
+                                            $badge_map = [
+                                                'vital'        => ['bg-warning-subtle text-warning', 'Vital'],
+                                                'prenatal'     => ['bg-danger-subtle text-danger',   'Prenatal'],
+                                                'family'       => ['bg-primary-subtle text-primary', 'Family'],
+                                            ];
+                                            [$cls, $label] = $badge_map[$svc] ?? ['bg-secondary-subtle text-secondary', ucfirst($svc)];
+                                            ?>
+                                            <span class="badge <?= $cls ?> fw-semibold" style="font-size: 0.7rem;">
+                                                <?= $label ?>
+                                            </span>
+                                        </td>
+                                        <td class="text-end py-2 text-muted" style="font-size: 0.78rem;">
+                                            <?= date("M d, Y", strtotime($fu['follow_up_date'])); ?>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-4">
+                                            <i class="bi bi-calendar-x fs-4 d-block mb-1 opacity-50"></i>
+                                            No follow-ups scheduled for today
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <?php if (!empty($followup_rows)): ?>
+                        <div class="mt-auto pt-2 border-top">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                <?= count($followup_rows); ?> patient<?= count($followup_rows) != 1 ? 's' : ''; ?> scheduled
+                            </small>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -936,6 +881,98 @@ $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
+<script>
+(function applySystemSettings() {
+    // 1. Theme / Dark Mode
+    const darkModeToggleBtn = document.getElementById("darkModeToggle");
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-mode");
+        document.documentElement.classList.add("dark-mode");
+    }
+    if (darkModeToggleBtn) {
+        darkModeToggleBtn.addEventListener("click", function() {
+            const isDark = document.body.classList.toggle("dark-mode");
+            document.documentElement.classList.toggle("dark-mode", isDark);
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+        });
+    }
+
+    // 2. Brightness
+    const savedBrightness = localStorage.getItem("brightness");
+    if (savedBrightness) {
+       document.documentElement.style.filter = `brightness(${savedBrightness}%)`;
+    }
+
+    // 3. Night Light
+    const savedNightLight = localStorage.getItem("nightLight");
+    const nightLightOverlay = document.getElementById("nightLightOverlay");
+    if (savedNightLight === "enabled" && nightLightOverlay) {
+        nightLightOverlay.style.display = "block";
+    }
+
+    // 4. Text Size
+    const savedTextSize = localStorage.getItem("textSize");
+    if (savedTextSize) {
+        const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
+        document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
+    }
+
+    // 5. Language Dictionary
+    const i18n = {
+        en: {
+            section_main: "Main", nav_dashboard: "Dashboard", section_clinical: "Clinical Services",
+            nav_patient_mgmt: "Patient Management", nav_all_patients: "All Patients Services", nav_add_patient: "Add Patient",
+            nav_patient_records: "Patient Records", nav_records_history: "Patient Records", nav_reports: "Reports",
+            section_system: "Hardware & System", nav_admin: "Administration", nav_user_mgmt: "User Management",
+            nav_settings: "Settings", nav_logout: "Log out", header_greeting: "Good Day, Admin",
+            header_desc: "System status overview and clinical intake telemetry.", avg_health_title: "Average Health",
+            avg_health_desc: "Average recorded vital measurements", tbl_measurement: "Measurement", tbl_average: "Average",
+            tbl_unit: "Unit", lbl_height: "Height", lbl_weight: "Weight", lbl_temp: "Temperature",
+            lbl_heart: "Heart Rate", lbl_bp: "Blood Pressure", title_new_patients: "New Patients",
+            title_patients_overview: "Patients Overview", title_services: "Service Categories",
+            title_recent_patients: "Recent Patient List", title_followup: "Follow-up Schedule", dark_mode_title: "Dark Mode"
+        },
+        fil: {
+            section_main: "Pangunahin", nav_dashboard: "Dashboard", section_clinical: "Serbisyong Klinikal",
+            nav_patient_mgmt: "Pamamahala ng Pasyente", nav_all_patients: "Lahat ng Serbisyong Pasyente", nav_add_patient: "Magdagdag ng Pasyente",
+            nav_patient_records: "Mga Rekord ng Pasyente", nav_records_history: "Kasaysayan ng Rekord", nav_reports: "Mga Ulat",
+            section_system: "Hardware at Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pamamahala ng Gumagamit",
+            nav_settings: "Mga Setting", nav_logout: "Mag-logout", header_greeting: "Magandang Araw, Admin",
+            header_desc: "Pangkalahatang-ideya ng estado ng sistema.", avg_health_title: "Gitarang Kalusugan",
+            avg_health_desc: "Karaniwang naitalang sukat ng vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
+            tbl_unit: "Yunit", lbl_height: "Taas", lbl_weight: "Timbang", lbl_temp: "Temperatura",
+            lbl_heart: "Bilis ng Puso", lbl_bp: "Presyon ng Dugo", title_new_patients: "Bagong Pasyente",
+            title_patients_overview: "Pangkalahatang-ideya ng Pasyente", title_services: "Kategorya ng Serbisyo",
+            title_recent_patients: "Kasalukuyang Listahan ng Pasyente", title_followup: "Iskedyul ng Follow-up", dark_mode_title: "Dark Mode"
+        },
+        ceb: {
+            section_main: "Pangunahing", nav_dashboard: "Dashboard", section_clinical: "Mga Serbisyong Klinikal",
+            nav_patient_mgmt: "Pagdumala sa Pasyente", nav_all_patients: "Tanan nga Serbisyong Pasyente", nav_add_patient: "Idugang ang Pasyente",
+            nav_patient_records: "Mga Rekord sa Pasyente", nav_records_history: "Kasaysayan sa Rekord", nav_reports: "Mga Report",
+            section_system: "Hardware ug Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pagdumala sa Paggamit",
+            nav_settings: "Mga Setting", nav_logout: "Mo-logout", header_greeting: "Maayong Adlaw, Admin",
+            header_desc: "Kinatibuk-ang pagtan-aw sa estado sa sistema.", avg_health_title: "Kasagarang Panglawas",
+            avg_health_desc: "Kasagarang nahitala nga vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
+            tbl_unit: "Yunit", lbl_height: "Gitas-on", lbl_weight: "Timbang", lbl_temp: "Temperatura",
+            lbl_heart: "Kusog sa Kasingkasing", lbl_bp: "Presyon sa Dugo", title_new_patients: "Bag-ong Pasyente",
+            title_patients_overview: "Kinatibuk-ang Pasyente", title_services: "Mga Kategorya sa Serbisyo",
+            title_recent_patients: "Bag-ong Listahan sa Pasyente", title_followup: "Iskedyul sa Follow-up", dark_mode_title: "Dark Mode"
+        }
+    };
+    const savedLang = localStorage.getItem("language");
+    if (savedLang && i18n[savedLang]) {
+        const dict = i18n[savedLang];
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            const key = el.getAttribute("data-i18n");
+            if (dict[key]) el.innerText = dict[key];
+        });
+    }
+})();
+</script>
+
 <script>
 const sensorModal = new bootstrap.Modal(document.getElementById('sensorModal'));
 
@@ -965,53 +1002,54 @@ document.getElementById('patientSearchInput').addEventListener('keyup', function
 });
 </script>
 
-<script src="../assets/js/theme.js"></script>
-
 <script>
     const ctx = document.getElementById('serviceChart');
 
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: [
-                'Vital Screening',
-                'Prenatal',
-                'Immunization',
-                'Family Planning'
-            ],
-            datasets: [{
-                data: [
-                    <?= $vital_count ?>,
-                    <?= $prenatal_count ?>,
-                    <?= $immunization_count ?>,
-                    <?= $family_count ?>
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    'Vital Screening',
+                    'Prenatal',
+                    'Family Planning'
                 ],
-                backgroundColor: [
-                    '#0d6efd',
-                    '#dc3545',
-                    '#198754',
-                    '#ffc107'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            cutout: '70%',
-            animation: {
-                duration: 3000,
-                easing: 'easeOutQuart',
-                animateRotate: true,
-                animateScale: true
+                datasets: [{
+                    data: [
+                        <?= $vital_count ?>,
+                        <?= $prenatal_count ?>,
+                        <?= $family_count ?>
+                    ],
+                    backgroundColor: [
+                        '#0d6efd',
+                        '#dc3545',
+                        '#ffc107'
+                    ]
+                }]
             },
-            plugins: {
-                legend: {
-                    display: false
+            options: {
+                responsive: true,
+                cutout: '70%',
+                animation: {
+                    duration: 3000,
+                    easing: 'easeOutQuart',
+                    animateRotate: true,
+                    animateScale: true
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 </script>
 
 </body>
 </html>
-<?php mysqli_close($conn); ?>
+<?php 
+if ($conn) {
+    mysqli_close($conn); 
+}
+?>

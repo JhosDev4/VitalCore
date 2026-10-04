@@ -8,7 +8,11 @@ require_once('../db_conn.php');
    SECURITY CHECK
 ========================= */
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrator') {
+if (
+    !isset($_SESSION['staff_id']) ||
+    !isset($_SESSION['role']) ||
+    $_SESSION['role'] !== 'Staff'
+) {
     header("Location: ../login.php");
     exit();
 }
@@ -249,6 +253,19 @@ if ($systolic_val !== null && $diastolic_val !== null) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+(function() {
+    const savedTheme = localStorage.getItem('staff_theme');
+
+    if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Patient Details - VitalCore</title>
@@ -287,21 +304,6 @@ if ($systolic_val !== null && $diastolic_val !== null) {
 
                 <div class="sidebar-menu-wrapper">
 
-                    <!-- SECTION: MAIN -->
-                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                        Main
-                    </small>
-
-                    <ul class="nav flex-column mb-3">
-                        <!-- Dashboard -->
-                        <li class="nav-item">
-                            <a class="nav-link <?= (isset($current_page) && $current_page == 'dashboard.php') ? 'active' : ''; ?>" href="dashboard.php">
-                                <i class="bi bi-grid-1x2-fill me-2"></i>
-                                Dashboard
-                            </a>
-                        </li>
-                    </ul>
-
                     <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
                     <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
                         Clinical Services
@@ -310,7 +312,7 @@ if ($systolic_val !== null && $diastolic_val !== null) {
                     <ul class="nav flex-column mb-3">
                         <!-- Patient Management -->
                         <li class="nav-item">
-                            <a class="nav-link active sidebar-collapse-link d-flex justify-content-between align-items-center"
+                            <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
                                data-bs-toggle="collapse"
                                href="#patientsMenu"
                                role="button"
@@ -359,13 +361,13 @@ if ($systolic_val !== null && $diastolic_val !== null) {
                             <div class="collapse" id="recordsMenu">
                                 <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                     <li class="py-1">
-                                        <a href="logs/patient-history.php" class="sidebar-submenu-link text-decoration-none">
+                                        <a href="patient-history.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-clock-history me-2"></i>
                                             Patient Records
                                         </a>
                                     </li>
                                     <li class="py-1">
-                                        <a href="logs/reports.php" class="sidebar-submenu-link text-decoration-none">
+                                        <a href="reports.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-file-earmark-bar-graph me-2"></i>
                                             Reports
                                         </a>
@@ -381,6 +383,7 @@ if ($systolic_val !== null && $diastolic_val !== null) {
                     </small>
 
                     <ul class="nav flex-column mb-3">
+
                         <!-- Administration -->
                         <li class="nav-item">
                             <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
@@ -398,12 +401,6 @@ if ($systolic_val !== null && $diastolic_val !== null) {
 
                             <div class="collapse" id="adminMenu">
                                 <ul class="sidebar-submenu list-unstyled ps-4 py-1">
-                                    <li class="py-1">
-                                        <a href="staff_accounts.php" class="sidebar-submenu-link text-decoration-none">
-                                            <i class="bi bi-person-gear me-2"></i>
-                                            User Management
-                                        </a>
-                                    </li>
                                     <li class="py-1">
                                         <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-sliders me-2"></i>
@@ -1096,7 +1093,180 @@ if ($systolic_val !== null && $diastolic_val !== null) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
+
+<script>
+// 1. Heart Rate Trend Chart (Glowing Area)
+const ctxTrend = document.getElementById('heartRateChart').getContext('2d');
+const hrGradient = ctxTrend.createLinearGradient(0, 0, 0, 130);
+hrGradient.addColorStop(0,   'rgba(239, 68, 68, 0.25)');
+hrGradient.addColorStop(0.6, 'rgba(239, 68, 68, 0.06)');
+hrGradient.addColorStop(1,   'rgba(239, 68, 68, 0.00)');
+
+new Chart(ctxTrend, {
+    type: 'line',
+    data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            data: <?= json_encode($chart_trend_data) ?>,
+            borderColor: '#ef4444',
+            backgroundColor: hrGradient,
+            borderWidth: 2.5,
+            pointBackgroundColor: '#ef4444',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.45,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ` ${ctx.parsed.y} BPM`
+                },
+                backgroundColor: '#1e293b',
+                titleColor: '#94a3b8',
+                bodyColor: '#f1f5f9',
+                padding: 8,
+                cornerRadius: 8
+            }
+        },
+        scales: {
+            y: {
+                min: 0,
+                max: 120,
+                ticks: { stepSize: 40, color: '#94a3b8', font: { size: 9 } },
+                grid: { color: 'rgba(241,245,249,0.8)', drawBorder: false }
+            },
+            x: {
+                ticks: { color: '#94a3b8', font: { size: 9 } },
+                grid: { display: false }
+            }
+        }
+    }
+});
+
+// 2. BMI Category Donut Chart
+const ctxBMI = document.getElementById('bmiCategoryChart').getContext('2d');
+new Chart(ctxBMI, {
+    type: 'doughnut',
+    data: {
+        labels: ['Underweight', 'Normal', 'Overweight', 'Obese'],
+        datasets: [{
+            data: <?= json_encode($chart_bmi_data) ?>,
+            backgroundColor: <?= json_encode($chart_bmi_colors) ?>,
+            borderWidth: 0
+        }]
+    }
+});
+
+// 3. Health Score Gauge
+const ctxScore = document.getElementById('healthScoreChart').getContext('2d');
+new Chart(ctxScore, {
+    type: 'doughnut',
+    data: {
+        datasets: [{
+            data: [0, 100],
+            backgroundColor: ['#10b981', '#e2e8f0'],
+            borderWidth: 0
+        }]
+    }
+});
+</script>
+<script src="../assets/js/staff-theme.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem('staff_theme');
+
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.body.setAttribute('data-bs-theme', 'dark');
+    }
+});
+</script>
+<!-- Add Service Modal -->
+<div class="modal fade" id="addServiceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <form action="save-service.php" method="POST">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Add Service
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           name="user_id"
+                           value="<?= $patient['id']; ?>">
+
+                    <label class="form-label">
+                        Select Service
+                    </label>
+
+                    <select name="service_type"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            Choose Service
+                        </option>
+
+                        <option value="Vital Screening">
+                            Vital Screening
+                        </option>
+
+                        <option value="Prenatal Check-up">
+                            Prenatal Check-up
+                        </option>
+
+                        <option value="Child Immunization">
+                            Child Immunization
+                        </option>
+
+                        <option value="Family Planning">
+                            Family Planning
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-success">
+                        Save Service
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>
 <script>
 (function applySystemSettings() {
     // 1. Theme / Dark Mode
@@ -1186,168 +1356,3 @@ if ($systolic_val !== null && $diastolic_val !== null) {
     }
 })();
 </script>
-
-<script>
-// 1. Heart Rate Trend Chart (Glowing Area)
-const ctxTrend = document.getElementById('heartRateChart').getContext('2d');
-const hrGradient = ctxTrend.createLinearGradient(0, 0, 0, 130);
-hrGradient.addColorStop(0,   'rgba(239, 68, 68, 0.25)');
-hrGradient.addColorStop(0.6, 'rgba(239, 68, 68, 0.06)');
-hrGradient.addColorStop(1,   'rgba(239, 68, 68, 0.00)');
-
-new Chart(ctxTrend, {
-    type: 'line',
-    data: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        datasets: [{
-            data: <?= json_encode($chart_trend_data) ?>,
-            borderColor: '#ef4444',
-            backgroundColor: hrGradient,
-            borderWidth: 2.5,
-            pointBackgroundColor: '#ef4444',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.45,
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ` ${ctx.parsed.y} BPM`
-                },
-                backgroundColor: '#1e293b',
-                titleColor: '#94a3b8',
-                bodyColor: '#f1f5f9',
-                padding: 8,
-                cornerRadius: 8
-            }
-        },
-        scales: {
-            y: {
-                min: 0,
-                max: 120,
-                ticks: { stepSize: 40, color: '#94a3b8', font: { size: 9 } },
-                grid: { color: 'rgba(241,245,249,0.8)', drawBorder: false }
-            },
-            x: {
-                ticks: { color: '#94a3b8', font: { size: 9 } },
-                grid: { display: false }
-            }
-        }
-    }
-});
-
-// 2. BMI Category Donut Chart
-const ctxBMI = document.getElementById('bmiCategoryChart').getContext('2d');
-new Chart(ctxBMI, {
-    type: 'doughnut',
-    data: {
-        labels: ['Underweight', 'Normal', 'Overweight', 'Obese'],
-        datasets: [{
-            data: <?= json_encode($chart_bmi_data) ?>,
-            backgroundColor: <?= json_encode($chart_bmi_colors) ?>,
-            borderWidth: 0
-        }]
-    }
-});
-
-// 3. Health Score Gauge
-const ctxScore = document.getElementById('healthScoreChart').getContext('2d');
-new Chart(ctxScore, {
-    type: 'doughnut',
-    data: {
-        datasets: [{
-            data: [0, 100],
-            backgroundColor: ['#10b981', '#e2e8f0'],
-            borderWidth: 0
-        }]
-    }
-});
-</script>
-<script src="../assets/js/theme.js"></script>
-
-<!-- Add Service Modal -->
-<div class="modal fade" id="addServiceModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-
-            <form action="save-service.php" method="POST">
-
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        Add Service
-                    </h5>
-
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal">
-                    </button>
-                </div>
-
-                <div class="modal-body">
-
-                    <input type="hidden"
-                           name="user_id"
-                           value="<?= $patient['id']; ?>">
-
-                    <label class="form-label">
-                        Select Service
-                    </label>
-
-                    <select name="service_type"
-                            class="form-select"
-                            required>
-
-                        <option value="">
-                            Choose Service
-                        </option>
-
-                        <option value="Vital Screening">
-                            Vital Screening
-                        </option>
-
-                        <option value="Prenatal Check-up">
-                            Prenatal Check-up
-                        </option>
-
-                        <option value="Child Immunization">
-                            Child Immunization
-                        </option>
-
-                        <option value="Family Planning">
-                            Family Planning
-                        </option>
-
-                    </select>
-
-                </div>
-
-                <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-
-                    <button type="submit"
-                            class="btn btn-success">
-                        Save Service
-                    </button>
-
-                </div>
-
-            </form>
-
-        </div>
-    </div>
-</div>
-</body>
-</html>

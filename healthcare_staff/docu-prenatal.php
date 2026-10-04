@@ -4,9 +4,10 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once('../../db_conn.php');
+require_once('../db_conn.php');
 
 if (
+    !isset($_SESSION['staff_id']) ||
     !isset($_SESSION['role']) ||
     !in_array($_SESSION['role'], ['Administrator', 'Staff'], true)
 ) {
@@ -48,8 +49,8 @@ if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
     $systolic       = $measurement['systolic']    ?? '--';
     $diastolic      = $measurement['diastolic']   ?? '--';
     if (!empty($measurement['created_at'])) {
-        $doc_date     = date('F d, Y', strtotime($measurement['created_at']));
         $last_visited = date('F d, Y - h:i A', strtotime($measurement['created_at']));
+        $doc_date     = date('F d, Y', strtotime($measurement['created_at']));
     }
 }
 
@@ -132,17 +133,24 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
 <html lang="en">
 <head>
     <script>
-        if (localStorage.getItem("theme") === "dark" || localStorage.getItem("staff_theme") === "dark") {
-            document.documentElement.classList.add("dark-mode");
-        }
+        (function() {
+            const savedTheme = localStorage.getItem('staff_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pre-Natal Chart - #PT<?= str_pad($patient['id'], 4, '0', STR_PAD_LEFT); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../../css/document.css">
-    <link rel="stylesheet" href="../../css/theme.css">
+    <link rel="stylesheet" href="../css/document.css">
+    <link rel="stylesheet" href="../css/theme.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -159,7 +167,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
 
         .pn-header {
             background: #d9534f;
-            color: #ffffff !important;
+            color: #ffffff;
             font-size: 0.75rem;
             font-weight: 700;
             letter-spacing: 0.6px;
@@ -175,91 +183,64 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             margin-bottom: 10px;
         }
 
-        /* Table Cell Text Styling — force dark text always (document is white paper) */
         .pn-table th,
         .pn-table td {
             border: 1px solid #aaa;
             padding: 4px 5px;
             vertical-align: middle;
             text-align: center;
-            color: #0f172a !important;
+            color: #1e293b;
         }
 
-        /* Override theme.css dark mode for ALL table cells inside the document */
-        html.dark-mode #document-wrapper .pn-table th,
-        html.dark-mode #document-wrapper .pn-table td,
-        body.dark-mode #document-wrapper .pn-table th,
-        body.dark-mode #document-wrapper .pn-table td,
-        html.dark-mode #document-wrapper .vitals-table th,
-        html.dark-mode #document-wrapper .vitals-table td,
-        body.dark-mode #document-wrapper .vitals-table th,
-        body.dark-mode #document-wrapper .vitals-table td {
-            color: #0f172a !important;
-            background-color: inherit;
+        /* ✅ FIXED — document is always white paper, text stays dark */
+        html.dark-mode .pn-table th,
+        html.dark-mode .pn-table td,
+        body.dark-mode .pn-table th,
+        body.dark-mode .pn-table td {
+            color: #1e293b !important;
         }
 
-        /* Colored rows — always pure black text */
-        html.dark-mode #document-wrapper .row-pink,
-        html.dark-mode #document-wrapper .row-pink td,
-        html.dark-mode #document-wrapper .row-blue,
-        html.dark-mode #document-wrapper .row-blue td,
-        body.dark-mode #document-wrapper .row-pink,
-        body.dark-mode #document-wrapper .row-pink td,
-        body.dark-mode #document-wrapper .row-blue,
-        body.dark-mode #document-wrapper .row-blue td {
+        /* Vitals table fix too */
+        html.dark-mode .vitals-table th,
+        html.dark-mode .vitals-table td,
+        body.dark-mode .vitals-table th,
+        body.dark-mode .vitals-table td {
+            color: #1e293b !important;
+        }
+
+        /* Colored rows always black text */
+        html.dark-mode .row-pink,
+        html.dark-mode .row-pink td,
+        html.dark-mode .row-blue,
+        html.dark-mode .row-blue td,
+        html.dark-mode .row-peach,
+        html.dark-mode .row-peach td,
+        body.dark-mode .row-pink,
+        body.dark-mode .row-pink td,
+        body.dark-mode .row-blue,
+        body.dark-mode .row-blue td {
             color: #000000 !important;
         }
 
         .pn-table td.text-start { text-align: left !important; }
 
         .pn-table thead th {
-            background: #fde8e6 !important;
+            background: #fde8e6;
             font-weight: 700;
             font-size: 0.68rem;
-            color: #2c3e50 !important;
+            color: #2c3e50;
         }
 
-        /* Force Pure Dark Text on Pink, Blue & Peach Highlight Rows */
-        .row-pink,
-        .row-pink td,
-        .row-pink th,
-        .row-blue,
-        .row-blue td,
-        .row-blue th,
-        .row-peach,
-        .row-peach td,
-        .row-peach th {
+        /* High Contrast Colored Rows */
+        .row-pink { background-color: #f7b0a7 !important; color: #000000 !important; }
+        .row-blue { background-color: #b0c6e8 !important; color: #000000 !important; }
+        .row-peach { background-color: #fce4b4 !important; color: #000000 !important; }
+
+        .row-pink td, .row-blue td, .row-peach td,
+        html.dark-mode .row-pink td, html.dark-mode .row-blue td, html.dark-mode .row-peach td,
+        body.dark-mode .row-pink td, body.dark-mode .row-blue td, body.dark-mode .row-peach td {
             color: #000000 !important;
         }
-
-        .row-pink { background-color: #f7b0a7 !important; }
-        .row-blue { background-color: #b0c6e8 !important; }
-        .row-peach { background-color: #fce4b4 !important; }
-
-        /* Black Dot Circle */
-        .dot-circle {
-            display: inline-block !important;
-            width: 10px !important;
-            height: 10px !important;
-            background-color: #000000 !important;
-            border-radius: 50% !important;
-            margin-right: 5px !important;
-            margin-left: 2px !important;
-            vertical-align: middle !important;
-        }
-
-        /* Check Icon Styling */
-        .check-icon {
-            display: inline-block !important;
-            font-size: 0.85rem !important;
-            font-weight: 900 !important;
-            margin-right: 3px !important;
-            color: #000000 !important;
-            vertical-align: middle !important;
-        }
-
-        .row-pink .check-icon { color: #842029 !important; }
-        .row-blue .check-icon { color: #0a49c4 !important; }
 
         /* Editable Blank Lines & Table Cells */
         .blank-line {
@@ -271,14 +252,12 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             vertical-align: bottom;
             padding: 0 4px;
             outline: none;
-            color: inherit !important;
         }
         .blank-line-sm { min-width: 35px; }
         .blank-line-lg { min-width: 130px; }
 
         [contenteditable="true"] {
             outline: none;
-            color: inherit;
             cursor: pointer;
         }
 
@@ -306,10 +285,9 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             align-items: center;
             flex-wrap: wrap;
         }
-
         html.dark-mode .legend-box,
         body.dark-mode .legend-box {
-            color: #e2e8f0 !important;
+            color: #e2e8f0;
         }
 
         .legend-square {
@@ -319,6 +297,33 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             vertical-align: middle;
             margin-right: 4px;
             border-radius: 2px;
+        }
+
+        /* Black Dot Circle Styling */
+        .dot-circle {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: #333;
+            border-radius: 50%;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        html.dark-mode .dot-circle,
+        body.dark-mode .dot-circle {
+            background-color: #ffffff !important;
+        }
+
+        /* Check Icon Styling */
+        .check-icon {
+            font-size: 0.85rem;
+            color: #198754;
+            vertical-align: middle;
+            margin-right: 2px;
+        }
+        html.dark-mode .check-icon,
+        body.dark-mode .check-icon {
+            color: #2ec4b6 !important;
         }
 
         .pp-grid {
@@ -347,7 +352,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
 <!-- TOP ACTION TOOLBAR -->
 <div class="no-print bg-white border-bottom p-3 mb-3 sticky-top shadow-sm">
     <div class="container d-flex justify-content-between align-items-center" style="max-width: 860px;">
-        <a href="../logs/patient-history-list.php?user_id=<?= $patient['id']; ?>" class="btn btn-outline-secondary btn-sm">
+        <a href="patient-history-list.php?user_id=<?= $patient['id']; ?>" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i> Back to Patient History
         </a>
         <div class="d-flex gap-2">
@@ -378,9 +383,9 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             </div>
         </div>
         <div class="text-end">
-            <span class="doc-title-badge">OFFICIAL MEDICAL REPORT</span>
+            <span class="doc-title-badge" style="background:#fde8e6; color:#d9534f; border:1px solid #f8b4b4;">OFFICIAL PRE-NATAL RECORD</span>
             <div class="mt-1 text-muted" style="font-size: 0.75rem;">
-                <strong>Document Date:</strong> <?= htmlspecialchars($doc_date); ?>
+                <strong>Document Date:</strong> <?= $doc_date; ?>
             </div>
         </div>
     </div>
@@ -468,7 +473,6 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         <div class="pn-header">OBSTETRICAL HISTORY</div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
             
-            <!-- G_ L_ P_ O_ ( _ _ _ _ ) with TPAL underneath -->
             <div style="font-size:0.85rem; font-weight:700; margin-bottom:8px; padding-left:4px;">
                 G <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;
                 L <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;
@@ -508,7 +512,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                 <tbody>
                     <tr>
                         <td class="text-start">Caesarean Section</td>
-                        <td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true"><span class="dot-circle"></span>Y</td><td contenteditable="true">N</td><td contenteditable="true"><span class="dot-circle"></span>Y</td><td contenteditable="true">N</td><td contenteditable="true"><span class="dot-circle"></span>Y</td><td contenteditable="true">N</td>
+                        <td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true">Y</td><td contenteditable="true">N</td><td contenteditable="true">Y</td><td contenteditable="true">N</td>
                     </tr>
                     <tr>
                         <td class="text-start">Stillbirth</td>
@@ -541,12 +545,12 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                 <tr>
                     <td class="text-start">Heart Disease</td>
                     <td contenteditable="true">NO</td>
-                    <td class="row-blue" contenteditable="true"><span class="dot-circle"></span>YES</td>
+                    <td class="row-blue" contenteditable="true">YES</td>
                 </tr>
                 <tr>
                     <td class="text-start">Diabetes</td>
                     <td contenteditable="true">NO</td>
-                    <td class="row-blue" contenteditable="true"><span class="dot-circle"></span>YES</td>
+                    <td class="row-blue" contenteditable="true">YES</td>
                 </tr>
                 <tr>
                     <td class="text-start">Bronchial Asthma</td>
@@ -561,7 +565,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                 <tr>
                     <td class="text-start">Hypertension</td>
                     <td contenteditable="true">NO</td>
-                    <td class="row-blue" contenteditable="true"><span class="dot-circle"></span>YES</td>
+                    <td class="row-blue" contenteditable="true">YES</td>
                 </tr>
             </tbody>
         </table>
@@ -572,7 +576,8 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                 
                 <span class="legend-square" style="background:#f7b0a7;"></span>Close observation or action by midwife/nurse
                 
-                <span class="dot-circle" style="width:12px; height:12px; margin-right:4px;"></span>Hospital delivery recommeded</div>
+                <span class="dot-circle" style="width:12px; height:12px; margin-right:4px;"></span>Hospital delivery recommeded
+            </div>
         </div>
         <div style="font-size:0.65rem; color:#666; padding-left:8px; margin-top:-4px;" class="mb-2">
             <em>*You may wish to consider a</em><br>
@@ -639,12 +644,11 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </table>
     </div>
 
-    <!-- SECTION 5 — PRESENT PREGNANCY (LMP & EDC) -->
+    <!-- SECTION 6 — PRESENT PREGNANCY (LMP & EDC) -->
     <div class="pn-section mt-3">
         <div class="pn-header">PRESENT PREGNANCY</div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
             
-            <!-- LMP and EDC Row with Header Badges -->
             <div class="d-flex justify-content-between align-items-center mb-4" style="font-size:0.75rem;">
                 <div class="d-flex gap-2">
                     <div>
@@ -762,7 +766,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </div>
     </div>
 
-    <!-- SECTION 6 — ACTION -->
+    <!-- SECTION 7 — ACTION -->
     <div class="pn-section mt-3">
         <div class="pn-header">ACTION</div>
         <table class="pn-table" style="border-top:none;">
@@ -797,7 +801,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </table>
     </div>
 
-    <!-- SECTION 7 — LABOR AND DELIVERY -->
+    <!-- SECTION 8 — LABOR AND DELIVERY -->
     <div class="pn-section mt-3">
         <div class="pn-header">LABOR AND DELIVERY</div>
         <div style="border:1px solid #aaa; border-top:none; padding:10px; border-radius:0 0 4px 4px;">
@@ -814,7 +818,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </div>
     </div>
 
-    <!-- SECTION 8 — POST PARTUM -->
+    <!-- SECTION 9 — POST PARTUM -->
     <div class="pn-section mt-3">
         <div class="pn-header">POST PARTUM</div>
         <table class="pn-table" style="border-top:none;">
@@ -910,7 +914,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </div>
     </div>
 
-    <!-- SECTION 9 — IMMUNIZATION RECORD -->
+    <!-- SECTION 10 — IMMUNIZATION RECORD -->
     <div class="pn-section mt-3">
         <div class="pn-header">IMMUNIZATION RECORD</div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
@@ -1000,36 +1004,43 @@ function loadSavedDraft() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (localStorage.getItem("theme") === "dark" || localStorage.getItem("staff_theme") === "dark") {
-        document.body.classList.add("dark-mode");
+    // Theme pre-loader check
+    const savedTheme = localStorage.getItem('staff_theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.body.setAttribute('data-bs-theme', 'dark');
     }
 
     loadSavedDraft();
 
     const editables = document.querySelectorAll('[contenteditable="true"]');
     editables.forEach(el => {
-        // Auto-save on text input
         el.addEventListener('input', () => {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(saveDraft, 300);
         });
+    });
 
-        // Click listener to toggle check icon on choice cells (NO, YES, Y, N) without touching dot circles
-        el.addEventListener('click', (e) => {
-            const rawText = el.innerText.replace(/[^A-Za-z]/g, '').trim().toUpperCase();
-            if (['YES', 'NO', 'Y', 'N'].includes(rawText)) {
-                const existingCheck = el.querySelector('.check-icon');
-                if (existingCheck) {
-                    existingCheck.remove();
-                } else {
-                    const icon = document.createElement('i');
-                    icon.className = 'bi bi-check-lg check-icon';
-                    el.prepend(icon);
-                }
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(saveDraft, 100);
+    // Checkmark Toggle Handler — Preserves Black Dots (.dot-circle)
+    document.addEventListener('click', (e) => {
+        const td = e.target.closest('td[contenteditable="true"]');
+        if (!td) return;
+        
+        // Extract raw text excluding HTML tags
+        const textContent = td.textContent.replace(/[\n\r]/g, '').trim();
+        
+        // Only toggle for choice cells (NO, YES, Y, N) or cells that already have a check icon
+        if (['NO', 'YES', 'Y', 'N'].includes(textContent) || td.querySelector('.check-icon')) {
+            let existingIcon = td.querySelector('.check-icon');
+            if (existingIcon) {
+                existingIcon.remove();
+            } else {
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-check-lg check-icon me-1';
+                td.insertBefore(icon, td.firstChild);
             }
-        });
+            saveDraft();
+        }
     });
 });
 
@@ -1178,10 +1189,11 @@ async function saveAsWord() {
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important; font-size: 11px !important; color: #1e293b !important; background: #ffffff !important; margin: 0 !important; padding: 0 !important; }
         .document-wrapper { width: 100% !important; background: #ffffff !important; padding: 0 !important; margin: 0 !important; }
         .pn-header { background-color: #d9534f !important; color: #ffffff !important; font-weight: bold !important; font-size: 11px !important; padding: 4px 8px !important; }
-        .row-pink { background-color: #f7b0a7 !important; }
-        .row-blue { background-color: #b0c6e8 !important; }
+        .row-pink { background-color: #f7b0a7 !important; color: #000000 !important; }
+        .row-blue { background-color: #b0c6e8 !important; color: #000000 !important; }
+        .row-peach { background-color: #fce4b4 !important; color: #000000 !important; }
         .pn-table { width: 100% !important; border-collapse: collapse !important; margin-bottom: 8px !important; font-size: 10px !important; }
-        .pn-table th, .pn-table td { border: 1px solid #aaa !important; padding: 3px 5px !important; text-align: center !important; color: #000000 !important; }
+        .pn-table th, .pn-table td { border: 1px solid #aaa !important; padding: 3px 5px !important; text-align: center !important; }
         .notes-box { border: 1px dashed #cbd5e1 !important; background-color: #f8fafc !important; padding: 6px 10px !important; min-height: 35px !important; margin-bottom: 10px !important; font-size: 10.5px !important; }
         .doc-footer { margin-top: 10px !important; text-align: center !important; font-size: 8.5px !important; color: #94a3b8 !important; border-top: 1px solid #e2e8f0 !important; padding-top: 4px !important; }
     `;
@@ -1217,7 +1229,7 @@ async function saveAsWord() {
                 types: [{ description: 'Word Document (*.doc)', accept: { 'application/msword': ['.doc', '.docx'] } }]
             });
             const writable = await handle.createWritable();
-            await writable.write(pdfBlob);
+            await writable.write(wordBlob);
             await writable.close();
         } catch (err) {
             if (err.name !== 'AbortError') fallbackDownload(wordBlob, defaultFileName + '.doc');
@@ -1238,96 +1250,7 @@ function fallbackDownload(blob, filename) {
     URL.revokeObjectURL(url);
 }
 </script>
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
-<script>
-(function applySystemSettings() {
-    // 1. Theme / Dark Mode
-    const darkModeToggleBtn = document.getElementById("darkModeToggle");
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-        document.documentElement.classList.add("dark-mode");
-    }
-    if (darkModeToggleBtn) {
-        darkModeToggleBtn.addEventListener("click", function() {
-            const isDark = document.body.classList.toggle("dark-mode");
-            document.documentElement.classList.toggle("dark-mode", isDark);
-            localStorage.setItem("theme", isDark ? "dark" : "light");
-        });
-    }
-
-    // 2. Brightness
-    const savedBrightness = localStorage.getItem("brightness");
-    if (savedBrightness) {
-        document.body.style.filter = `brightness(${savedBrightness}%)`;
-    }
-
-    // 3. Night Light
-    const savedNightLight = localStorage.getItem("nightLight");
-    const nightLightOverlay = document.getElementById("nightLightOverlay");
-    if (savedNightLight === "enabled" && nightLightOverlay) {
-        nightLightOverlay.style.display = "block";
-    }
-
-    // 4. Text Size
-    const savedTextSize = localStorage.getItem("textSize");
-    if (savedTextSize) {
-        const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
-        document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
-    }
-
-    // 5. Language Dictionary
-    const i18n = {
-        en: {
-            section_main: "Main", nav_dashboard: "Dashboard", section_clinical: "Clinical Services",
-            nav_patient_mgmt: "Patient Management", nav_all_patients: "All Patients Services", nav_add_patient: "Add Patient",
-            nav_patient_records: "Patient Records", nav_records_history: "Patient Records", nav_reports: "Reports",
-            section_system: "Hardware & System", nav_admin: "Administration", nav_user_mgmt: "User Management",
-            nav_settings: "Settings", nav_logout: "Log out", header_greeting: "Good Day, Admin",
-            header_desc: "System status overview and clinical intake telemetry.", avg_health_title: "Average Health",
-            avg_health_desc: "Average recorded vital measurements", tbl_measurement: "Measurement", tbl_average: "Average",
-            tbl_unit: "Unit", lbl_height: "Height", lbl_weight: "Weight", lbl_temp: "Temperature",
-            lbl_heart: "Heart Rate", lbl_bp: "Blood Pressure", title_new_patients: "New Patients",
-            title_patients_overview: "Patients Overview", title_services: "Service Categories",
-            title_recent_patients: "Recent Patient List", title_followup: "Follow-up Schedule", dark_mode_title: "Dark Mode"
-        },
-        fil: {
-            section_main: "Pangunahin", nav_dashboard: "Dashboard", section_clinical: "Serbisyong Klinikal",
-            nav_patient_mgmt: "Pamamahala ng Pasyente", nav_all_patients: "Lahat ng Serbisyong Pasyente", nav_add_patient: "Magdagdag ng Pasyente",
-            nav_patient_records: "Mga Rekord ng Pasyente", nav_records_history: "Kasaysayan ng Rekord", nav_reports: "Mga Ulat",
-            section_system: "Hardware at Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pamamahala ng Gumagamit",
-            nav_settings: "Mga Setting", nav_logout: "Mag-logout", header_greeting: "Magandang Araw, Admin",
-            header_desc: "Pangkalahatang-ideya ng estado ng sistema.", avg_health_title: "Gitarang Kalusugan",
-            avg_health_desc: "Karaniwang naitalang sukat ng vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Taas", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Bilis ng Puso", lbl_bp: "Presyon ng Dugo", title_new_patients: "Bagong Pasyente",
-            title_patients_overview: "Pangkalahatang-ideya ng Pasyente", title_services: "Kategorya ng Serbisyo",
-            title_recent_patients: "Kasalukuyang Listahan ng Pasyente", title_followup: "Iskedyul ng Follow-up", dark_mode_title: "Dark Mode"
-        },
-        ceb: {
-            section_main: "Pangunahing", nav_dashboard: "Dashboard", section_clinical: "Mga Serbisyong Klinikal",
-            nav_patient_mgmt: "Pagdumala sa Pasyente", nav_all_patients: "Tanan nga Serbisyong Pasyente", nav_add_patient: "Idugang ang Pasyente",
-            nav_patient_records: "Mga Rekord sa Pasyente", nav_records_history: "Kasaysayan sa Rekord", nav_reports: "Mga Report",
-            section_system: "Hardware ug Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pagdumala sa Paggamit",
-            nav_settings: "Mga Setting", nav_logout: "Mo-logout", header_greeting: "Maayong Adlaw, Admin",
-            header_desc: "Kinatibuk-ang pagtan-aw sa estado sa sistema.", avg_health_title: "Kasagarang Panglawas",
-            avg_health_desc: "Kasagarang nahitala nga vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Gitas-on", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Kusog sa Kasingkasing", lbl_bp: "Presyon sa Dugo", title_new_patients: "Bag-ong Pasyente",
-            title_patients_overview: "Kinatibuk-ang Pasyente", title_services: "Mga Kategorya sa Serbisyo",
-            title_recent_patients: "Bag-ong Listahan sa Pasyente", title_followup: "Iskedyul sa Follow-up", dark_mode_title: "Dark Mode"
-        }
-    };
-    const savedLang = localStorage.getItem("language");
-    if (savedLang && i18n[savedLang]) {
-        const dict = i18n[savedLang];
-        document.querySelectorAll("[data-i18n]").forEach(el => {
-            const key = el.getAttribute("data-i18n");
-            if (dict[key]) el.innerText = dict[key];
-        });
-    }
-})();
-</script>
-<script src="../../assets/js/theme.js"></script>
 </body>
 </html>
+
+

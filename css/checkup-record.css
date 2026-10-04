@@ -1,0 +1,806 @@
+/* =========================================================
+   VITALCORE — CHECKUP RECORDS
+========================================================= */
+
+/* =========================================================
+   ROOT VARIABLES
+========================================================= */
+
+:root {
+    --vc-primary: #0a49c4;
+    --vc-bg: #f4f7fc;
+    --vc-sidebar-text: #5c6873;
+    --vc-border: #334155;
+}
+
+
+/* =========================================================
+   BODY
+========================================================= */
+
+body {
+    background: var(--vc-bg);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+    animation: pageLoad .5s ease;
+}
+
+@keyframes pageLoad {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+    background: #fff;
+    min-height: 100vh;
+    height: 100vh;
+
+    position: sticky;
+    top: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    box-shadow: 2px 0 20px rgba(0, 0, 0, .03);
+
+    z-index: 100;
+    overflow: hidden;
+
+    animation: sidebarSlide .6s ease;
+}
+
+@keyframes sidebarSlide {
+    from {
+        opacity: 0;
+        transform: translateX(-25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+
+/* =========================================================
+   SIDEBAR SCROLL
+========================================================= */
+
+.sidebar > div:first-child {
+    flex: 1;
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding-right: 4px;
+
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 transparent;
+}
+
+.sidebar > div:first-child::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar > div:first-child::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar > div:first-child::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 10px;
+}
+
+.sidebar > div:first-child::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+
+/* =========================================================
+   SIDEBAR LOGO
+========================================================= */
+
+.logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: .75rem .5rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar-logo {
+    width: 45px;
+    height: 45px;
+
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.sidebar-brand {
+    color: var(--vc-primary);
+
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -.5px;
+}
+
+
+/* =========================================================
+   SIDEBAR NAVIGATION
+========================================================= */
+
+.sidebar .nav-link {
+    position: relative;
+
+    color: var(--vc-sidebar-text);
+
+    padding: .75rem 1rem;
+    margin-bottom: .25rem;
+
+    border-radius: 8px;
+
+    font-weight: 500;
+    text-decoration: none;
+
+    transition: all .25s ease;
+
+    overflow: hidden;
+}
+
+
+/* Hover */
+
+.sidebar .nav-link:hover {
+    background: #f8f9fa;
+    color: var(--vc-primary);
+
+    transform: translateX(3px);
+}
+
+
+/* Click */
+
+.sidebar .nav-link:active {
+    transform: scale(.97);
+}
+
+
+/* Active */
+
+.sidebar .nav-link.active {
+    background: var(--vc-primary);
+    color: #fff;
+
+    font-weight: 600;
+
+    box-shadow: 0 4px 12px rgba(10, 73, 196, .25);
+}
+
+.sidebar .nav-link.active i,
+.sidebar .nav-link.active span {
+    color: #fff;
+}
+
+
+/* =========================================================
+   SIDEBAR HOVER SHINE
+========================================================= */
+
+.sidebar .nav-link::before {
+    content: '';
+
+    position: absolute;
+    top: 0;
+    left: -120%;
+
+    width: 100%;
+    height: 100%;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, .25),
+        transparent
+    );
+
+    transition: .5s;
+}
+
+.sidebar .nav-link:hover::before {
+    left: 120%;
+}
+
+
+/* =========================================================
+   COLLAPSIBLE SIDEBAR
+========================================================= */
+
+.sidebar-collapse-link {
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+.collapse-chevron {
+    font-size: .75rem;
+    color: #94a3b8;
+
+    transition: transform .3s ease;
+}
+
+
+/* Open menu */
+
+.sidebar-collapse-link[aria-expanded="true"] {
+    color: var(--vc-primary);
+    background: #f8fbff;
+}
+
+.sidebar-collapse-link[aria-expanded="true"] .collapse-chevron {
+    transform: rotate(180deg);
+    color: var(--vc-primary);
+}
+
+
+/* =========================================================
+   SIDEBAR SUBMENU
+========================================================= */
+
+.sidebar-submenu {
+    list-style: none;
+
+    padding: 6px 0 6px 2.8rem;
+    margin: 0;
+}
+
+.sidebar-submenu li {
+    margin-bottom: 4px;
+}
+
+.sidebar-submenu-link {
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+
+    padding: 7px 10px;
+
+    color: #64748b;
+
+    font-size: .86rem;
+    font-weight: 500;
+
+    text-decoration: none;
+
+    border-radius: 7px;
+
+    transition: all .25s ease;
+}
+
+.sidebar-submenu-link:hover {
+    color: var(--vc-primary);
+    background: #f3f7ff;
+
+    transform: translateX(3px);
+}
+
+
+/* Submenu dot */
+
+.submenu-dot {
+    color: #94a3b8;
+
+    font-size: .55rem;
+
+    margin-right: 8px;
+
+    transition: color .25s ease;
+}
+
+.sidebar-submenu-link:hover .submenu-dot {
+    color: var(--vc-primary);
+}
+
+
+/* Active submenu */
+
+.sidebar-submenu-link.active {
+    color: var(--vc-primary);
+    background: #eff6ff;
+
+    font-weight: 600;
+}
+
+.sidebar-submenu-link.active .submenu-dot {
+    color: var(--vc-primary);
+}
+
+
+/* =========================================================
+   PAGE TITLE
+========================================================= */
+
+.page-title {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+
+/* =========================================================
+   STICKY HEADER
+========================================================= */
+
+.checkup-sticky-header {
+    position: sticky;
+    top: 0;
+
+    z-index: 1000;
+
+    padding-top: 10px;
+    padding-bottom: 15px;
+
+    background: rgba(244, 247, 252, .92);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border-bottom: 1px solid rgba(0, 0, 0, .06);
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+#patientSearchInput {
+    width: 250px;
+
+    transition: width .3s ease, box-shadow .3s ease;
+}
+
+#patientSearchInput:focus {
+    width: 320px;
+
+    box-shadow:
+        0 0 0 4px rgba(13, 110, 253, .12);
+}
+
+
+/* =========================================================
+   TOTAL PATIENTS BADGE
+========================================================= */
+
+.total-badge {
+    font-size: .9rem;
+
+    padding: .65rem .9rem;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 4px 12px rgba(13, 110, 253, .15);
+}
+
+
+/* =========================================================
+   RECORDS CARD
+========================================================= */
+
+.records-card {
+    border: none;
+    border-radius: 16px;
+
+    overflow: hidden;
+
+    background: #fff;
+
+    box-shadow:
+        0 5px 25px rgba(0, 0, 0, .05);
+
+    animation: fadeUp .7s ease;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background: var(--vc-primary);
+    color: #fff;
+
+    border: none;
+
+    font-size: .82rem;
+    font-weight: 600;
+
+    text-transform: uppercase;
+    letter-spacing: .5px;
+
+    white-space: nowrap;
+}
+
+.table td {
+    vertical-align: middle;
+    padding: .85rem;
+}
+
+.table tbody tr {
+    transition: all .25s ease;
+}
+
+.table tbody tr:hover {
+    background: #f8fbff;
+}
+/* =========================================
+   TABLE ROW ANIMATION
+========================================= */
+
+#patientTable tr {
+    opacity: 0;
+    animation: rowFade .5s ease forwards;
+    animation-delay: calc(var(--row-index) * .05s);
+}
+
+@keyframes rowFade {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#patientTable tr:hover {
+    background: #f8fbff;
+    transform: scale(1.01);
+    box-shadow: 0 6px 18px rgba(13, 110, 253, .08);
+}
+/* =========================================================
+   GENERAL FADE-UP ANIMATION
+========================================================= */
+
+.fade-up {
+    opacity: 0;
+
+    transform: translateY(-40px) scale(.97);
+
+    animation:
+        fadeUp .8s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+
+.fade-delay-1 {
+    animation-delay: .1s;
+}
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(-40px) scale(.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+main {
+    min-width: 0;
+}
+
+
+/* =========================================================
+   LOGOUT
+========================================================= */
+
+.sidebar .border-top {
+    border-color: #e2e8f0 !important;
+}
+
+
+/* =========================================================
+   DARK MODE
+========================================================= */
+
+body.dark-mode {
+    background: #0f172a;
+}
+
+
+/* ---------- Sidebar ---------- */
+
+body.dark-mode .sidebar {
+    background-color: #111827 !important;
+    color: #cbd5e1 !important;
+
+    border-right: 1px solid #1e293b !important;
+}
+
+body.dark-mode .sidebar .nav-link {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .sidebar .nav-link:hover {
+    background-color: #1e293b !important;
+    color: #fff !important;
+}
+
+body.dark-mode .sidebar .nav-link.active {
+    background-color: #0a49c4 !important;
+    color: #fff !important;
+}
+
+body.dark-mode .sidebar .nav-link.active i,
+body.dark-mode .sidebar .nav-link.active span {
+    color: #fff !important;
+}
+
+body.dark-mode .sidebar-brand {
+    color: #60a5fa !important;
+}
+
+
+/* ---------- Sidebar scrollbar ---------- */
+
+body.dark-mode .sidebar > div:first-child {
+    scrollbar-color: #475569 #111827;
+}
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar {
+    width: 5px;
+}
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-track {
+    background: #111827;
+}
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+body.dark-mode .sidebar > div:first-child::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+
+/* ---------- Collapsible menu ---------- */
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"] {
+    background: transparent !important;
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .sidebar-collapse-link[aria-expanded="true"]:hover {
+    background: #1e293b !important;
+    color: #fff !important;
+}
+
+body.dark-mode .collapse-chevron {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode
+.sidebar-collapse-link[aria-expanded="true"]
+.collapse-chevron {
+    color: #60a5fa !important;
+}
+
+
+/* ---------- Submenu ---------- */
+
+body.dark-mode .sidebar-submenu {
+    border-left: 2px solid #334155;
+}
+
+body.dark-mode .sidebar-submenu-link {
+    color: #cbd5e1;
+}
+
+body.dark-mode .sidebar-submenu-link:hover {
+    background-color: #1e293b;
+    color: #fff;
+}
+
+body.dark-mode .sidebar-submenu-link.active {
+    background-color: #1e293b;
+    color: #60a5fa;
+    border: 1px solid #334155;
+}
+
+body.dark-mode .sidebar-submenu-link.active .submenu-dot {
+    color: #60a5fa;
+}
+
+
+/* ---------- Main ---------- */
+
+body.dark-mode main {
+    background-color: #0f172a !important;
+    color: #cbd5e1 !important;
+}
+
+
+/* ---------- Title ---------- */
+
+body.dark-mode .page-title {
+    color: #f8fafc !important;
+}
+
+
+/* ---------- Sticky header ---------- */
+
+body.dark-mode .checkup-sticky-header {
+    background: rgba(15, 23, 42, .92);
+
+    border-bottom-color:
+        rgba(255, 255, 255, .08);
+}
+
+
+/* ---------- Records card ---------- */
+
+body.dark-mode .records-card {
+    background-color: #111827 !important;
+
+    border: 1px solid #334155 !important;
+}
+
+
+/* ---------- Table ---------- */
+
+body.dark-mode .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: #e2e8f0;
+    --bs-table-border-color: #334155;
+
+    color: #e2e8f0;
+}
+
+body.dark-mode .table td {
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+body.dark-mode .table tbody tr:hover {
+    background-color: #1e293b;
+}
+
+
+/* ---------- Search ---------- */
+
+body.dark-mode #patientSearchInput {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+
+    border: 1px solid #334155 !important;
+}
+
+body.dark-mode #patientSearchInput::placeholder {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode #patientSearchInput:focus {
+    background-color: #111827 !important;
+    color: #fff !important;
+
+    border-color: #3b82f6 !important;
+
+    box-shadow:
+        0 0 0 .2rem rgba(59, 130, 246, .20) !important;
+}
+
+
+/* ---------- Badge ---------- */
+
+body.dark-mode .badge.bg-primary {
+    background-color: #2563eb !important;
+    color: #fff !important;
+}
+
+
+/* ---------- Logout ---------- */
+
+body.dark-mode .sidebar .border-top {
+    border-color: #334155 !important;
+}
+
+body.dark-mode .sidebar .text-danger {
+    color: #fb7185 !important;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 992px) {
+
+    .sidebar {
+        position: relative !important;
+
+        min-height: auto !important;
+        height: auto !important;
+    }
+
+}
+
+
+/* Tablets / mobile */
+
+@media (max-width: 768px) {
+
+    #patientSearchInput,
+    #patientSearchInput:focus {
+        width: 100%;
+    }
+
+    .checkup-sticky-header {
+        position: relative;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table {
+        min-width: 650px;
+    }
+
+}
+
+.fade-up {
+    opacity: 0;
+
+    transform: translateY(-40px) scale(.97);
+
+    animation:
+        fadeUp .8s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+.fade-delay-1 {
+    animation-delay: .1s;
+}
+.fade-delay-2 {
+    animation-delay: .2s;
+}
+
+.fade-delay-3 {
+    animation-delay: .3s;
+}
+
+.fade-delay-4 {
+    animation-delay: .4s;
+}
+
+.fade-delay-5 {
+    animation-delay: .5s;
+}

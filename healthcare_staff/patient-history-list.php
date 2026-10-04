@@ -4,7 +4,7 @@
 
 session_start();
 
-require_once('../../db_conn.php');
+require_once('../db_conn.php');
 
 
 /* =========================================================
@@ -1476,7 +1476,7 @@ if (count($nameParts) >= 2) {
 
 
                                         <a
-                                            href="../Doc/docu-vital-screening.php?id=<?= $user_id ?>&measurement_id=<?= (int)$row['id'] ?>"
+                                            href="docu-vital-screening.php?id=<?= $user_id ?>&measurement_id=<?= (int)$row['id'] ?>"
                                             class="document-btn document-vital"
                                         >
 

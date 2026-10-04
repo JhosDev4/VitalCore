@@ -1,0 +1,720 @@
+body {
+            background: #f8fafc;
+            color: #1e293b;
+            font-family: Inter, system-ui, -apple-system,
+                         BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        .history-wrapper {
+            max-width: 1500px;
+            margin: auto;
+            padding: 28px 30px 50px;
+        }
+
+
+        /* =====================================================
+           TOP BAR
+        ===================================================== */
+
+        .history-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 22px;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #475569;
+            font-weight: 600;
+            transition: .2s ease;
+        }
+
+        .back-button:hover {
+            color: #2563eb;
+            transform: translateX(-2px);
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 750;
+            color: #0f172a;
+        }
+
+        .page-subtitle {
+            margin: 4px 0 0;
+            font-size: .85rem;
+            color: #64748b;
+        }
+
+
+        /* =====================================================
+           PATIENT HEADER
+        ===================================================== */
+
+        .patient-header-card {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            background: #ffffff;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, .06);
+            margin-bottom: 22px;
+        }
+
+        .patient-header-card::after {
+            content: "";
+            position: absolute;
+            right: -90px;
+            top: -100px;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: rgba(37, 99, 235, .07);
+        }
+
+        .patient-header-content {
+            position: relative;
+            z-index: 2;
+            padding: 25px 28px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .patient-avatar {
+            width: 68px;
+            height: 68px;
+            flex-shrink: 0;
+            border-radius: 18px;
+            background: linear-gradient(
+                135deg,
+                #2563eb,
+                #3b82f6
+            );
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 750;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, .22);
+        }
+
+        .patient-id {
+            font-size: .72rem;
+            font-weight: 700;
+            color: #2563eb;
+            letter-spacing: .05em;
+            margin-bottom: 2px;
+        }
+
+        .patient-name {
+            font-size: 1.35rem;
+            font-weight: 750;
+            margin: 0;
+            color: #0f172a;
+        }
+
+        .patient-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            margin-top: 8px;
+        }
+
+        .patient-detail {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .82rem;
+            color: #64748b;
+        }
+
+        .patient-detail i {
+            color: #2563eb;
+        }
+
+
+        /* =====================================================
+           HISTORY CARD
+        ===================================================== */
+
+        .history-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, .05);
+            overflow: hidden;
+        }
+
+        .history-card-header {
+            padding: 20px 22px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .history-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-title-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .history-title {
+            margin: 0;
+            font-size: .98rem;
+            font-weight: 750;
+            color: #0f172a;
+        }
+
+        .history-subtitle {
+            margin: 2px 0 0;
+            font-size: .76rem;
+            color: #64748b;
+        }
+
+        .record-count {
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #dbeafe;
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-size: .72rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+
+        /* =====================================================
+           TABLE
+        ===================================================== */
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .history-table {
+            margin: 0;
+            min-width: 1100px;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .history-table thead th {
+            background: #f8fafc;
+            color: #64748b;
+            font-size: .7rem;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .045em;
+            padding: 13px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .history-table tbody td {
+            padding: 15px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            font-size: .82rem;
+            white-space: nowrap;
+        }
+
+        .history-table tbody tr {
+            transition: .18s ease;
+        }
+
+        .history-table tbody tr:hover {
+            background: #f8fbff;
+        }
+
+        .history-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+
+        /* =====================================================
+           DATE
+        ===================================================== */
+
+        .date-main {
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .date-time {
+            display: block;
+            margin-top: 2px;
+            font-size: .7rem;
+            color: #94a3b8;
+        }
+
+
+        /* =====================================================
+           VITAL VALUES
+        ===================================================== */
+
+        .vital-value {
+            font-weight: 650;
+            color: #334155;
+        }
+
+        .vital-unit {
+            font-size: .68rem;
+            color: #94a3b8;
+            margin-left: 2px;
+        }
+
+        .bmi-value {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 9px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .bp-value {
+            font-weight: 700;
+            color: #334155;
+        }
+
+
+        /* =====================================================
+           DOCUMENT BUTTONS
+        ===================================================== */
+
+        .document-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: .7rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: .2s ease;
+        }
+
+        .document-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .document-vital {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .document-prenatal {
+            background: #fff1f2;
+            color: #e11d48;
+        }
+
+        .document-immunization {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .document-family {
+            background: #f0f9ff;
+            color: #0284c7;
+        }
+
+        .no-document {
+            color: #94a3b8;
+            font-size: .75rem;
+        }
+
+
+        /* =====================================================
+           DELETE BUTTON
+        ===================================================== */
+
+        .delete-btn {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            border: 1px solid #fecaca;
+            background: #fff1f2;
+            color: #ef4444;
+            transition: .2s ease;
+        }
+
+        .delete-btn:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            transform: translateY(-1px);
+        }
+
+
+        /* =====================================================
+           DELETE MODAL
+        ===================================================== */
+
+        .delete-icon {
+            width: 65px;
+            height: 65px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: #fef2f2;
+            color: #dc2626;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .delete-modal-content {
+            border-radius: 20px !important;
+        }
+
+        .delete-modal-title {
+            font-size: 1rem;
+            color: #1e293b;
+        }
+
+        .delete-modal-text {
+            font-size: .85rem;
+            line-height: 1.6;
+        }
+
+        .delete-cancel-btn,
+        .delete-confirm-btn {
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 9px 18px;
+        }
+
+
+        /* =====================================================
+           EMPTY STATE
+        ===================================================== */
+
+        .empty-history {
+            text-align: center;
+            padding: 65px 20px;
+        }
+
+        .empty-icon {
+            width: 65px;
+            height: 65px;
+            margin: auto;
+            border-radius: 18px;
+            background: #f1f5f9;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+        }
+
+        .empty-history h6 {
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-weight: 750;
+            color: #334155;
+        }
+
+        .empty-history p {
+            margin: 0;
+            font-size: .8rem;
+            color: #94a3b8;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 768px) {
+
+            .history-wrapper {
+                padding: 18px 14px 40px;
+            }
+
+            .history-topbar {
+                align-items: flex-start;
+            }
+
+            .patient-header-content {
+                padding: 20px;
+                align-items: flex-start;
+            }
+
+            .patient-avatar {
+                width: 55px;
+                height: 55px;
+                border-radius: 15px;
+            }
+
+            .patient-name {
+                font-size: 1.1rem;
+            }
+
+            .history-card-header {
+                align-items: flex-start;
+            }
+
+        }
+
+
+        /* =====================================================
+           DARK MODE
+        ===================================================== */
+
+        [data-theme="dark"] body {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .page-title {
+            color: #f8fafc;
+        }
+
+        [data-theme="dark"] .page-subtitle {
+            color: #94a3b8;
+        }
+
+        [data-theme="dark"] .back-button {
+            color: #cbd5e1;
+        }
+
+        [data-theme="dark"] .back-button:hover {
+            color: #60a5fa;
+        }
+
+        [data-theme="dark"] .patient-header-card,
+        [data-theme="dark"] .history-card {
+            background: #1e293b;
+            border-color: #334155;
+            box-shadow: none;
+        }
+
+        [data-theme="dark"] .patient-name,
+        [data-theme="dark"] .history-title {
+            color: #f8fafc;
+        }
+
+        [data-theme="dark"] .patient-detail {
+            color: #94a3b8;
+        }
+
+        [data-theme="dark"] .history-card-header {
+            border-color: #334155;
+        }
+
+        [data-theme="dark"] .history-title-icon {
+            background: #172554;
+            color: #60a5fa;
+        }
+
+        [data-theme="dark"] .record-count {
+            background: #172554;
+            border-color: #1e40af;
+            color: #60a5fa;
+        }
+
+        [data-theme="dark"] .history-table thead th {
+            background: #172033;
+            color: #94a3b8;
+            border-color: #334155;
+        }
+
+        [data-theme="dark"] .history-table tbody td {
+            color: #cbd5e1;
+            border-color: #334155;
+        }
+
+        [data-theme="dark"] .history-table tbody tr:hover {
+            background: #263449;
+        }
+
+        [data-theme="dark"] .date-main,
+        [data-theme="dark"] .vital-value,
+        [data-theme="dark"] .bp-value {
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .bmi-value {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .document-vital {
+            background: #172554;
+            color: #60a5fa;
+        }
+
+        [data-theme="dark"] .document-prenatal {
+            background: #4c0519;
+            color: #fb7185;
+        }
+
+        [data-theme="dark"] .document-immunization {
+            background: #052e1b;
+            color: #34d399;
+        }
+
+        [data-theme="dark"] .document-family {
+            background: #082f49;
+            color: #38bdf8;
+        }
+
+        [data-theme="dark"] .delete-btn {
+            background: #450a0a;
+            border-color: #7f1d1d;
+            color: #f87171;
+        }
+
+        [data-theme="dark"] .delete-btn:hover {
+            background: #7f1d1d;
+        }
+
+        [data-theme="dark"] .empty-icon {
+            background: #334155;
+            color: #64748b;
+        }
+
+        [data-theme="dark"] .empty-history h6 {
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .delete-modal-content {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
+
+        [data-theme="dark"] .delete-modal-title {
+            color: #f8fafc;
+        }
+
+        [data-theme="dark"] .delete-icon {
+            background: #450a0a;
+            color: #f87171;
+        }
+
+
+        /* =====================================================
+           FADE-IN ANIMATION
+        ===================================================== */
+
+        .fade-delay {
+            opacity: 0;
+            animation: fadeIn .7s ease forwards;
+        }
+
+        .fade-delay-1 {
+            animation-delay: .1s;
+        }
+
+        .fade-delay-2 {
+            animation-delay: .3s;
+        }
+
+        .fade-delay-3 {
+            animation-delay: .4s;
+        }
+
+        .fade-delay-4 {
+            animation-delay: .5s;
+        }
+
+        .fade-delay-5 {
+            animation-delay: .6s;
+        }
+
+        .fade-delay-6 {
+            animation-delay: .7s;
+        }
+
+        .fade-delay-7 {
+            animation-delay: .8s;
+        }
+
+        .fade-delay-8 {
+            animation-delay: .9s;
+        }
+
+        .fade-delay-9 {
+            animation-delay: 1s;
+        }
+
+        @keyframes fadeIn {
+
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        }
+
+        /* =========================================================
+   BACK TO PATIENT HISTORY BUTTON
+========================================================= */
+
+.history-topbar .back-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+
+    padding: 0 !important;
+    margin: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+
+    text-decoration: none !important;
+
+    color: #0d6efd !important;
+
+    border-radius: 0 !important;
+}
+
+.history-topbar .back-button:hover,
+.history-topbar .back-button:focus,
+.history-topbar .back-button:active {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+
+    text-decoration: none !important;
+
+    color: #0a58ca !important;
+}
+
+.history-topbar .back-button i {
+    font-size: 16px;
+    line-height: 1;
+}

@@ -1,6 +1,6 @@
 <?php
 /** @var mysqli $conn */
-require_once('../db_conn.php');
+require_once('../../db_conn.php');
 
 $heart_rate = $_POST['heart_rate'] ?? 0;
 $spo2 = $_POST['spo2'] ?? 0;

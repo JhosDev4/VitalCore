@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 16, 2026 at 07:43 PM
+-- Generation Time: Aug 23, 2026 at 10:35 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,42 @@ SET time_zone = "+00:00";
 --
 -- Database: `vitalcore_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `family_planning_records`
+--
+
+CREATE TABLE `family_planning_records` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `measurement_id` int(11) DEFAULT NULL,
+  `gravida` int(11) DEFAULT NULL,
+  `para_count` int(11) DEFAULT NULL,
+  `living_children` int(11) DEFAULT NULL,
+  `partner_name` varchar(150) DEFAULT NULL,
+  `occupation` varchar(150) DEFAULT NULL,
+  `lmp` date DEFAULT NULL,
+  `menstrual_cycle` varchar(100) DEFAULT NULL,
+  `pregnancy_status` varchar(100) DEFAULT NULL,
+  `eligibility_status` varchar(100) DEFAULT NULL,
+  `fp_method` varchar(150) DEFAULT NULL,
+  `date_started` date DEFAULT NULL,
+  `next_schedule` date DEFAULT NULL,
+  `counseling_status` varchar(50) DEFAULT NULL,
+  `provider_name` varchar(150) DEFAULT NULL,
+  `remarks` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `family_planning_records`
+--
+
+INSERT INTO `family_planning_records` (`id`, `user_id`, `measurement_id`, `gravida`, `para_count`, `living_children`, `partner_name`, `occupation`, `lmp`, `menstrual_cycle`, `pregnancy_status`, `eligibility_status`, `fp_method`, `date_started`, `next_schedule`, `counseling_status`, `provider_name`, `remarks`, `created_at`) VALUES
+(1, 60, NULL, 1, 3, 2, 'Juan dela Cruz', 'Teacher', '2026-01-03', 'Regular', 'Not Pregnant', 'Eligible', 'DMPA Injectable', '2026-08-22', '2026-11-22', 'Yes', 'Nurse Maria Santos', 'Client was counseled regarding the selected family planning method and follow-up schedule.', '2026-08-22 10:18:14'),
+(2, 60, 98, 1, 3, 2, 'Juan dela Cruz', 'Teacher', '2026-01-03', 'Regular', 'Not Pregnant', 'Eligible', 'DMPA Injectable', '2026-08-22', '2026-11-22', 'Yes', 'Nurse Maria Santos', '', '2026-08-22 11:00:51');
 
 -- --------------------------------------------------------
 
@@ -179,17 +215,14 @@ CREATE TABLE `measurements` (
 --
 
 INSERT INTO `measurements` (`id`, `user_id`, `temperature`, `weight`, `height`, `bmi`, `heart_rate`, `spo2`, `systolic`, `diastolic`, `created_at`, `service_type`) VALUES
-(6, 1, 27.75, 0.57, 86.00, 0.77, NULL, NULL, NULL, NULL, '2026-07-14 18:46:05', NULL),
-(70, 1, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-15 17:37:11', NULL),
-(79, 1, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-15 20:12:48', 'immunization'),
-(80, 51, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-15 20:19:22', 'immunization'),
-(81, 51, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-15 20:29:48', 'vital'),
-(82, 56, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-15 20:35:32', 'immunization'),
-(83, 51, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-16 16:16:29', 'immunization'),
-(84, 55, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-16 16:32:40', 'vital'),
-(85, 54, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-16 16:47:11', 'prenatal'),
-(86, 54, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-16 16:51:50', 'family'),
-(87, 52, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-16 17:07:54', 'vital');
+(96, 58, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 07:25:07', 'immunization'),
+(97, 59, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 07:41:46', 'vital'),
+(98, 60, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 09:29:58', 'family'),
+(99, 60, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 10:46:13', 'family'),
+(100, 59, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 11:18:00', 'vital'),
+(101, 58, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 11:37:59', 'immunization'),
+(102, 61, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 12:27:46', 'prenatal'),
+(103, 61, 30.67, -1174.35, 84.00, 0.00, 83, 80, NULL, NULL, '2026-08-22 12:36:13', 'prenatal');
 
 -- --------------------------------------------------------
 
@@ -237,7 +270,23 @@ INSERT INTO `patient_services` (`id`, `user_id`, `service_type`, `created_at`) V
 (11, 55, 'vital', '2026-08-17 00:32:40'),
 (12, 54, 'prenatal', '2026-08-17 00:47:11'),
 (13, 54, 'family', '2026-08-17 00:51:50'),
-(14, 52, 'vital', '2026-08-17 01:07:54');
+(14, 52, 'vital', '2026-08-17 01:07:54'),
+(15, 57, 'prenatal', '2026-08-17 02:05:38'),
+(16, 53, 'family', '2026-08-17 02:30:51'),
+(17, 57, 'family', '2026-08-17 02:35:36'),
+(18, 1, 'immunization', '2026-08-17 17:30:08'),
+(19, 1, 'vital', '2026-08-17 17:36:24'),
+(20, 51, 'family', '2026-08-18 21:47:47'),
+(21, 54, 'immunization', '2026-08-18 22:09:13'),
+(22, 54, 'vital', '2026-08-20 22:43:23'),
+(23, 58, 'immunization', '2026-08-22 15:25:07'),
+(24, 59, 'vital', '2026-08-22 15:41:46'),
+(25, 60, 'family', '2026-08-22 17:29:58'),
+(26, 60, 'family', '2026-08-22 18:46:13'),
+(27, 59, 'vital', '2026-08-22 19:18:00'),
+(28, 58, 'immunization', '2026-08-22 19:37:59'),
+(29, 61, 'prenatal', '2026-08-22 20:27:46'),
+(30, 61, 'prenatal', '2026-08-22 20:36:13');
 
 -- --------------------------------------------------------
 
@@ -358,13 +407,13 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `fullname`, `last_name`, `first_name`, `middle_name`, `suffix`, `age`, `birth_date`, `gender`, `address`, `barangay`, `city_municipality`, `province`, `code_number`, `role`, `created_at`, `contact_number`, `service_type`, `patient_number`, `blood_type`) VALUES
 (1, 'System Administrator', NULL, NULL, NULL, NULL, 0, NULL, 'Male', 'System', NULL, NULL, NULL, '123456', 'admin', '2026-07-11 16:21:46', NULL, '', 0, NULL),
-(51, 'jhoshua concepcion laurito', 'laurito', 'jhoshua', 'concepcion', '', 21, '2008-12-01', 'Male', 'Simangan, isabel, leyte', 'Simangan', 'isabel', 'leyte', '509394', 'patient', '2026-08-14 14:10:59', '09273111611', 'Vital Screening', 17, 'O+'),
-(52, 'jhonreil concepcion Laurito', 'Laurito', 'jhonreil', 'concepcion', '', 19, '2007-04-13', 'Male', 'Simangan, isabel, leyte', 'Simangan', 'isabel', 'leyte', '989188', 'patient', '2026-08-14 15:28:32', '09273111611', 'Vital Screening', 18, 'AB+'),
-(53, 'jhasmine concepcion laurito', 'laurito', 'jhasmine', 'concepcion', '', 22, '2004-01-01', 'Female', 'simangan, isabel, leyte', 'simangan', 'isabel', 'leyte', '175578', 'patient', '2026-08-14 15:55:57', '09273111611', 'Family Planning', 19, 'AB+'),
-(54, 'kristal  jade almoroto', 'almoroto', 'kristal ', 'jade', '', 23, '2002-12-07', 'Female', 'Balagtas, Matag-ob, leyte', 'Balagtas', 'Matag-ob', 'leyte', '771151', 'patient', '2026-08-14 19:04:26', '09273111611', 'Prenatal Check-up', 20, 'B+'),
-(55, 'andrew laurito salar', 'salar', 'andrew', 'laurito', '', 23, '2003-12-07', 'Male', 'Matlang, isabel, leyte', 'Matlang', 'isabel', 'leyte', '821780', 'patient', '2026-08-15 18:50:11', '09273111611', '', 21, 'B+'),
-(56, 'john concepcion verna', 'verna', 'john', 'concepcion', '', 21, '2003-12-07', 'Male', 'Sto,Highway, isabel, leyte', 'Sto,Highway', 'isabel', 'leyte', '968235', 'patient', '2026-08-15 20:32:57', '09273111611', '', 22, 'AB+'),
-(57, 'mary joy concepcion almereno', 'almereno', 'mary joy', 'concepcion', '', 22, '2003-12-07', 'Female', 'anislag, isabel, leyte', 'anislag', 'isabel', 'leyte', '109400', 'patient', '2026-08-16 17:22:48', '09273111611', '', 23, 'AB+');
+(58, 'mary joy concepcion almereno', 'almereno', 'mary joy', 'concepcion', '', 22, '2003-12-07', 'Female', 'anislag, isabel, leyte', 'anislag', 'isabel', 'leyte', '112282', 'patient', '2026-08-22 07:22:56', '09273111611', '', 1, 'B+'),
+(59, 'jhoshua concepcion laurito', 'laurito', 'jhoshua', 'concepcion', '', 22, '2004-12-08', 'Male', 'Simangan, isabel, leyte', 'Simangan', 'isabel', 'leyte', '109144', 'patient', '2026-08-22 07:37:44', '09273111611', '', 2, 'O+'),
+(60, 'maria concepcion acero', 'acero', 'maria', 'concepcion', '', 21, '2004-12-08', 'Female', 'Simangan, isabel, leyte', 'Simangan', 'isabel', 'leyte', '985887', 'patient', '2026-08-22 09:23:18', '09273111611', '', 3, 'A+'),
+(61, 'joan  S toñada', 'toñada ', 'joan ', 'S', '', 21, '2004-11-08', 'Female', 'Simangan, Ormoc City, leyte', 'Simangan', 'Ormoc City', 'leyte', '126882', 'patient', '2026-08-22 12:19:11', '09273111611', '', 4, 'A+'),
+(62, 'jhasmine concepcion laurito', 'laurito', 'jhasmine', 'concepcion', '', 22, '2004-01-01', 'Female', 'Simangan, Ormoc City, leyte', 'Simangan', 'Ormoc City', 'leyte', '761661', 'patient', '2026-08-22 17:46:48', '09273111611', '', 5, 'AB+'),
+(63, 'nelandrew laurito salar', 'salar', 'nelandrew', 'laurito', '', 23, '2004-01-01', 'Male', 'Apali, isabe , leyte', 'Apali', 'isabe ', 'leyte', '371125', 'patient', '2026-08-22 17:50:42', '09273111611', '', 6, 'B+'),
+(64, 'ferne laurito Mayor', 'Mayor', 'ferne', 'laurito', '', 27, '2004-01-01', 'Female', 'libertad, isabel, leyte', 'libertad', 'isabel', 'leyte', '364604', 'patient', '2026-08-22 17:52:27', '09273111611', '', 7, 'A+');
 
 -- --------------------------------------------------------
 
@@ -499,6 +548,14 @@ INSERT INTO `weight_readings` (`id`, `weight`, `created_at`, `user_id`) VALUES
 --
 
 --
+-- Indexes for table `family_planning_records`
+--
+ALTER TABLE `family_planning_records`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `measurement_id` (`measurement_id`);
+
+--
 -- Indexes for table `height_readings`
 --
 ALTER TABLE `height_readings`
@@ -554,6 +611,12 @@ ALTER TABLE `weight_readings`
 --
 
 --
+-- AUTO_INCREMENT for table `family_planning_records`
+--
+ALTER TABLE `family_planning_records`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
 -- AUTO_INCREMENT for table `height_readings`
 --
 ALTER TABLE `height_readings`
@@ -561,15 +624,15 @@ ALTER TABLE `height_readings`
 
 --
 -- AUTO_INCREMENT for table `max30102_readings`
---
+-- 
 ALTER TABLE `max30102_readings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;   
 
 --
 -- AUTO_INCREMENT for table `measurements`
 --
 ALTER TABLE `measurements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=88;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=104;
 
 --
 -- AUTO_INCREMENT for table `patients`
@@ -581,7 +644,7 @@ ALTER TABLE `patients`
 -- AUTO_INCREMENT for table `patient_services`
 --
 ALTER TABLE `patient_services`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `sensor_readings`
@@ -593,7 +656,7 @@ ALTER TABLE `sensor_readings`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=58;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=65;
 
 --
 -- AUTO_INCREMENT for table `weight_readings`
@@ -604,6 +667,12 @@ ALTER TABLE `weight_readings`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `family_planning_records`
+--
+ALTER TABLE `family_planning_records`
+  ADD CONSTRAINT `fk_family_planning_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `measurements`

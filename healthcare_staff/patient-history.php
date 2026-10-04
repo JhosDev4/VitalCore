@@ -2,16 +2,15 @@
 /** @var mysqli $conn */
 session_start();
 
-/* =========================
-   SECURITY CHECK
-========================= */
-
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrator') {
+if (
+    !isset($_SESSION['staff_id']) ||
+    !isset($_SESSION['role']) ||
+    $_SESSION['role'] !== 'Staff'
+) {
     header("Location: ../login.php");
     exit();
 }
-
-require_once('../../db_conn.php');
+require_once('../db_conn.php');
 
 $query = mysqli_query(
     $conn,
@@ -46,6 +45,19 @@ $total_checkups = $checkup_row['total'];
 <html lang="en" translate="no">
 
 <head>
+<script>
+(function() {
+    const savedTheme = localStorage.getItem('staff_theme');
+
+    if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+})();
+</script>
 <meta name="google" content="notranslate">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -69,21 +81,6 @@ $total_checkups = $checkup_row['total'];
                 </div>
 
             <div class="sidebar-menu-wrapper">
-
-                <!-- SECTION: MAIN -->
-                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                    Main
-                </small>
-
-                <ul class="nav flex-column mb-3">
-                    <!-- Dashboard -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="../dashboard.php">
-                            <i class="bi bi-grid-1x2-fill me-2"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                </ul>
 
                 <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
                 <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
@@ -109,13 +106,13 @@ $total_checkups = $checkup_row['total'];
                         <div class="collapse" id="patientsMenu">
                             <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                 <li class="py-1">
-                                    <a href="../patient-list.php" class="sidebar-submenu-link text-decoration-none">
+                                    <a href="patient-list.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-list-ul me-2"></i>
                                         All Patients Services
                                     </a>
                                 </li>
                                 <li class="py-1">
-                                    <a href="../admin-dashboard.php" class="sidebar-submenu-link text-decoration-none">
+                                    <a href="admin-dashboard.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-person-plus-fill me-2"></i>
                                         Add Patient
                                     </a>
@@ -156,15 +153,6 @@ $total_checkups = $checkup_row['total'];
                             </ul>
                         </div>
                     </li>
-                </ul>
-
-                <!-- SECTION: HARDWARE & SYSTEM -->
-                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                    Hardware & System
-                </small>
-
-                <ul class="nav flex-column mb-3">
-                    <!-- Administration -->
                     <li class="nav-item">
                         <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
                         data-bs-toggle="collapse"
@@ -182,13 +170,7 @@ $total_checkups = $checkup_row['total'];
                         <div class="collapse" id="adminMenu">
                             <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                 <li class="py-1">
-                                    <a href="../staff_accounts.php" class="sidebar-submenu-link text-decoration-none">
-                                        <i class="bi bi-person-gear me-2"></i>
-                                        User Management
-                                    </a>
-                                </li>
-                                <li class="py-1">
-                                    <a href="../setting.php" class="sidebar-submenu-link text-decoration-none">
+                                    <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-sliders me-2"></i>
                                         Settings
                                     </a>
@@ -588,7 +570,16 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem('staff_theme');
+
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.body.setAttribute('data-bs-theme', 'dark');
+    }
+});
+</script>
 <script>
 (function applySystemSettings() {
     // 1. Theme / Dark Mode
@@ -679,7 +670,4 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 </script>
 </body>
-
 </html>
-
-

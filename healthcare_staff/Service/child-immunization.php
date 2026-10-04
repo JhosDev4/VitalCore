@@ -98,21 +98,6 @@
 
             <div class="sidebar-menu-wrapper">
 
-                <!-- SECTION: MAIN -->
-                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                    Main
-                </small>
-
-                <ul class="nav flex-column mb-3">
-                    <!-- Dashboard -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="../dashboard.php">
-                            <i class="bi bi-grid-1x2-fill me-2"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                </ul>
-
                 <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
                 <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
                     Clinical Services
@@ -148,12 +133,6 @@
                                         Add Patient
                                     </a>
                                 </li>
-                                <li class="py-1">
-                                    <a href="#" class="sidebar-submenu-link text-decoration-none">
-                                        <i class="bi bi-hospital-fill me-2 text-info"></i>
-                                         Add Service
-                                    </a>
-                                </li>
                             </ul>
                         </div>
                     </li>
@@ -176,13 +155,13 @@
                         <div class="collapse" id="recordsMenu">
                             <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                 <li class="py-1">
-                                    <a href="../logs/patient-history.php" class="sidebar-submenu-link text-decoration-none">
+                                    <a href="../patient-history.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-clock-history me-2"></i>
                                         Patient Records
                                     </a>
                                 </li>
                                 <li class="py-1">
-                                    <a href="../logs/reports.php" class="sidebar-submenu-link text-decoration-none">
+                                    <a href="../reports.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-file-earmark-bar-graph me-2"></i>
                                         Reports
                                     </a>
@@ -191,13 +170,7 @@
                         </div>
                     </li>
                 </ul>
-
-                <!-- SECTION: HARDWARE & SYSTEM -->
-                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                    Hardware & System
-                </small>
-
-                <ul class="nav flex-column mb-3">
+                 
                     <!-- Administration -->
                     <li class="nav-item">
                         <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
@@ -217,12 +190,6 @@
                             <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                 <li class="py-1">
                                     <a href="#" class="sidebar-submenu-link text-decoration-none">
-                                        <i class="bi bi-person-gear me-2"></i>
-                                        User Management
-                                    </a>
-                                </li>
-                                <li class="py-1">
-                                    <a href="../setting.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-sliders me-2"></i>
                                         Settings
                                     </a>

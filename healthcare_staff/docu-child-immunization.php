@@ -4,18 +4,22 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once('../../db_conn.php');
+require_once('../db_conn.php');
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+if (
+    !isset($_SESSION['staff_id']) ||
+    !isset($_SESSION['role']) ||
+    !in_array($_SESSION['role'], ['Administrator', 'Staff'], true)
+) {
     header("Location: ../login.php");
     exit();
 }
-
 if (!isset($_GET['id'])) {
     die("Patient not found.");
 }
 
-$patient_id = (int)$_GET['id'];
+$patient_id     = (int)$_GET['id'];
+$measurement_id = isset($_GET['measurement_id']) && is_numeric($_GET['measurement_id']) ? (int)$_GET['measurement_id'] : 0;
 
 // 1. Fetch Patient Info
 $query = mysqli_query(
@@ -28,7 +32,7 @@ if (!$patient) {
     die("Patient not found.");
 }
 
-// 2. Fetch Latest Vital Measurements
+// 2. Fetch Vital Measurements for This Visit
 $temp       = '--';
 $weight     = '--';
 $height     = '--';
@@ -38,11 +42,19 @@ $spo2       = '--';
 $systolic   = '--';
 $diastolic  = '--';
 $last_visited = 'No visits recorded';
+$doc_date     = date('F d, Y');
 
-$measurementQuery = mysqli_query(
-    $conn,
-    "SELECT * FROM measurements WHERE user_id = $patient_id ORDER BY created_at DESC LIMIT 1"
-);
+if ($measurement_id > 0) {
+    $measurementQuery = mysqli_query(
+        $conn,
+        "SELECT * FROM measurements WHERE id = $measurement_id LIMIT 1"
+    );
+} else {
+    $measurementQuery = mysqli_query(
+        $conn,
+        "SELECT * FROM measurements WHERE user_id = $patient_id ORDER BY created_at DESC LIMIT 1"
+    );
+}
 
 if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
     $measurement = mysqli_fetch_assoc($measurementQuery);
@@ -58,6 +70,7 @@ if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
 
     if (!empty($measurement['created_at'])) {
         $last_visited = date('F d, Y - h:i A', strtotime($measurement['created_at']));
+        $doc_date     = date('F d, Y', strtotime($measurement['created_at']));
     }
 }
 
@@ -128,6 +141,21 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+    <!-- PRE-LOAD STAFF INDEPENDENT DARK MODE -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('staff_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Clinical Record - #PT<?= str_pad($patient['id'], 4, '0', STR_PAD_LEFT); ?></title>
@@ -139,6 +167,23 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
     <!-- HTML2PDF Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    <style>
+        /* Dark Mode Override Fix for Clinic Title */
+        .clinic-name,
+        h1.clinic-name,
+        html.dark-mode .clinic-name,
+        body.dark-mode .clinic-name,
+        .dark-mode h1.clinic-name {
+            color: #0a49c4 !important;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff !important; }
+            .document-wrapper { box-shadow: none !important; margin: 0 !important; width: 100% !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
 
 </head>
 <body>
@@ -146,7 +191,7 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
 <!-- TOP ACTION TOOLBAR -->
 <div class="no-print bg-white border-bottom p-3 mb-3 sticky-top shadow-sm">
     <div class="container d-flex justify-content-between align-items-center" style="max-width: 820px;">
-        <a href="../patient-view.php?id=<?= $patient['id']; ?>" class="btn btn-outline-secondary btn-sm">
+        <a href="patient-history-list.php?user_id=<?= $patient['id']; ?>" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i> Back to Patient View
         </a>
 
@@ -170,14 +215,14 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
             <div class="clinic-brand">
                 <img src="../../img/logo.jpg" alt="Logo" class="clinic-logo" onerror="this.src='https://via.placeholder.com/48?text=VC'">
                 <div>
-                    <h1 class="clinic-name">Child Immunization</h1>
+                    <h1 class="clinic-name" style="color:#0a49c4 !important;">Child Immunization</h1>
                     <p class="clinic-sub">Clinical Patient Record & Health Assessment</p>
                 </div>
             </div>
             <div class="text-end">
                 <span class="doc-title-badge">OFFICIAL MEDICAL REPORT</span>
                 <div class="mt-1 text-muted" style="font-size: 0.75rem;">
-                    <strong>Document Date:</strong> <?= date('F d, Y'); ?>
+                    <strong>Document Date:</strong> <?= $doc_date; ?>
                 </div>
             </div>
         </div>
@@ -281,7 +326,6 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
                 <tr>
                     <th>Parameter</th>
                     <th>Measured Value</th>
-                    <th>Reference / Target</th>
                     <th>Status</th>
                 </tr>
             </thead>
@@ -289,43 +333,36 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
                 <tr>
                     <td><strong>Blood Pressure</strong></td>
                     <td><?= $bp_disp; ?></td>
-                    <td>120/80 mmHg</td>
                     <td><span class="status-badge badge-success">Normal</span></td>
                 </tr>
                 <tr>
                     <td><strong>Heart Rate</strong></td>
                     <td><?= $heart_rate_disp; ?></td>
-                    <td>60 - 100 BPM</td>
                     <td><span class="status-badge <?= $heart_class; ?>"><?= $heart_status; ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>SpO2 (Blood Oxygen)</strong></td>
                     <td><?= $spo2_disp; ?></td>
-                    <td>95% - 100%</td>
                     <td><span class="status-badge <?= $spo2_class; ?>"><?= $spo2_status; ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>Body Temperature</strong></td>
                     <td><?= $temp_disp; ?></td>
-                    <td>36.5 °C - 37.5 °C</td>
                     <td><span class="status-badge <?= $temp_class; ?>"><?= $temp_status; ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>Body Weight</strong></td>
                     <td><?= $weight_disp; ?></td>
-                    <td>--</td>
                     <td><span class="status-badge badge-secondary">Recorded</span></td>
                 </tr>
                 <tr>
                     <td><strong>Height</strong></td>
                     <td><?= $height_disp; ?></td>
-                    <td>--</td>
                     <td><span class="status-badge badge-secondary">Recorded</span></td>
                 </tr>
                 <tr>
                     <td><strong>BMI Score</strong></td>
                     <td><?= $bmi_disp; ?></td>
-                    <td>18.5 - 24.9</td>
                     <td><span class="status-badge <?= $bmi_class; ?>"><?= $bmi_status; ?></span></td>
                 </tr>
             </tbody>
@@ -435,6 +472,20 @@ function fallbackDownload(blob, filename) {
     URL.revokeObjectURL(url);
 }
 </script>
-<script src="../../assets/js/theme.js"></script>
+
+<script src="../assets/js/theme.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem('staff_theme');
+    if (savedTheme === 'dark') {
+        if (document.body) {
+            document.body.classList.add('dark-mode');
+            document.body.setAttribute('data-bs-theme', 'dark');
+        }
+    }
+});
+</script>
+
 </body>
 </html>

@@ -80,7 +80,7 @@ body.dark-mode .darkmode-btn{
 }
 
 /* Inputs */
-body.dark-mode input,
+body.dark-mode input:not(.form-check-input),
 body.dark-mode select{
     background:#1e293b !important;
     border-color:#334155 !important;
@@ -1077,4 +1077,125 @@ body.dark-mode .empty-state p{
 
     box-shadow:
         0 7px 20px rgba(25, 135, 84, 0.35);
+}
+
+/* =====================================
+   PATIENT HISTORY TABLE — DARK MODE FIX
+   ===================================== */
+
+body.dark-mode .patient-table {
+    --bs-table-bg: #111827 !important;
+    --bs-table-color: #f8fafc !important;
+    --bs-table-border-color: #334155 !important;
+    --bs-table-hover-bg: #1e293b !important;
+    --bs-table-hover-color: #ffffff !important;
+
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+}
+
+/* Every table cell */
+body.dark-mode .patient-table > :not(caption) > * > * {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+    border-color: #334155 !important;
+}
+
+/* First column specifically */
+body.dark-mode .patient-table tbody tr td:first-child {
+    background-color: #111827 !important;
+    color: #f8fafc !important;
+}
+
+/* First column contents */
+body.dark-mode .patient-table tbody tr td:first-child *,
+body.dark-mode .patient-table tbody tr td:first-child span,
+body.dark-mode .patient-table tbody tr td:first-child div {
+    color: #f8fafc;
+}
+
+/* Patient name */
+body.dark-mode .patient-table .patient-name {
+    color: #f8fafc !important;
+}
+
+/* Patient ID / secondary information */
+body.dark-mode .patient-table .patient-id {
+    color: #94a3b8 !important;
+}
+
+/* Avatar */
+body.dark-mode .patient-table .patient-avatar {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+/* Hover */
+body.dark-mode .patient-table tbody tr:hover > * {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+}
+
+/* Header */
+body.dark-mode .patient-table thead > tr > th {
+    background-color: #1e293b !important;
+    color: #cbd5e1 !important;
+    border-color: #334155 !important;
+}
+/* =====================================
+   PATIENT HISTORY — RECORDS FOOTER
+   ===================================== */
+
+body.dark-mode .records-footer {
+    background-color: #111827 !important;
+    color: #cbd5e1 !important;
+    border-top: 1px solid #334155 !important;
+}
+
+/* Footer icon */
+body.dark-mode .records-footer i {
+    color: #60a5fa !important;
+}
+
+/* Strong patient count */
+body.dark-mode .records-footer strong {
+    color: #f8fafc !important;
+}
+.checkup-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    padding-top: 10px;
+    padding-bottom: 15px;
+
+    border-bottom: 1px solid rgba(128, 128, 128, 0.15);
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Force Bootstrap knob to remain visible */
+.dark-mode .form-check-input:not(:checked) {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='white'/%3e%3c/svg%3e");
+}
+
+.dark-mode .form-check-input:checked {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='white'/%3e%3c/svg%3e");
+}
+
+/* Bootstrap Switch Fix */
+body.dark-mode .form-check-input {
+    background-color: #374151 !important;
+    border-color: #4b5563 !important;
+}
+
+body.dark-mode .form-check-input:checked {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+}
+
+.form-switch .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
 }

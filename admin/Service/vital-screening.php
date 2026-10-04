@@ -1,7 +1,15 @@
     <?php
     session_start();
 
-    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+   /* =========================
+    SECURITY CHECK
+    ========================= */
+
+    if (
+        !isset($_SESSION['staff_id']) ||
+        !isset($_SESSION['role']) ||
+        !in_array($_SESSION['role'], ['Administrator', 'Staff'], true)
+    ) {
         header("Location: ../login.php");
         exit();
     }
@@ -77,14 +85,21 @@
 
  <!-- Sidebar Navigation -->
         <nav class="col-md-3 col-lg-2 d-md-flex sidebar p-3 flex-column justify-content-between">
-            <div>
-                <div class="logo-section">
-                    <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo">
-                    <span class="sidebar-brand">VitalCore</span>
-                </div>
+        <div>
+            <!-- LOGO & BRAND -->
+           <div class="logo-section mb-4 d-flex align-items-center gap-2 px-2">
+                <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;">
+                <span class="sidebar-brand">VitalCore</span>
+           </div>
 
-                <ul class="nav flex-column">
+            <div class="sidebar-menu-wrapper">
 
+                <!-- SECTION: MAIN -->
+                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                    Main
+                </small>
+
+                <ul class="nav flex-column mb-3">
                     <!-- Dashboard -->
                     <li class="nav-item">
                         <a class="nav-link" href="../dashboard.php">
@@ -92,268 +107,138 @@
                             Dashboard
                         </a>
                     </li>
+                </ul>
 
-                    <!-- Patients -->
+                <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
+                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                    Clinical Services
+                </small>
+
+                <ul class="nav flex-column mb-3">
+                    <!-- Patient Management -->
                     <li class="nav-item">
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#patientsMenu"
-                           role="button"
-                           aria-expanded="false"
-                           aria-controls="patientsMenu">
-
+                        <a class="nav-link sidebar-collapse-link active d-flex justify-content-between align-items-center"
+                        data-bs-toggle="collapse"
+                        href="#patientsMenu"
+                        role="button"
+                        aria-expanded="True"
+                        aria-controls="patientsMenu">
                             <span>
-                                <i class="bi bi-people-fill me-2"></i>
-                                Patients
+                                <i class="bi bi-people-fill me-2 text-primary"></i>
+                                Patient Management
                             </span>
-
                             <i class="bi bi-chevron-down collapse-chevron"></i>
                         </a>
 
-                        <div class="collapse" id="patientsMenu">
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="../patient-list.php" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        All Patients
+                        <div class="collapse show" id="patientsMenu">
+                            <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                <li class="py-1">
+                                    <a href="../patient-list.php" class="sidebar-submenu-link active text-decoration-none">
+                                        <i class="bi bi-list-ul me-2"></i>
+                                        All Patients Services
                                     </a>
                                 </li>
-
-                                <li>
-                                    <a href="../admin-dashboard.php" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
+                                <li class="py-1">
+                                    <a href="../admin-dashboard.php" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-person-plus-fill me-2"></i>
                                         Add Patient
                                     </a>
                                 </li>
-
+                                <li class="py-1">
+                                    <a href="#" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-hospital-fill me-2 text-info"></i>
+                                        Add Service
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </li>
 
-                </ul>
-
-                <!-- CLINIC SERVICES <div class="sidebar-heading">CLINIC</div> -->
-                <ul class="nav flex-column">
-
+                    <!-- Patient Records -->
                     <li class="nav-item">
-                        <a class="nav-link active sidebar-collapse-link 
-                                d-flex justify-content-between align-items-center 
-                                active-perent"
-                           data-bs-toggle="collapse"
-                           href="#clinicServicesMenu"
-                           role="button"
-                           aria-expanded="true"
-                           aria-controls="clinicServicesMenu">
-
-                            <span>
-                                <i class="bi bi-hospital-fill me-2"></i>
-                                Clinic Services
-                            </span>
-
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-                        </a>
-
-                        <div class="collapse show" id="clinicServicesMenu">
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="../Service/vital-screening.php" class="sidebar-submenu-link active">
-                                        <i class="bi bi-clipboard2-pulse-fill text-warning me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Vital Screening
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="../Service/prenatal.php" class="sidebar-submenu-link">
-                                        <i class="bi bi-heart-pulse-fill text-danger me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Prenatal Check-up
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="../Service/child-immunization.php" class="sidebar-submenu-link">
-                                        <i class="bi bi-shield-check text-success me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Child Immunization
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="../Service/family-planning.php" class="sidebar-submenu-link">
-                                         <i class="bi bi-people-fill text-primary me-2"></i>
-                                        <span class="submenu-dot"></span>
-                                        Family Planning
-                                    </a>
-                                </li>
-
-                            </ul>
-                        </div>
-                    </li>
-
-                </ul>
-
-                <!-- RECORDS -->
-                <ul class="nav flex-column">
-
-                    <li class="nav-item">
-
                         <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
                         data-bs-toggle="collapse"
                         href="#recordsMenu"
-                        role="button">
-
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="recordsMenu">
                             <span>
-                                <i class="bi bi-folder2-open me-2"></i>
+                                <i class="bi bi-folder2-open me-2 text-warning"></i>
                                 Patient Records
                             </span>
-
                             <i class="bi bi-chevron-down collapse-chevron"></i>
-
                         </a>
 
                         <div class="collapse" id="recordsMenu">
-
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="../logs/checkup-records.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Checkup Records
+                            <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                <li class="py-1">
+                                    <a href="../logs/patient-history.php" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-clock-history me-2"></i>
+                                        Patient Records
                                     </a>
                                 </li>
-
-                                <li>
-                                    <a href="../logs/patient-history.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Patient History
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="../logs/service-records.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Service Records
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="../logs/reports.php"
-                                    class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
+                                <li class="py-1">
+                                    <a href="../logs/reports.php" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-file-earmark-bar-graph me-2"></i>
                                         Reports
                                     </a>
                                 </li>
-
-                            </ul>
-
-                        </div>
-
-                    </li>
-
-                </ul>
-
-                <!-- KIOSK & DEVICES <div class="sidebar-heading">KIOSK &amp; DEVICES</div> -->
-                <ul class="nav flex-column">
-
-                    <li class="nav-item">
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#kioskMenu"
-                           role="button"
-                           aria-expanded="false"
-                           aria-controls="kioskMenu">
-
-                            <span>
-                                <i class="bi bi-display me-2"></i>
-                                Kiosk Management
-                            </span>
-
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-                        </a>
-
-                        <div class="collapse" id="kioskMenu">
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="#" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Kiosk Monitor
-                                    </a>
-                                </li>
-
-                                <li>
-                                    <a href="#" id="sidebarSensorStatus" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
-                                        Sensor Status
-                                    </a>
-                                </li>
-
                             </ul>
                         </div>
                     </li>
-
                 </ul>
 
-                <!-- ADMINISTRATION -->
-                <ul class="nav flex-column">
+                <!-- SECTION: HARDWARE & SYSTEM -->
+                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                    Hardware & System
+                </small>
 
+                <ul class="nav flex-column mb-3">
+                    <!-- Administration -->
                     <li class="nav-item">
                         <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                           data-bs-toggle="collapse"
-                           href="#adminMenu"
-                           role="button"
-                           aria-expanded="false"
-                           aria-controls="adminMenu">
-
+                        data-bs-toggle="collapse"
+                        href="#adminMenu"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="adminMenu">
                             <span>
-                                <i class="bi bi-shield-lock-fill me-2"></i>
+                                <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
                                 Administration
                             </span>
-
                             <i class="bi bi-chevron-down collapse-chevron"></i>
                         </a>
 
                         <div class="collapse" id="adminMenu">
-                            <ul class="sidebar-submenu">
-
-                                <li>
-                                    <a href="#" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
+                            <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                <li class="py-1">
+                                    <a href="#" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-person-gear me-2"></i>
                                         User Management
                                     </a>
                                 </li>
-
-                                <li>
-                                    <a href="#" class="sidebar-submenu-link">
-                                        <span class="submenu-dot">●</span>
+                                <li class="py-1">
+                                    <a href="../setting.php" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-sliders me-2"></i>
                                         Settings
                                     </a>
                                 </li>
-
                             </ul>
                         </div>
                     </li>
-
                 </ul>
 
             </div>
+        </div>
 
-            <!-- Logout -->
-            <div class="pt-4 px-2 border-top">
-                <a href="../../login.php"
-                   class="text-decoration-none text-danger fw-semibold d-flex align-items-center gap-2">
-                    <i class="bi bi-box-arrow-left"></i>
-                    Log out
-                </a>
-            </div>
-        </nav>
-
+        <!-- LOGOUT FOOTER -->
+        <div class="logout-section pt-3 px-2 border-top border-secondary border-opacity-25">
+            <a href="../../login.php" class="text-decoration-none text-danger fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-box-arrow-left fs-5"></i>
+                Log out
+            </a>
+        </div>
+    </nav>
             <!-- MAIN CONTENT -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
@@ -372,7 +257,7 @@
                                 aria-expanded="false">
 
                             <i class="bi bi-list"></i>
-                            <span>Categories</span>
+                            <span>Services Categories</span>
 
                         </button>
 

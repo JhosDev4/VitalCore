@@ -1,6 +1,6 @@
 <?php
 /** @var mysqli $conn */
-require_once('../db_conn.php');
+require_once('../../db_conn.php');
 
 $temp = $_POST['temperature'] ?? '';
 

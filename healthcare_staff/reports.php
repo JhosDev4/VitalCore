@@ -3,7 +3,7 @@
 date_default_timezone_set('Asia/Manila');
 
 /** @var mysqli $conn */
-require_once('../../db_conn.php');
+require_once('../db_conn.php');
 
 /* ==========================================================
    OFFICIAL 35 BARANGAYS OF VILLABA, LEYTE
@@ -188,6 +188,19 @@ if ($brgy_q) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+(function() {
+    const savedTheme = localStorage.getItem('staff_theme');
+
+    if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark-mode');
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+    }
+})();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($report_scope_title . " - " . $filter_label); ?> - VitalCore</title>
@@ -270,15 +283,7 @@ if ($brgy_q) {
                 </div>
 
                 <div class="sidebar-menu-wrapper">
-                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Main</small>
-                    <ul class="nav flex-column mb-3">
-                        <li class="nav-item">
-                            <a class="nav-link" href="../dashboard.php">
-                                <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
-                            </a>
-                        </li>
-                    </ul>
-
+                   
                     <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Clinical Services</small>
                     <ul class="nav flex-column mb-3">
                         <li class="nav-item">
@@ -288,8 +293,8 @@ if ($brgy_q) {
                             </a>
                             <div class="collapse" id="patientsMenu">
                                 <ul class="sidebar-submenu list-unstyled ps-4 py-1">
-                                    <li class="py-1"><a href="../patient-list.php" class="sidebar-submenu-link text-decoration-none"><i class="bi bi-list-ul me-2"></i> All Patients</a></li>
-                                    <li class="py-1"><a href="../admin-dashboard.php" class="sidebar-submenu-link text-decoration-none"><i class="bi bi-person-plus-fill me-2"></i> Add Patient</a></li>
+                                    <li class="py-1"><a href="patient-list.php" class="sidebar-submenu-link text-decoration-none"><i class="bi bi-list-ul me-2"></i> All Patients</a></li>
+                                    <li class="py-1"><a href="admin-dashboard.php" class="sidebar-submenu-link text-decoration-none"><i class="bi bi-person-plus-fill me-2"></i> Add Patient</a></li>
                                 </ul>
                             </div>
                         </li>
@@ -306,22 +311,31 @@ if ($brgy_q) {
                                 </ul>
                             </div>
                         </li>
-                    </ul>
-
-                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">Hardware & System</small>
-                    <ul class="nav flex-column mb-3">
                         <li class="nav-item">
-                            <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#adminMenu" role="button">
-                                <span><i class="bi bi-shield-lock-fill me-2 text-danger"></i> Administration</span>
-                                <i class="bi bi-chevron-down collapse-chevron"></i>
-                            </a>
-                            <div class="collapse" id="adminMenu">
-                                <ul class="sidebar-submenu list-unstyled ps-4 py-1">
-                                    <li class="py-1"><a href="../staff_accounts.php" class="sidebar-submenu-link text-decoration-none"><i class="bi bi-person-gear me-2"></i> User Management</a></li>
-                                    <li class="py-1"><a href="../setting.php" class="sidebar-submenu-link text-decoration-none"><i class="bi bi-sliders me-2"></i> Settings</a></li>
-                                </ul>
-                            </div>
-                        </li>
+                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
+                        data-bs-toggle="collapse"
+                        href="#adminMenu"
+                        role="button"
+                        aria-expanded="false"
+                        aria-controls="adminMenu">
+                            <span>
+                                <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
+                                Administration
+                            </span>
+                            <i class="bi bi-chevron-down collapse-chevron"></i>
+                        </a>
+
+                        <div class="collapse" id="adminMenu">
+                            <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                <li class="py-1">
+                                    <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
+                                        <i class="bi bi-sliders me-2"></i>
+                                        Settings
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
                     </ul>
                 </div>
             </div>
@@ -479,6 +493,12 @@ if ($brgy_q) {
                             <div class="d-flex justify-content-between">
                                 <span class="fw-semibold"><i class="bi bi-heart-pulse-fill text-danger me-2"></i> Prenatal Check-up</span>
                                 <strong><?= number_format($prenatal_count); ?> Checkups</strong>
+                            </div>
+                        </div>
+                        <div class="service-item-row mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-semibold"><i class="bi bi-shield-check text-success me-2"></i> Child Immunization</span>
+                                <strong><?= number_format($immunization_count); ?> Checkups</strong>
                             </div>
                         </div>
                         <div class="service-item-row mb-2">
@@ -745,7 +765,16 @@ window.addEventListener('afterprint', () => {
 <!-- Bootstrap 5 Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/theme.js"></script>
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem('staff_theme');
+
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.body.setAttribute('data-bs-theme', 'dark');
+    }
+});
+</script>
 <script>
 (function applySystemSettings() {
     // 1. Theme / Dark Mode

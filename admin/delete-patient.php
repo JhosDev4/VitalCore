@@ -1,11 +1,13 @@
 <?php
-session_start();
-
 /* =========================
-   ADMIN SECURITY CHECK
+   SECURITY CHECK
 ========================= */
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+if (
+    !isset($_SESSION['staff_id']) ||
+    !isset($_SESSION['role']) ||
+    !in_array($_SESSION['role'], ['Administrator', 'Staff'], true)
+) {
     header("Location: ../login.php");
     exit();
 }

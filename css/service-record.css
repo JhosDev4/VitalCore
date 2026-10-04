@@ -1,0 +1,687 @@
+/* =========================================
+   SERVICE RECORDS PAGE
+========================================= */
+
+body {
+    background: #f4f7fc;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+
+/* =========================================
+   PAGE HEADER
+========================================= */
+
+.page-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    width: 100%;
+
+    margin-bottom: 25px;
+    padding: 20px 25px;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .04);
+
+    gap: 15px;
+
+    flex-wrap: nowrap;
+}
+
+
+/* =========================================
+   PAGE TITLE SECTION
+========================================= */
+
+.page-header > div:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: auto;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+
+    color: #1e293b;
+
+    margin: 0;
+}
+
+.page-subtitle {
+    color: #64748b;
+
+    margin: 0;
+
+    font-size: .95rem;
+}
+
+
+/* =========================================
+   SEARCH
+========================================= */
+
+.page-header .search-wrapper {
+    position: relative;
+
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+
+    flex: 0 0 320px;
+}
+
+.search-wrapper input {
+    width: 100%;
+
+    height: 44px;
+
+    padding-left: 15px;
+    padding-right: 15px;
+
+    border-radius: 10px;
+
+    border: 1px solid #dbe3ef;
+
+    box-sizing: border-box;
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease;
+}
+
+.search-wrapper input:focus {
+    border-color: #0d6efd;
+
+    box-shadow:
+        0 0 0 .2rem rgba(13, 110, 253, .15);
+
+    outline: none;
+}
+
+
+/* =========================================
+   CATEGORY DROPDOWN
+========================================= */
+
+.category-dropdown {
+    position: relative;
+
+    width: 145px;
+    min-width: 145px;
+    max-width: 145px;
+
+    flex: 0 0 145px;
+}
+
+.patient-menu-btn {
+    width: 145px;
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 0 14px;
+
+    border: 1px solid #dee2e6;
+
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #344054;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+}
+
+.patient-menu-btn:hover {
+    background: #f8fafc;
+
+    border-color: #cbd5e1;
+}
+
+.patient-menu-btn:focus,
+.patient-menu-btn:active,
+.patient-menu-btn.show {
+    background: #ffffff;
+
+    color: #344054;
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .10);
+}
+
+.patient-menu-btn .bi-list {
+    font-size: 18px;
+}
+
+
+/* =========================================
+   DROPDOWN MENU
+========================================= */
+
+.patient-dropdown {
+    min-width: 250px !important;
+
+    margin-top: 8px !important;
+
+    padding: 7px;
+
+    border: none !important;
+
+    border-radius: 12px !important;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 10px 30px rgba(15, 23, 42, .12),
+        0 2px 8px rgba(15, 23, 42, .06) !important;
+
+    animation: dropdownFade .18s ease;
+}
+
+@keyframes dropdownFade {
+
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+}
+
+.patient-dropdown .dropdown-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 11px 12px;
+
+    border-radius: 8px;
+
+    color: #344054;
+
+    font-size: 14px;
+
+    font-weight: 500;
+
+    transition:
+        background .2s ease,
+        color .2s ease,
+        transform .2s ease;
+}
+
+.patient-dropdown .dropdown-item i {
+    width: 20px;
+
+    display: inline-flex;
+
+    justify-content: center;
+
+    font-size: 16px;
+}
+
+.patient-dropdown .dropdown-item:hover {
+    background: #f1f5f9;
+
+    color: #2563eb;
+
+    transform: translateX(2px);
+}
+
+.patient-dropdown .dropdown-item:focus {
+    background: #f1f5f9;
+
+    color: #2563eb;
+}
+
+
+/* =========================================
+   STAT CARD
+========================================= */
+
+.service-stat-card {
+    background: linear-gradient(
+        135deg,
+        #0d6efd,
+        #2563eb
+    );
+
+    color: #fff;
+
+    border-radius: 18px;
+
+    padding: 24px;
+
+    margin-bottom: 25px;
+
+    box-shadow:
+        0 12px 30px rgba(13, 110, 253, .18);
+}
+
+.service-stat-title {
+    font-size: .9rem;
+
+    opacity: .9;
+}
+
+.service-stat-number {
+    font-size: 2rem;
+
+    font-weight: 700;
+}
+
+
+/* =========================================
+   TABLE CARD
+========================================= */
+
+.records-card {
+    background: #fff;
+
+    border: none;
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 6px 24px rgba(0, 0, 0, .04);
+}
+
+
+/* =========================================
+   TABLE
+========================================= */
+
+.records-card .table {
+    margin: 0;
+}
+
+
+/* =========================================
+   TABLE HEADER
+========================================= */
+
+.records-card thead th {
+    background: #0d6efd;
+
+    color: #fff;
+
+    border: none;
+
+    font-size: .8rem;
+
+    text-transform: uppercase;
+
+    letter-spacing: .5px;
+
+    padding: 16px;
+}
+
+
+/* =========================================
+   TABLE BODY
+========================================= */
+
+.records-card tbody td {
+    padding: 16px;
+
+    vertical-align: middle;
+}
+
+.records-card tbody tr {
+    transition:
+        background .25s ease,
+        transform .25s ease;
+}
+
+.records-card tbody tr:hover {
+    background: #f8fbff;
+
+    transform: scale(1.002);
+}
+
+
+/* =========================================
+   SERVICE BADGES
+========================================= */
+
+.service-badge {
+    display: inline-block;
+
+    padding: 7px 12px;
+
+    border-radius: 50px;
+
+    font-size: .78rem;
+
+    font-weight: 600;
+}
+
+.service-vital {
+    background: #eff6ff;
+
+    color: #2563eb;
+}
+
+.service-prenatal {
+    background: #fef2f2;
+
+    color: #dc2626;
+}
+
+.service-immunization {
+    background: #ecfdf5;
+
+    color: #16a34a;
+}
+
+.service-family {
+    background: #f5f3ff;
+
+    color: #7c3aed;
+}
+
+
+/* =========================================
+   PAGE FADE-UP ANIMATION
+========================================= */
+
+.fade-up {
+    opacity: 0;
+
+    transform: translateY(25px);
+
+    animation:
+        fadeUp .7s ease forwards;
+}
+
+.fade-delay-1 {
+    animation-delay: .1s;
+}
+
+.fade-delay-2 {
+    animation-delay: .2s;
+}
+
+@keyframes fadeUp {
+
+    from {
+        opacity: 0;
+
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform: translateY(0);
+    }
+
+}
+
+
+/* =========================================
+   TABLE ROW AUTOMATIC ANIMATION
+========================================= */
+
+/*
+   The JavaScript sets:
+
+   --row-index: 0
+   --row-index: 1
+   --row-index: 2
+   --row-index: 3
+   ...
+
+   CSS then calculates:
+
+   0 × 100ms = 0ms
+   1 × 100ms = 100ms
+   2 × 100ms = 200ms
+   3 × 100ms = 300ms
+*/
+
+.records-card tbody tr {
+    opacity: 0;
+
+    transform: translateY(15px);
+
+    animation-name: rowFade;
+
+    animation-duration: .5s;
+
+    animation-timing-function: ease;
+
+    animation-fill-mode: forwards;
+
+    animation-delay: calc(var(--row-index, 0) * 100ms);
+}
+
+@keyframes rowFade {
+
+    from {
+        opacity: 0;
+
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform: translateY(0);
+    }
+
+}
+
+
+/* =========================================
+   RESPONSIVE - TABLET
+========================================= */
+
+@media (max-width: 1100px) {
+
+    .page-header {
+        gap: 10px;
+    }
+
+    .page-header .search-wrapper {
+        width: 260px;
+
+        min-width: 260px;
+
+        max-width: 260px;
+
+        flex: 0 0 260px;
+    }
+
+    .category-dropdown {
+        width: 135px;
+
+        min-width: 135px;
+
+        max-width: 135px;
+
+        flex: 0 0 135px;
+    }
+
+    .patient-menu-btn {
+        width: 135px;
+    }
+
+}
+
+
+/* =========================================
+   RESPONSIVE - TABLET
+========================================= */
+
+@media (max-width: 992px) {
+
+    .page-header {
+        flex-wrap: wrap;
+    }
+
+    .page-header > div:first-child {
+        flex: 1 1 100%;
+    }
+
+    .page-header .search-wrapper {
+        width: 320px;
+
+        min-width: 320px;
+
+        max-width: 320px;
+
+        flex: 0 0 320px;
+    }
+
+}
+
+
+/* =========================================
+   RESPONSIVE - MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+
+    .page-header {
+        padding: 18px;
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+        gap: 12px;
+    }
+
+    .page-header > div:first-child {
+        width: 100%;
+
+        margin-right: 0;
+    }
+
+    .page-header .search-wrapper {
+        width: 100%;
+
+        min-width: 100%;
+
+        max-width: 100%;
+
+        flex: 0 0 auto;
+    }
+
+    .category-dropdown {
+        width: 100%;
+
+        min-width: 100%;
+
+        max-width: 100%;
+
+        flex: 0 0 auto;
+    }
+
+    .patient-menu-btn {
+        width: 100%;
+
+        min-width: 100%;
+
+        max-width: 100%;
+    }
+
+    .page-title {
+        font-size: 1.4rem;
+    }
+
+}
+
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+
+    .page-header {
+        padding: 16px;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+    }
+
+    .page-subtitle {
+        font-size: .85rem;
+    }
+
+    .search-wrapper input {
+        height: 44px;
+    }
+
+    .patient-menu-btn {
+        height: 44px;
+    }
+
+    .patient-dropdown {
+        width: 100%;
+
+        min-width: 100%;
+    }
+
+}
+
+.fade-up {
+    opacity: 0;
+
+    transform: translateY(-40px) scale(.97);
+
+    animation:
+        fadeUp .8s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+.fade-delay-1 {
+    animation-delay: .1s;
+}
+.fade-delay-2 {
+    animation-delay: .2s;
+}
+
+.fade-delay-3 {
+    animation-delay: .3s;
+}
+
+.fade-delay-4 {
+    animation-delay: .4s;
+}
+
+.fade-delay-5 {
+    animation-delay: .5s;
+}

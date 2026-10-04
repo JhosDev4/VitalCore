@@ -13,6 +13,7 @@
         header("Location: ../login.php");
         exit();
     }
+
     $conn = mysqli_connect("localhost", "root", "", "vitalcore_db");
 
     if (!$conn) {
@@ -26,7 +27,7 @@
         INNER JOIN measurements m
             ON u.id = m.user_id
         WHERE u.role = 'patient'
-        AND m.service_type = 'prenatal'"
+        AND m.service_type = 'vital'"
     );
 
     $count_row = mysqli_fetch_assoc($count_query);
@@ -39,7 +40,7 @@
         FROM users u
         INNER JOIN measurements m
             ON u.id = m.user_id
-        WHERE m.service_type = 'prenatal'
+        WHERE m.service_type = 'vital'
         AND u.role = 'patient'
         ORDER BY u.id DESC"
     );
@@ -82,32 +83,16 @@
     <div class="container-fluid">
         <div class="row">
 
-        
-<!-- Sidebar Navigation -->
-      <nav class="col-md-3 col-lg-2 d-md-flex sidebar p-3 flex-column justify-content-between">
+ <!-- Sidebar Navigation -->
+        <nav class="col-md-3 col-lg-2 d-md-flex sidebar p-3 flex-column justify-content-between">
         <div>
             <!-- LOGO & BRAND -->
-            <div class="logo-section mb-4 d-flex align-items-center gap-2 px-2">
-                    <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;">
-                    <span class="sidebar-brand">VitalCore</span>
-                </div>
+           <div class="logo-section mb-4 d-flex align-items-center gap-2 px-2">
+                <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;">
+                <span class="sidebar-brand">VitalCore</span>
+           </div>
 
             <div class="sidebar-menu-wrapper">
-
-                <!-- SECTION: MAIN -->
-                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                    Main
-                </small>
-
-                <ul class="nav flex-column mb-3">
-                    <!-- Dashboard -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="../dashboard.php">
-                            <i class="bi bi-grid-1x2-fill me-2"></i>
-                            Dashboard
-                        </a>
-                    </li>
-                </ul>
 
                 <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
                 <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
@@ -115,7 +100,7 @@
                 </small>
 
                 <ul class="nav flex-column mb-3">
-                     <!-- Patient Management -->
+                    <!-- Patient Management -->
                     <li class="nav-item">
                         <a class="nav-link sidebar-collapse-link active d-flex justify-content-between align-items-center"
                         data-bs-toggle="collapse"
@@ -144,13 +129,6 @@
                                         Add Patient
                                     </a>
                                 </li>
-                                <li class="py-1">
-                                    <a href="#" class="sidebar-submenu-link text-decoration-none">
-                                        <i class="bi bi-hospital-fill me-2 text-info"></i>
-                                        Add Service
-                                    </a>
-                                </li>
-                            </ul>
                         </div>
                     </li>
 
@@ -172,13 +150,13 @@
                         <div class="collapse" id="recordsMenu">
                             <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                 <li class="py-1">
-                                    <a href="../logs/patient-history.php" class="sidebar-submenu-link text-decoration-none">
+                                    <a href="../patient-history.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-clock-history me-2"></i>
                                         Patient Records
                                     </a>
                                 </li>
                                 <li class="py-1">
-                                    <a href="../logs/reports.php" class="sidebar-submenu-link text-decoration-none">
+                                    <a href="../reports.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-file-earmark-bar-graph me-2"></i>
                                         Reports
                                     </a>
@@ -188,12 +166,6 @@
                     </li>
                 </ul>
 
-                <!-- SECTION: HARDWARE & SYSTEM -->
-                <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
-                    Hardware & System
-                </small>
-
-                <ul class="nav flex-column mb-3">
                     <!-- Administration -->
                     <li class="nav-item">
                         <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
@@ -208,17 +180,10 @@
                             </span>
                             <i class="bi bi-chevron-down collapse-chevron"></i>
                         </a>
-
                         <div class="collapse" id="adminMenu">
                             <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                 <li class="py-1">
                                     <a href="#" class="sidebar-submenu-link text-decoration-none">
-                                        <i class="bi bi-person-gear me-2"></i>
-                                        User Management
-                                    </a>
-                                </li>
-                                <li class="py-1">
-                                    <a href="../setting.php" class="sidebar-submenu-link text-decoration-none">
                                         <i class="bi bi-sliders me-2"></i>
                                         Settings
                                     </a>
@@ -239,7 +204,6 @@
             </a>
         </div>
     </nav>
-
             <!-- MAIN CONTENT -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
@@ -248,7 +212,7 @@
                 <div class="patient-grid-header d-flex align-items-center">
 
                     <h4 class="fw-bold mb-0 patient-title">
-                        Prenatal Grid
+                        Vital Screening Grid
                     </h4>
 
                     <div class="dropdown">
@@ -400,7 +364,6 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../../assets/js/theme.js"></script>
-
         
 <script>
 document.getElementById('patientSearchInput').addEventListener('input', function () {

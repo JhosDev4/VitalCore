@@ -6,13 +6,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once('../../db_conn.php');
+require_once('../db_conn.php');
 
 /* =========================================================
    ACCESS CONTROL
 ========================================================= */
 
 if (
+    !isset($_SESSION['staff_id']) ||
     !isset($_SESSION['role']) ||
     !in_array($_SESSION['role'], ['Administrator', 'Staff'], true)
 ) {
@@ -290,11 +291,11 @@ if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
     $diastolic  = $measurement['diastolic'] ?? null;
 
     if (!empty($measurement['created_at'])) {
-        $doc_date     = date('F d, Y', strtotime($measurement['created_at']));
         $last_visited = date(
             'F d, Y - h:i A',
             strtotime($measurement['created_at'])
         );
+        $doc_date = date('F d, Y', strtotime($measurement['created_at']));
     }
 }
 
@@ -457,10 +458,18 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
 
 <head>
 
+    <!-- PRE-LOAD STAFF INDEPENDENT DARK MODE -->
     <script>
-        if (localStorage.getItem("theme") === "dark" || localStorage.getItem("staff_theme") === "dark") {
-            document.documentElement.classList.add("dark-mode");
-        }
+        (function() {
+            const savedTheme = localStorage.getItem('staff_theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark-mode');
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        })();
     </script>
 
     <meta charset="UTF-8">
@@ -475,13 +484,16 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
-        .fp-title { color: #0a49c4; font-weight: 800; }
-        
+        /* Dark Mode Override Fix for Clinic Title */
+        .clinic-name,
+        h1.clinic-name,
         html.dark-mode .clinic-name,
-        body.dark-mode .clinic-name {
+        body.dark-mode .clinic-name,
+        .dark-mode h1.clinic-name {
             color: #0a49c4 !important;
         }
 
+        .fp-title { color: #0a49c4; font-weight: 800; }
         .fp-method-box { border: 1px solid #dbe3ef; border-radius: 10px; padding: 16px; background: #f8fafc; }
         .fp-method-value { font-size: 1.05rem; font-weight: 700; color: #0a49c4; }
         .fp-status-box { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
@@ -511,7 +523,7 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
 <div class="no-print bg-white border-bottom p-3 mb-3 sticky-top shadow-sm">
     <div class="container d-flex justify-content-between align-items-center" style="max-width: 820px;">
 
-        <a href="../logs/patient-history-list.php?user_id=<?= $patient['id']; ?>" class="btn btn-outline-secondary btn-sm">
+        <a href="patient-history-list.php?user_id=<?= $patient['id']; ?>" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left me-1"></i> Back to Patient History
         </a>
 
@@ -559,7 +571,7 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
             <div class="clinic-brand">
                 <img src="../../img/logo.jpg" alt="VitalCore Logo" class="clinic-logo" onerror="this.style.display='none';">
                 <div>
-                    <h1 class="clinic-name">Family Planning Chart</h1>
+                    <h1 class="clinic-name" style="color:#0a49c4 !important;">Family Planning Chart</h1>
                     <p class="clinic-sub">Clinical Patient Record & Health Assessment</p>
                 </div>
             </div>
@@ -567,7 +579,7 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
             <div class="text-end">
                 <span class="doc-title-badge">FAMILY PLANNING RECORD</span>
                 <div class="mt-1 text-muted" style="font-size: 0.75rem;">
-                    <strong>Document Date:</strong> <?= htmlspecialchars($doc_date); ?>
+                    <strong>Document Date:</strong> <?= $doc_date; ?>
                 </div>
             </div>
         </div>
@@ -851,12 +863,6 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
 <script>
 const defaultFileName = <?= json_encode($safe_filename); ?>;
 
-document.addEventListener("DOMContentLoaded", function() {
-    if (localStorage.getItem("theme") === "dark" || localStorage.getItem("staff_theme") === "dark") {
-        document.body.classList.add("dark-mode");
-    }
-});
-
 const remarksInput = document.querySelector('textarea[name="remarks"]');
 if (remarksInput) {
     const adjustHeight = () => {
@@ -1108,98 +1114,20 @@ function fallbackDownload(blob, filename) {
     URL.revokeObjectURL(url);
 }
 </script>
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
-<script>
-(function applySystemSettings() {
-    // 1. Theme / Dark Mode
-    const darkModeToggleBtn = document.getElementById("darkModeToggle");
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-        document.documentElement.classList.add("dark-mode");
-    }
-    if (darkModeToggleBtn) {
-        darkModeToggleBtn.addEventListener("click", function() {
-            const isDark = document.body.classList.toggle("dark-mode");
-            document.documentElement.classList.toggle("dark-mode", isDark);
-            localStorage.setItem("theme", isDark ? "dark" : "light");
-        });
-    }
 
-    // 2. Brightness
-    const savedBrightness = localStorage.getItem("brightness");
-    if (savedBrightness) {
-        document.body.style.filter = `brightness(${savedBrightness}%)`;
-    }
-
-    // 3. Night Light
-    const savedNightLight = localStorage.getItem("nightLight");
-    const nightLightOverlay = document.getElementById("nightLightOverlay");
-    if (savedNightLight === "enabled" && nightLightOverlay) {
-        nightLightOverlay.style.display = "block";
-    }
-
-    // 4. Text Size
-    const savedTextSize = localStorage.getItem("textSize");
-    if (savedTextSize) {
-        const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
-        document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
-    }
-
-    // 5. Language Dictionary
-    const i18n = {
-        en: {
-            section_main: "Main", nav_dashboard: "Dashboard", section_clinical: "Clinical Services",
-            nav_patient_mgmt: "Patient Management", nav_all_patients: "All Patients Services", nav_add_patient: "Add Patient",
-            nav_patient_records: "Patient Records", nav_records_history: "Patient Records", nav_reports: "Reports",
-            section_system: "Hardware & System", nav_admin: "Administration", nav_user_mgmt: "User Management",
-            nav_settings: "Settings", nav_logout: "Log out", header_greeting: "Good Day, Admin",
-            header_desc: "System status overview and clinical intake telemetry.", avg_health_title: "Average Health",
-            avg_health_desc: "Average recorded vital measurements", tbl_measurement: "Measurement", tbl_average: "Average",
-            tbl_unit: "Unit", lbl_height: "Height", lbl_weight: "Weight", lbl_temp: "Temperature",
-            lbl_heart: "Heart Rate", lbl_bp: "Blood Pressure", title_new_patients: "New Patients",
-            title_patients_overview: "Patients Overview", title_services: "Service Categories",
-            title_recent_patients: "Recent Patient List", title_followup: "Follow-up Schedule", dark_mode_title: "Dark Mode"
-        },
-        fil: {
-            section_main: "Pangunahin", nav_dashboard: "Dashboard", section_clinical: "Serbisyong Klinikal",
-            nav_patient_mgmt: "Pamamahala ng Pasyente", nav_all_patients: "Lahat ng Serbisyong Pasyente", nav_add_patient: "Magdagdag ng Pasyente",
-            nav_patient_records: "Mga Rekord ng Pasyente", nav_records_history: "Kasaysayan ng Rekord", nav_reports: "Mga Ulat",
-            section_system: "Hardware at Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pamamahala ng Gumagamit",
-            nav_settings: "Mga Setting", nav_logout: "Mag-logout", header_greeting: "Magandang Araw, Admin",
-            header_desc: "Pangkalahatang-ideya ng estado ng sistema.", avg_health_title: "Gitarang Kalusugan",
-            avg_health_desc: "Karaniwang naitalang sukat ng vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Taas", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Bilis ng Puso", lbl_bp: "Presyon ng Dugo", title_new_patients: "Bagong Pasyente",
-            title_patients_overview: "Pangkalahatang-ideya ng Pasyente", title_services: "Kategorya ng Serbisyo",
-            title_recent_patients: "Kasalukuyang Listahan ng Pasyente", title_followup: "Iskedyul ng Follow-up", dark_mode_title: "Dark Mode"
-        },
-        ceb: {
-            section_main: "Pangunahing", nav_dashboard: "Dashboard", section_clinical: "Mga Serbisyong Klinikal",
-            nav_patient_mgmt: "Pagdumala sa Pasyente", nav_all_patients: "Tanan nga Serbisyong Pasyente", nav_add_patient: "Idugang ang Pasyente",
-            nav_patient_records: "Mga Rekord sa Pasyente", nav_records_history: "Kasaysayan sa Rekord", nav_reports: "Mga Report",
-            section_system: "Hardware ug Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pagdumala sa Paggamit",
-            nav_settings: "Mga Setting", nav_logout: "Mo-logout", header_greeting: "Maayong Adlaw, Admin",
-            header_desc: "Kinatibuk-ang pagtan-aw sa estado sa sistema.", avg_health_title: "Kasagarang Panglawas",
-            avg_health_desc: "Kasagarang nahitala nga vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Gitas-on", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Kusog sa Kasingkasing", lbl_bp: "Presyon sa Dugo", title_new_patients: "Bag-ong Pasyente",
-            title_patients_overview: "Kinatibuk-ang Pasyente", title_services: "Mga Kategorya sa Serbisyo",
-            title_recent_patients: "Bag-ong Listahan sa Pasyente", title_followup: "Iskedyul sa Follow-up", dark_mode_title: "Dark Mode"
-        }
-    };
-    const savedLang = localStorage.getItem("language");
-    if (savedLang && i18n[savedLang]) {
-        const dict = i18n[savedLang];
-        document.querySelectorAll("[data-i18n]").forEach(el => {
-            const key = el.getAttribute("data-i18n");
-            if (dict[key]) el.innerText = dict[key];
-        });
-    }
-})();
-</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../../assets/js/theme.js"></script>
+<script src="../assets/js/theme.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const savedTheme = localStorage.getItem('staff_theme');
+    if (savedTheme === 'dark') {
+        if (document.body) {
+            document.body.classList.add('dark-mode');
+            document.body.setAttribute('data-bs-theme', 'dark');
+        }
+    }
+});
+</script>
 
 </body>
 </html>

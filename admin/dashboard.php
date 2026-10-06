@@ -4,10 +4,19 @@ session_start();
 // Set local timezone for Philippines
 date_default_timezone_set('Asia/Manila');
 
+/* =========================
+   SECURITY CHECK
+   (re-enabled - this page shows patient data.
+    To bypass it while demoing, comment out this block again.)
+========================= */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Administrator') {
-    // Fallback for demonstration / security
-    // header("Location: ../login.php");
-    // exit();
+    header("Location: ../login.php");
+    exit();
+}
+
+/* Helper: JSON-encode template variables for data-vars attributes */
+function vars_attr(array $vars): string {
+    return htmlspecialchars(json_encode($vars, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
 }
 
 $conn = mysqli_connect("localhost", "root", "", "vitalcore_db");
@@ -32,11 +41,11 @@ $yesterday_r = $yesterday_q ? mysqli_fetch_assoc($yesterday_q) : [];
 $yesterday_new_patients = $yesterday_r['yesterday_total'] ?? 0;
 
 $gender_q = $conn ? mysqli_query($conn, "
-    SELECT 
+    SELECT
         SUM(CASE WHEN gender='Male' THEN 1 ELSE 0 END) AS male_count,
         SUM(CASE WHEN gender='Female' THEN 1 ELSE 0 END) AS female_count,
         COUNT(*) AS total_count
-    FROM users 
+    FROM users
     WHERE role='patient'
 ") : false;
 $gender_r = $gender_q ? mysqli_fetch_assoc($gender_q) : [];
@@ -55,11 +64,11 @@ $yesterday_date_str = date("M d, Y", strtotime("-1 day"));
    PATIENT LIST (DYNAMIC QUERY)
 ========================= */
 $sql_patients = "
-    SELECT u.*, COALESCE(p.disease, 'Not recorded') AS disease 
-    FROM users u 
-    LEFT JOIN patients p ON u.id = p.user_id 
-    WHERE u.role='patient' 
-    ORDER BY u.id DESC 
+    SELECT u.*, COALESCE(p.disease, 'Not recorded') AS disease
+    FROM users u
+    LEFT JOIN patients p ON u.id = p.user_id
+    WHERE u.role='patient'
+    ORDER BY u.id DESC
     LIMIT 10
 ";
 $patients = $conn ? mysqli_query($conn, $sql_patients) : false;
@@ -104,14 +113,16 @@ $followup_query = $conn ? mysqli_query($conn, "
     SELECT
         u.id,
         u.fullname,
-        'Family Planning' AS service_type,
-        f.next_schedule AS follow_up_date
-     FROM family_planning_records f
-     INNER JOIN users u ON u.id = f.user_id
-     WHERE f.next_schedule IS NOT NULL
-     AND f.next_schedule >= CURDATE()
-     ORDER BY f.next_schedule ASC
-     LIMIT 20
+        'family' AS service_type,
+        MIN(f.next_schedule) AS follow_up_date
+    FROM family_planning_records f
+    INNER JOIN users u ON u.id = f.user_id
+    WHERE f.next_schedule IS NOT NULL
+      AND f.next_schedule >= CURDATE()
+      AND u.role = 'patient'
+    GROUP BY f.user_id, u.id, u.fullname
+    ORDER BY follow_up_date ASC
+    LIMIT 20
 ") : false;
 
 if ($followup_query) {
@@ -120,29 +131,32 @@ if ($followup_query) {
     }
 }
 
+$followup_total = count($followup_rows);
+
 ?>
 <!DOCTYPE html>
 <html lang="en" translate="no">
 <head>
     <script>
-    // System Settings Pre-loader Script (Applies Dark Mode, Text Size, & Brightness instantly)
-    (function() {
-        // Dark Mode
-        if (localStorage.getItem("theme") === "dark") {
-            document.documentElement.classList.add("dark-mode");
-        }
-        // Text Size
-        const savedTextSize = localStorage.getItem("textSize");
-        if (savedTextSize) {
-            const fontSizes = { small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
-            document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
-        }
+    // Apply saved theme + text size before first paint (prevents flicker)
+    (function () {
+        try {
+            if (localStorage.getItem("theme") === "dark") {
+                document.documentElement.classList.add("dark-mode");
+            }
+            const savedTextSize = localStorage.getItem("textSize");
+            if (savedTextSize) {
+                const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
+                document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
+            }
+        } catch (e) { /* localStorage unavailable */ }
     })();
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VitalCore Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css">
+    <!-- Bootstrap 5.3 (the *-subtle classes used on this page need 5.3) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="../css/theme.css">
@@ -153,7 +167,10 @@ if ($followup_query) {
             background-color: #121824 !important;
             color: #e2e8f0 !important;
         }
-        html.dark-mode .card, html.dark-mode .patient-card, html.dark-mode .analytics-card {
+        html.dark-mode .card,
+        html.dark-mode .patient-card,
+        html.dark-mode .analytics-card,
+        html.dark-mode .modal-content {
             background-color: #1e293b !important;
             color: #e2e8f0 !important;
             border-color: rgba(255,255,255,0.1) !important;
@@ -164,9 +181,31 @@ if ($followup_query) {
         html.dark-mode .text-muted {
             color: #94a3b8 !important;
         }
+        html.dark-mode .bg-white,
+        html.dark-mode .bg-light {
+            background-color: #0f172a !important;
+            color: #e2e8f0 !important;
+            border-color: #334155 !important;
+        }
+        html.dark-mode .form-control {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
         html.dark-mode .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: #e2e8f0;
+            --bs-table-hover-color: #f8fafc;
+            --bs-table-hover-bg: rgba(255,255,255,0.05);
+            --bs-table-border-color: rgba(255,255,255,0.1);
             color: #e2e8f0 !important;
         }
+        html.dark-mode .border-top,
+        html.dark-mode .border-bottom,
+        html.dark-mode .border-start {
+            border-color: rgba(255,255,255,0.12) !important;
+        }
+        html.dark-mode .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
         html.dark-mode .sidebar {
             background-color: #0f172a !important;
             border-right-color: rgba(255,255,255,0.1) !important;
@@ -213,12 +252,12 @@ if ($followup_query) {
             <div>
                 <!-- LOGO & BRAND -->
                 <div class="logo-section mb-4 d-flex align-items-center gap-2 px-2">
-                    <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2966/2966327.png';">
+                    <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/2966/2966327.png';">
                     <span class="sidebar-brand fw-bold fs-5">VitalCore</span>
                 </div>
 
                 <div class="sidebar-menu-wrapper">
-                    
+
                     <!-- SECTION: MAIN -->
                     <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_main">
                         Main
@@ -309,7 +348,7 @@ if ($followup_query) {
 
                     <!-- SECTION: HARDWARE & SYSTEM -->
                     <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_system">
-                        Hardware & System
+                        Hardware &amp; System
                     </small>
 
                     <ul class="nav flex-column mb-3">
@@ -361,7 +400,7 @@ if ($followup_query) {
 
         <!-- Main Content Area -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-            
+
             <!-- TOP HEADER BAR WITH DYNAMIC DATE & QUICK CONTROLS -->
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 fade-up">
                <div>
@@ -375,17 +414,18 @@ if ($followup_query) {
                 </div>
 
                 <div class="top-actions m-0">
-                    <!-- DYNAMIC CURRENT DATE CHIP -->
+                    <!-- DYNAMIC CURRENT DATE + LIVE CLOCK CHIP -->
                     <span class="badge bg-white text-secondary border px-3 py-2 rounded-pill fw-semibold shadow-sm" style="font-size: 0.85rem;" id="dashboardDateChip">
                         <i class="bi bi-calendar-event me-1 text-primary"></i> <?= date("l, M d, Y"); ?>
+                        <span class="ms-1 text-primary" id="liveClock"></span>
                     </span>
 
                     <a href="#" id="openSensorStatus" class="status-pill warning text-decoration-none">
                         <i class="bi bi-exclamation-triangle-fill warning-icon"></i>
-                        <span>Sensors Status</span>
+                        <span data-i18n="sensors_status">Sensors Status</span>
                     </a>
-                    
-                     <button id="darkModeToggle" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+
+                     <button id="darkModeToggle" type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
                         <i class="bi bi-moon-stars-fill me-1"></i>
                         <span data-i18n="dark_mode_title">Dark Mode</span>
                     </button>
@@ -412,7 +452,7 @@ if ($followup_query) {
 
                             <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1">
                                 <i class="bi bi-activity me-1"></i>
-                                Live Data
+                                <span data-i18n="live_data">Live Data</span>
                             </span>
                         </div>
 
@@ -436,7 +476,7 @@ if ($followup_query) {
                                                 </div>
                                                 <div>
                                                     <strong data-i18n="lbl_height">Height</strong>
-                                                    <small>Body height</small>
+                                                    <small data-i18n="sub_height">Body height</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -459,7 +499,7 @@ if ($followup_query) {
                                                 </div>
                                                 <div>
                                                     <strong data-i18n="lbl_weight">Weight</strong>
-                                                    <small>Body weight</small>
+                                                    <small data-i18n="sub_weight">Body weight</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -482,7 +522,7 @@ if ($followup_query) {
                                                 </div>
                                                 <div>
                                                     <strong data-i18n="lbl_temp">Temperature</strong>
-                                                    <small>Body temperature</small>
+                                                    <small data-i18n="sub_temp">Body temperature</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -505,7 +545,7 @@ if ($followup_query) {
                                                 </div>
                                                 <div>
                                                     <strong data-i18n="lbl_heart">Heart Rate</strong>
-                                                    <small>Pulse rate</small>
+                                                    <small data-i18n="sub_heart">Pulse rate</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -528,7 +568,7 @@ if ($followup_query) {
                                                 </div>
                                                 <div>
                                                     <strong>SpO₂</strong>
-                                                    <small>Oxygen saturation</small>
+                                                    <small data-i18n="sub_spo2">Oxygen saturation</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -551,7 +591,7 @@ if ($followup_query) {
                                                 </div>
                                                 <div>
                                                     <strong data-i18n="lbl_bp">Blood Pressure</strong>
-                                                    <small>Average BP</small>
+                                                    <small data-i18n="sub_bp">Average BP</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -576,7 +616,7 @@ if ($followup_query) {
                         <div class="average-health-footer">
                             <div>
                                 <i class="bi bi-info-circle me-1"></i>
-                                Based on recorded measurements
+                                <span data-i18n="based_on">Based on recorded measurements</span>
                             </div>
                             <i class="bi bi-chevron-right"></i>
                         </div>
@@ -589,23 +629,23 @@ if ($followup_query) {
                    <div class="card analytics-card p-4 mb-3 fade-up fade-delay-2">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h5 class="card-title fw-bold text-dark m-0" data-i18n="title_new_patients">New Patients</h5>
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;" data-i18n="badge_today">
                                 Today
                             </span>
                         </div>
-                        
+
                         <div style="position: relative; height:150px; width:100%" class="d-flex flex-column justify-content-between">
                             <div class="d-flex align-items-baseline gap-2 mt-1">
                                <span class="display-3 fw-bolder text-primary lh-1 stat-number">
                                     <?= number_format($today_new_patients); ?>
                                 </span>
-                                <span class="text-muted fw-semibold fs-6">new patient<?= $today_new_patients != 1 ? 's' : ''; ?> added today</span>
+                                <span class="text-muted fw-semibold fs-6" data-i18n="<?= $today_new_patients == 1 ? 'new_added_one' : 'new_added_many'; ?>">new patient<?= $today_new_patients != 1 ? 's' : ''; ?> added today</span>
                             </div>
 
                             <div class="row g-2 border-top pt-2 mt-auto">
                                 <div class="col-6">
                                     <div class="d-flex flex-column">
-                                        <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;">Total Patients</span>
+                                        <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;" data-i18n="total_patients_lbl">Total Patients</span>
                                        <span class="fw-bold fs-5 text-dark stat-number"><?= number_format($patient_count); ?></span>
                                         <span class="text-secondary opacity-75" style="font-size: 0.75rem;"><?= $current_date_str; ?></span>
                                     </div>
@@ -613,7 +653,7 @@ if ($followup_query) {
 
                                 <div class="col-6 border-start ps-3">
                                     <div class="d-flex flex-column">
-                                        <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;">Previous Record</span>
+                                        <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.5px;" data-i18n="previous_record">Previous Record</span>
                                         <span class="fw-bold fs-5 text-dark stat-number"><?= number_format($yesterday_new_patients); ?></span>
                                         <span class="text-secondary opacity-75" style="font-size: 0.75rem;"><?= $yesterday_date_str; ?></span>
                                     </div>
@@ -626,25 +666,25 @@ if ($followup_query) {
                    <div class="card analytics-card p-4 fade-up fade-delay-3">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h5 class="card-title fw-bold text-dark m-0" data-i18n="title_patients_overview">Patients Overview</h5>
-                            <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;">
+                            <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.72rem;" data-i18n="gender_ratio">
                                 Gender Ratio
                             </span>
                         </div>
-                        
+
                         <div style="position: relative; height:150px; width:100%" class="d-flex flex-column justify-content-between">
                             <div class="table-responsive mt-1">
                                 <table class="table table-borderless table-sm align-middle mb-1" style="font-size: 0.85rem;">
                                     <thead>
                                         <tr class="text-muted border-bottom" style="font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                            <th class="ps-0 py-1">Gender</th>
-                                            <th class="text-center py-1">Count</th>
-                                            <th class="text-end py-1">Ratio</th>
+                                            <th class="ps-0 py-1" data-i18n="col_gender">Gender</th>
+                                            <th class="text-center py-1" data-i18n="col_count">Count</th>
+                                            <th class="text-end py-1" data-i18n="col_ratio">Ratio</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
                                             <td class="ps-0 py-1 fw-semibold text-dark">
-                                                <i class="bi bi-gender-male text-primary me-1"></i> Male
+                                                <i class="bi bi-gender-male text-primary me-1"></i> <span data-i18n="male">Male</span>
                                             </td>
                                             <td class="text-center py-1 fw-bold stat-number"><?= number_format($male_count); ?></td>
                                             <td class="text-end py-1">
@@ -653,7 +693,7 @@ if ($followup_query) {
                                         </tr>
                                         <tr>
                                             <td class="ps-0 py-1 fw-semibold text-dark">
-                                                <i class="bi bi-gender-female text-danger me-1"></i> Female
+                                                <i class="bi bi-gender-female text-danger me-1"></i> <span data-i18n="female">Female</span>
                                             </td>
                                             <td class="text-center py-1 fw-bold stat-number"><?= number_format($female_count); ?></td>
                                             <td class="text-end py-1">
@@ -666,8 +706,8 @@ if ($followup_query) {
 
                             <div class="mt-auto pt-2 border-top">
                                 <div class="d-flex justify-content-between text-muted mb-1" style="font-size: 0.72rem;">
-                                    <span><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5rem;"></i> Male (<?= $male_percent; ?>%)</span>
-                                    <span><i class="bi bi-circle-fill text-danger me-1" style="font-size: 0.5rem;"></i> Female (<?= $female_percent; ?>%)</span>
+                                    <span><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5rem;"></i> <span data-i18n="legend_male" data-vars="<?= vars_attr(['p' => (string)$male_percent]); ?>">Male (<?= $male_percent; ?>%)</span></span>
+                                    <span><i class="bi bi-circle-fill text-danger me-1" style="font-size: 0.5rem;"></i> <span data-i18n="legend_female" data-vars="<?= vars_attr(['p' => (string)$female_percent]); ?>">Female (<?= $female_percent; ?>%)</span></span>
                                 </div>
                                <div class="progress gender-progress">
                                     <div class="progress-bar bg-primary male-bar" style="width: <?= $male_percent; ?>%"></div>
@@ -689,24 +729,24 @@ if ($followup_query) {
 
                         <div class="mt-3">
                             <div class="d-flex justify-content-between mb-2">
-                                <span><i class="bi bi-circle-fill text-primary me-1"></i> Vital Screening</span>
+                                <span><i class="bi bi-circle-fill text-primary me-1"></i> <span data-i18n="svc_vital">Vital Screening</span></span>
                                 <strong class="stat-number"><?= $vital_count ?></strong>
                             </div>
 
                             <div class="d-flex justify-content-between mb-2">
-                                <span><i class="bi bi-circle-fill text-danger me-1"></i> Prenatal</span>
+                                <span><i class="bi bi-circle-fill text-danger me-1"></i> <span data-i18n="svc_prenatal">Prenatal</span></span>
                                <strong class="stat-number"><?= $prenatal_count ?></strong>
                             </div>
 
                             <div class="d-flex justify-content-between">
-                                <span><i class="bi bi-circle-fill text-warning me-1"></i> Family Planning</span>
+                                <span><i class="bi bi-circle-fill text-warning me-1"></i> <span data-i18n="svc_family">Family Planning</span></span>
                                 <strong class="stat-number"><?= $family_count ?></strong>
                             </div>
                         </div>
                     </div>
-                </div>        
+                </div>
             </div>
-        
+
            <!-- Patient List + Follow-up Schedule Row -->
             <div class="row mt-4">
                 <!-- Recent Patient List -->
@@ -715,15 +755,15 @@ if ($followup_query) {
                         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3">
                             <div>
                                 <h5 class="fw-bold text-dark m-0" data-i18n="title_recent_patients">Recent Patient List</h5>
-                                <small class="text-muted">Showing latest registered patients</small>
+                                <small class="text-muted" data-i18n="recent_sub">Showing latest registered patients</small>
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="position-relative">
                                     <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                                    <input type="text" id="patientSearchInput" class="form-control rounded-pill ps-5 bg-light border-light-subtle" placeholder="Search patient name..." style="font-size: 0.85rem; width: 230px;">
+                                    <input type="text" id="patientSearchInput" class="form-control rounded-pill ps-5 bg-light border-light-subtle" placeholder="Search patient name..." data-i18n-placeholder="ph_search" style="font-size: 0.85rem; width: 230px;">
                                 </div>
                                 <a href="admin-dashboard.php" class="btn btn-primary rounded-pill px-3 py-1 fw-semibold d-flex align-items-center gap-1" style="font-size: 0.85rem;">
-                                    <i class="bi bi-person-plus-fill"></i> Add Patient
+                                    <i class="bi bi-person-plus-fill"></i> <span data-i18n="nav_add_patient">Add Patient</span>
                                 </a>
                             </div>
                         </div>
@@ -732,9 +772,9 @@ if ($followup_query) {
                             <table class="table table-hover align-middle mb-0" id="patientTable">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
-                                        <th>Name</th>
-                                        <th>Date Of Checkup</th>
+                                        <th data-i18n="col_no">No</th>
+                                        <th data-i18n="col_name">Name</th>
+                                        <th data-i18n="col_checkup">Date Of Checkup</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -742,19 +782,18 @@ if ($followup_query) {
                                 $no = 1;
                                 if ($patients) {
                                     while ($row = mysqli_fetch_assoc($patients)) {
-                                        $disease = htmlspecialchars($row['disease']);
                                         $date = isset($row['created_at']) ? date("Y-m-d", strtotime($row['created_at'])) : date("Y-m-d");
                                 ?>
                                     <tr>
                                         <td><?= $no++; ?></td>
                                         <td class="fw-semibold patient-name">
-                                            <?= htmlspecialchars($row['fullname']); ?>
+                                            <?= htmlspecialchars((string)$row['fullname']); ?>
                                         </td>
                                         <td><?= $date; ?></td>
                                     </tr>
-                                <?php 
+                                <?php
                                     }
-                                } 
+                                }
                                 ?>
                                 </tbody>
                             </table>
@@ -770,11 +809,11 @@ if ($followup_query) {
                                 <h5 class="card-title fw-bold text-dark mb-1">
                                     <i class="bi bi-calendar2-check-fill text-primary me-2"></i>
                                     <span data-i18n="title_followup">Follow-up Schedule</span>
-                                    <span class="badge bg-primary ms-2"> Total:
-                                        <?= count($followup_rows); ?>
+                                    <span class="badge bg-primary ms-2" data-i18n="followup_total" data-vars="<?= vars_attr(['n' => (string)$followup_total]); ?>"> Total:
+                                        <?= $followup_total; ?>
                                     </span>
                                 </h5>
-                                <small class="text-muted">Patients scheduled</small>
+                                <small class="text-muted" data-i18n="followup_sub">Patients scheduled</small>
                             </div>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill fw-semibold" style="font-size: 0.75rem;">
                                 <?= date("M d, Y"); ?>
@@ -785,9 +824,9 @@ if ($followup_query) {
                             <table class="table table-borderless table-sm align-middle mb-0" style="font-size: 0.85rem;">
                                 <thead>
                                     <tr class="text-muted border-bottom" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                        <th class="ps-0 py-1">Patient</th>
-                                        <th class="text-center py-1">Service</th>
-                                        <th class="text-end py-1">Time</th>
+                                        <th class="ps-0 py-1" data-i18n="col_patient">Patient</th>
+                                        <th class="text-center py-1" data-i18n="col_service">Service</th>
+                                        <th class="text-end py-1" data-i18n="col_date">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -795,20 +834,20 @@ if ($followup_query) {
                                     <?php foreach ($followup_rows as $fu): ?>
                                     <tr>
                                         <td class="ps-0 py-2 fw-semibold text-dark">
-                                            <?= htmlspecialchars($fu['fullname']); ?>
+                                            <?= htmlspecialchars((string)$fu['fullname']); ?>
                                         </td>
                                         <td class="text-center py-2">
                                             <?php
                                             $svc = $fu['service_type'];
                                             $badge_map = [
-                                                'vital'        => ['bg-warning-subtle text-warning', 'Vital'],
-                                                'prenatal'     => ['bg-danger-subtle text-danger',   'Prenatal'],
-                                                'family'       => ['bg-primary-subtle text-primary', 'Family'],
+                                                'vital'        => ['bg-warning-subtle text-warning', 'Vital',    'badge_vital'],
+                                                'prenatal'     => ['bg-danger-subtle text-danger',   'Prenatal', 'badge_prenatal'],
+                                                'family'       => ['bg-primary-subtle text-primary', 'Family',   'badge_family'],
                                             ];
-                                            [$cls, $label] = $badge_map[$svc] ?? ['bg-secondary-subtle text-secondary', ucfirst($svc)];
+                                            [$cls, $label, $label_key] = $badge_map[$svc] ?? ['bg-secondary-subtle text-secondary', ucfirst($svc), ''];
                                             ?>
-                                            <span class="badge <?= $cls ?> fw-semibold" style="font-size: 0.7rem;">
-                                                <?= $label ?>
+                                            <span class="badge <?= $cls ?> fw-semibold" style="font-size: 0.7rem;"<?= $label_key ? ' data-i18n="' . $label_key . '"' : ''; ?>>
+                                                <?= htmlspecialchars($label) ?>
                                             </span>
                                         </td>
                                         <td class="text-end py-2 text-muted" style="font-size: 0.78rem;">
@@ -820,7 +859,7 @@ if ($followup_query) {
                                     <tr>
                                         <td colspan="3" class="text-center text-muted py-4">
                                             <i class="bi bi-calendar-x fs-4 d-block mb-1 opacity-50"></i>
-                                            No follow-ups scheduled for today
+                                            <span data-i18n="no_followups">No upcoming follow-ups scheduled</span>
                                         </td>
                                     </tr>
                                 <?php endif; ?>
@@ -832,7 +871,7 @@ if ($followup_query) {
                         <div class="mt-auto pt-2 border-top">
                             <small class="text-muted">
                                 <i class="bi bi-info-circle me-1"></i>
-                                <?= count($followup_rows); ?> patient<?= count($followup_rows) != 1 ? 's' : ''; ?> scheduled
+                                <span data-i18n="<?= $followup_total == 1 ? 'followup_footer_one' : 'followup_footer_many'; ?>" data-vars="<?= vars_attr(['n' => (string)$followup_total]); ?>"><?= $followup_total; ?> patient<?= $followup_total != 1 ? 's' : ''; ?> scheduled</span>
                             </small>
                         </div>
                         <?php endif; ?>
@@ -849,30 +888,30 @@ if ($followup_query) {
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title fw-bold">
-                    <i class="bi bi-cpu me-2"></i> Sensor Status
+                    <i class="bi bi-cpu me-2"></i> <span data-i18n="sensor_title">Sensor Status</span>
                 </h4>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
                     <div><i class="bi bi-rulers me-2 text-primary"></i> TF-Luna Height Sensor</div>
-                    <span class="badge bg-success">Connected</span>
+                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
                     <div><i class="bi bi-speedometer2 me-2 text-primary"></i> HX711 Weight Sensor</div>
-                    <span class="badge bg-success">Connected</span>
+                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
                     <div><i class="bi bi-thermometer-half me-2 text-primary"></i> MLX90614 Temperature Sensor</div>
-                    <span class="badge bg-success">Connected</span>
+                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
                     <div><i class="bi bi-heart-pulse me-2 text-danger"></i> MAX30102 Heart Rate Sensor</div>
-                    <span class="badge bg-danger">Disconnected</span>
+                    <span class="badge bg-danger" data-i18n="status_disconnected">Disconnected</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center py-3">
                     <div><i class="bi bi-activity me-2 text-primary"></i> Blood Pressure Monitor</div>
-                    <span class="badge bg-success">Connected</span>
+                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
                 </div>
             </div>
         </div>
@@ -880,96 +919,274 @@ if ($followup_query) {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/theme.js"></script>
 
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
+<!-- SYSTEM SETTINGS ENGINE (applies the preferences saved in setting.php) -->
 <script>
 (function applySystemSettings() {
-    // 1. Theme / Dark Mode
-    const darkModeToggleBtn = document.getElementById("darkModeToggle");
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-        document.documentElement.classList.add("dark-mode");
-    }
-    if (darkModeToggleBtn) {
-        darkModeToggleBtn.addEventListener("click", function() {
-            const isDark = document.body.classList.toggle("dark-mode");
-            document.documentElement.classList.toggle("dark-mode", isDark);
-            localStorage.setItem("theme", isDark ? "dark" : "light");
-        });
-    }
 
-    // 2. Brightness
-    const savedBrightness = localStorage.getItem("brightness");
-    if (savedBrightness) {
-       document.documentElement.style.filter = `brightness(${savedBrightness}%)`;
-    }
-
-    // 3. Night Light
-    const savedNightLight = localStorage.getItem("nightLight");
-    const nightLightOverlay = document.getElementById("nightLightOverlay");
-    if (savedNightLight === "enabled" && nightLightOverlay) {
-        nightLightOverlay.style.display = "block";
-    }
-
-    // 4. Text Size
-    const savedTextSize = localStorage.getItem("textSize");
-    if (savedTextSize) {
-        const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
-        document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
-    }
-
-    // 5. Language Dictionary
-    const i18n = {
-        en: {
-            section_main: "Main", nav_dashboard: "Dashboard", section_clinical: "Clinical Services",
-            nav_patient_mgmt: "Patient Management", nav_all_patients: "All Patients Services", nav_add_patient: "Add Patient",
-            nav_patient_records: "Patient Records", nav_records_history: "Patient Records", nav_reports: "Reports",
-            section_system: "Hardware & System", nav_admin: "Administration", nav_user_mgmt: "User Management",
-            nav_settings: "Settings", nav_logout: "Log out", header_greeting: "Good Day, Admin",
-            header_desc: "System status overview and clinical intake telemetry.", avg_health_title: "Average Health",
-            avg_health_desc: "Average recorded vital measurements", tbl_measurement: "Measurement", tbl_average: "Average",
-            tbl_unit: "Unit", lbl_height: "Height", lbl_weight: "Weight", lbl_temp: "Temperature",
-            lbl_heart: "Heart Rate", lbl_bp: "Blood Pressure", title_new_patients: "New Patients",
-            title_patients_overview: "Patients Overview", title_services: "Service Categories",
-            title_recent_patients: "Recent Patient List", title_followup: "Follow-up Schedule", dark_mode_title: "Dark Mode"
+    // Safe localStorage helper
+    const store = {
+        get(key, fallback = null) {
+            try {
+                const v = localStorage.getItem(key);
+                return v === null ? fallback : v;
+            } catch (e) { return fallback; }
         },
-        fil: {
-            section_main: "Pangunahin", nav_dashboard: "Dashboard", section_clinical: "Serbisyong Klinikal",
-            nav_patient_mgmt: "Pamamahala ng Pasyente", nav_all_patients: "Lahat ng Serbisyong Pasyente", nav_add_patient: "Magdagdag ng Pasyente",
-            nav_patient_records: "Mga Rekord ng Pasyente", nav_records_history: "Kasaysayan ng Rekord", nav_reports: "Mga Ulat",
-            section_system: "Hardware at Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pamamahala ng Gumagamit",
-            nav_settings: "Mga Setting", nav_logout: "Mag-logout", header_greeting: "Magandang Araw, Admin",
-            header_desc: "Pangkalahatang-ideya ng estado ng sistema.", avg_health_title: "Gitarang Kalusugan",
-            avg_health_desc: "Karaniwang naitalang sukat ng vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Taas", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Bilis ng Puso", lbl_bp: "Presyon ng Dugo", title_new_patients: "Bagong Pasyente",
-            title_patients_overview: "Pangkalahatang-ideya ng Pasyente", title_services: "Kategorya ng Serbisyo",
-            title_recent_patients: "Kasalukuyang Listahan ng Pasyente", title_followup: "Iskedyul ng Follow-up", dark_mode_title: "Dark Mode"
-        },
-        ceb: {
-            section_main: "Pangunahing", nav_dashboard: "Dashboard", section_clinical: "Mga Serbisyong Klinikal",
-            nav_patient_mgmt: "Pagdumala sa Pasyente", nav_all_patients: "Tanan nga Serbisyong Pasyente", nav_add_patient: "Idugang ang Pasyente",
-            nav_patient_records: "Mga Rekord sa Pasyente", nav_records_history: "Kasaysayan sa Rekord", nav_reports: "Mga Report",
-            section_system: "Hardware ug Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pagdumala sa Paggamit",
-            nav_settings: "Mga Setting", nav_logout: "Mo-logout", header_greeting: "Maayong Adlaw, Admin",
-            header_desc: "Kinatibuk-ang pagtan-aw sa estado sa sistema.", avg_health_title: "Kasagarang Panglawas",
-            avg_health_desc: "Kasagarang nahitala nga vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Gitas-on", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Kusog sa Kasingkasing", lbl_bp: "Presyon sa Dugo", title_new_patients: "Bag-ong Pasyente",
-            title_patients_overview: "Kinatibuk-ang Pasyente", title_services: "Mga Kategorya sa Serbisyo",
-            title_recent_patients: "Bag-ong Listahan sa Pasyente", title_followup: "Iskedyul sa Follow-up", dark_mode_title: "Dark Mode"
+        set(key, value) {
+            try { localStorage.setItem(key, value); } catch (e) {}
         }
     };
-    const savedLang = localStorage.getItem("language");
-    if (savedLang && i18n[savedLang]) {
-        const dict = i18n[savedLang];
-        document.querySelectorAll("[data-i18n]").forEach(el => {
-            const key = el.getAttribute("data-i18n");
-            if (dict[key]) el.innerText = dict[key];
+
+    // ---------------------------------------------------------------
+    // 1. Theme / Dark Mode
+    // ---------------------------------------------------------------
+    function applyTheme(isDark) {
+        document.body.classList.toggle("dark-mode", isDark);
+        document.documentElement.classList.toggle("dark-mode", isDark);
+    }
+    applyTheme(store.get("theme") === "dark");
+
+    // Replace the button with a clone so only ONE click handler exists
+    // (prevents theme.js and this script from toggling twice and cancelling out)
+    let darkBtn = document.getElementById("darkModeToggle");
+    if (darkBtn) {
+        const fresh = darkBtn.cloneNode(true);
+        darkBtn.parentNode.replaceChild(fresh, darkBtn);
+        darkBtn = fresh;
+        darkBtn.addEventListener("click", function () {
+            const isDark = !document.documentElement.classList.contains("dark-mode");
+            applyTheme(isDark);
+            store.set("theme", isDark ? "dark" : "light");
         });
     }
+
+    // ---------------------------------------------------------------
+    // 2. Night Light
+    // ---------------------------------------------------------------
+    const nightLightOverlay = document.getElementById("nightLightOverlay");
+    if (nightLightOverlay) {
+        nightLightOverlay.style.display =
+            store.get("nightLight") === "enabled" ? "block" : "none";
+    }
+
+    // ---------------------------------------------------------------
+    // 3. Text Size
+    // ---------------------------------------------------------------
+    const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
+    document.documentElement.style.fontSize =
+        fontSizes[store.get("textSize", "normal")] || "100%";
+
+    // ---------------------------------------------------------------
+    // 4. Language (English is the server-rendered default, so only
+    //    Filipino / Cebuano need to be applied)
+    // ---------------------------------------------------------------
+    const i18n = {
+        fil: {
+            section_main: "Pangunahin",
+            nav_dashboard: "Dashboard",
+            section_clinical: "Serbisyong Klinikal",
+            nav_patient_mgmt: "Pamamahala ng Pasyente",
+            nav_all_patients: "Lahat ng Serbisyong Pasyente",
+            nav_add_patient: "Magdagdag ng Pasyente",
+            nav_patient_records: "Mga Rekord ng Pasyente",
+            nav_records_history: "Kasaysayan ng Rekord",
+            nav_reports: "Mga Ulat",
+            section_system: "Hardware at Sistema",
+            nav_admin: "Administrasyon",
+            nav_user_mgmt: "Pamamahala ng Gumagamit",
+            nav_settings: "Mga Setting",
+            nav_logout: "Mag-logout",
+            header_greeting: "Magandang Araw, Admin",
+            header_desc: "Pangkalahatang-ideya ng estado ng sistema.",
+            sensors_status: "Katayuan ng mga Sensor",
+            dark_mode_title: "Dark Mode",
+            avg_health_title: "Gitarang Kalusugan",
+            avg_health_desc: "Karaniwang naitalang sukat ng vital signs",
+            live_data: "Live na Datos",
+            tbl_measurement: "Sukat",
+            tbl_average: "Average",
+            tbl_unit: "Yunit",
+            lbl_height: "Taas",
+            lbl_weight: "Timbang",
+            lbl_temp: "Temperatura",
+            lbl_heart: "Bilis ng Puso",
+            lbl_bp: "Presyon ng Dugo",
+            sub_height: "Taas ng katawan",
+            sub_weight: "Timbang ng katawan",
+            sub_temp: "Temperatura ng katawan",
+            sub_heart: "Pulso",
+            sub_spo2: "Saturasyon ng oxygen",
+            sub_bp: "Karaniwang BP",
+            based_on: "Batay sa mga naitalang sukat",
+            title_new_patients: "Bagong Pasyente",
+            badge_today: "Ngayon",
+            new_added_one: "bagong pasyente ang naidagdag ngayon",
+            new_added_many: "bagong pasyente ang naidagdag ngayon",
+            total_patients_lbl: "Kabuuang Pasyente",
+            previous_record: "Nakaraang Rekord",
+            title_patients_overview: "Pangkalahatang-ideya ng Pasyente",
+            gender_ratio: "Ratio ng Kasarian",
+            col_gender: "Kasarian",
+            col_count: "Bilang",
+            col_ratio: "Ratio",
+            male: "Lalaki",
+            female: "Babae",
+            legend_male: "Lalaki ({p}%)",
+            legend_female: "Babae ({p}%)",
+            title_services: "Kategorya ng Serbisyo",
+            svc_vital: "Vital Screening",
+            svc_prenatal: "Prenatal",
+            svc_family: "Family Planning",
+            title_recent_patients: "Kasalukuyang Listahan ng Pasyente",
+            recent_sub: "Ipinapakita ang mga pinakabagong nakarehistrong pasyente",
+            ph_search: "Maghanap ng pangalan ng pasyente...",
+            col_no: "Blg",
+            col_name: "Pangalan",
+            col_checkup: "Petsa ng Check-up",
+            title_followup: "Iskedyul ng Follow-up",
+            followup_total: "Kabuuan: {n}",
+            followup_sub: "Mga naka-iskedyul na pasyente",
+            col_patient: "Pasyente",
+            col_service: "Serbisyo",
+            col_date: "Petsa",
+            badge_vital: "Vital",
+            badge_prenatal: "Prenatal",
+            badge_family: "Family",
+            no_followups: "Walang paparating na follow-up",
+            followup_footer_one: "{n} pasyente ang naka-iskedyul",
+            followup_footer_many: "{n} pasyente ang naka-iskedyul",
+            sensor_title: "Katayuan ng Sensor",
+            status_connected: "Nakakonekta",
+            status_disconnected: "Hindi Nakakonekta"
+        },
+        ceb: {
+            section_main: "Pangunahing",
+            nav_dashboard: "Dashboard",
+            section_clinical: "Mga Serbisyong Klinikal",
+            nav_patient_mgmt: "Pagdumala sa Pasyente",
+            nav_all_patients: "Tanan nga Serbisyong Pasyente",
+            nav_add_patient: "Idugang ang Pasyente",
+            nav_patient_records: "Mga Rekord sa Pasyente",
+            nav_records_history: "Kasaysayan sa Rekord",
+            nav_reports: "Mga Report",
+            section_system: "Hardware ug Sistema",
+            nav_admin: "Administrasyon",
+            nav_user_mgmt: "Pagdumala sa Paggamit",
+            nav_settings: "Mga Setting",
+            nav_logout: "Mo-logout",
+            header_greeting: "Maayong Adlaw, Admin",
+            header_desc: "Kinatibuk-ang pagtan-aw sa estado sa sistema.",
+            sensors_status: "Kahimtang sa mga Sensor",
+            dark_mode_title: "Dark Mode",
+            avg_health_title: "Kasagarang Panglawas",
+            avg_health_desc: "Kasagarang nahitala nga vital signs",
+            live_data: "Live nga Datos",
+            tbl_measurement: "Sukat",
+            tbl_average: "Average",
+            tbl_unit: "Yunit",
+            lbl_height: "Gitas-on",
+            lbl_weight: "Timbang",
+            lbl_temp: "Temperatura",
+            lbl_heart: "Kusog sa Kasingkasing",
+            lbl_bp: "Presyon sa Dugo",
+            sub_height: "Gitas-on sa lawas",
+            sub_weight: "Timbang sa lawas",
+            sub_temp: "Temperatura sa lawas",
+            sub_heart: "Pulso",
+            sub_spo2: "Saturasyon sa oxygen",
+            sub_bp: "Kasagarang BP",
+            based_on: "Gibase sa mga nahitala nga sukat",
+            title_new_patients: "Bag-ong Pasyente",
+            badge_today: "Karon",
+            new_added_one: "bag-ong pasyente ang nadugang karon",
+            new_added_many: "bag-ong pasyente ang nadugang karon",
+            total_patients_lbl: "Total nga Pasyente",
+            previous_record: "Miaging Rekord",
+            title_patients_overview: "Kinatibuk-ang Pasyente",
+            gender_ratio: "Ratio sa Gender",
+            col_gender: "Gender",
+            col_count: "Ihap",
+            col_ratio: "Ratio",
+            male: "Lalaki",
+            female: "Babaye",
+            legend_male: "Lalaki ({p}%)",
+            legend_female: "Babaye ({p}%)",
+            title_services: "Mga Kategorya sa Serbisyo",
+            svc_vital: "Vital Screening",
+            svc_prenatal: "Prenatal",
+            svc_family: "Family Planning",
+            title_recent_patients: "Bag-ong Listahan sa Pasyente",
+            recent_sub: "Gipakita ang pinakabag-ong narehistrong pasyente",
+            ph_search: "Pangita og ngalan sa pasyente...",
+            col_no: "Blg",
+            col_name: "Ngalan",
+            col_checkup: "Petsa sa Check-up",
+            title_followup: "Iskedyul sa Follow-up",
+            followup_total: "Total: {n}",
+            followup_sub: "Mga naka-iskedyul nga pasyente",
+            col_patient: "Pasyente",
+            col_service: "Serbisyo",
+            col_date: "Petsa",
+            badge_vital: "Vital",
+            badge_prenatal: "Prenatal",
+            badge_family: "Family",
+            no_followups: "Walay moabot nga follow-up",
+            followup_footer_one: "{n} ka pasyente ang naka-iskedyul",
+            followup_footer_many: "{n} ka pasyente ang naka-iskedyul",
+            sensor_title: "Kahimtang sa Sensor",
+            status_connected: "Konektado",
+            status_disconnected: "Dili Konektado"
+        }
+    };
+
+    const lang = store.get("language", "en");
+    const dict = i18n[lang] || null;
+
+    // Exposed so the chart (below) can translate its labels
+    window.vcT = function (key, fallback) {
+        return (dict && dict[key]) ? dict[key] : fallback;
+    };
+
+    if (dict) {
+        document.documentElement.lang = lang;
+
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            let text = dict[el.getAttribute("data-i18n")];
+            if (!text) return;
+
+            // Fill {placeholders} from data-vars (counts, percentages)
+            if (el.dataset.vars) {
+                try {
+                    const vars = JSON.parse(el.dataset.vars);
+                    text = text.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+                } catch (e) {}
+            }
+            el.textContent = text;
+        });
+
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+            const t = dict[el.getAttribute("data-i18n-placeholder")];
+            if (t) el.placeholder = t;
+        });
+    }
+
+    // ---------------------------------------------------------------
+    // 5. Date & Time Format (live clock in the date chip)
+    // ---------------------------------------------------------------
+    const use12h = store.get("dateTimeFormat", "24h") === "12h";
+    const clockEl = document.getElementById("liveClock");
+
+    function updateClock() {
+        if (!clockEl) return;
+        const opts = { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Manila" };
+        if (use12h) { opts.hour12 = true; } else { opts.hourCycle = "h23"; }
+        clockEl.textContent = "• " + new Date().toLocaleTimeString("en-US", opts);
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
 })();
 </script>
 
@@ -981,22 +1198,13 @@ document.getElementById('openSensorStatus').addEventListener('click', function(e
     sensorModal.show();
 });
 
-const sidebarSensorStatus = document.getElementById('sidebarSensorStatus');
-
-if (sidebarSensorStatus) {
-    sidebarSensorStatus.addEventListener('click', function(e){
-        e.preventDefault();
-        sensorModal.show();
-    });
-}
-
 // Live Search Filter for Patient List
 document.getElementById('patientSearchInput').addEventListener('keyup', function() {
-    let filter = this.value.toLowerCase();
-    let rows = document.querySelectorAll('#patientTable tbody tr');
-    
+    const filter = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#patientTable tbody tr');
+
     rows.forEach(row => {
-        let name = row.querySelector('.patient-name').textContent.toLowerCase();
+        const name = row.querySelector('.patient-name').textContent.toLowerCase();
         row.style.display = name.includes(filter) ? '' : 'none';
     });
 });
@@ -1010,15 +1218,15 @@ document.getElementById('patientSearchInput').addEventListener('keyup', function
             type: 'doughnut',
             data: {
                 labels: [
-                    'Vital Screening',
-                    'Prenatal',
-                    'Family Planning'
+                    window.vcT('svc_vital', 'Vital Screening'),
+                    window.vcT('svc_prenatal', 'Prenatal'),
+                    window.vcT('svc_family', 'Family Planning')
                 ],
                 datasets: [{
                     data: [
-                        <?= $vital_count ?>,
-                        <?= $prenatal_count ?>,
-                        <?= $family_count ?>
+                        <?= (int)$vital_count ?>,
+                        <?= (int)$prenatal_count ?>,
+                        <?= (int)$family_count ?>
                     ],
                     backgroundColor: [
                         '#0d6efd',
@@ -1048,8 +1256,8 @@ document.getElementById('patientSearchInput').addEventListener('keyup', function
 
 </body>
 </html>
-<?php 
+<?php
 if ($conn) {
-    mysqli_close($conn); 
+    mysqli_close($conn);
 }
 ?>

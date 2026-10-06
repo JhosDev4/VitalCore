@@ -23,29 +23,16 @@ if (!$conn) {
     <script>
     // Global Settings Application Script (Prevents UI Flicker on Page Load)
     (function() {
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme === "dark") {
-            document.documentElement.classList.add("dark-mode");
-        }
-        const savedTextSize = localStorage.getItem("textSize");
-        if (savedTextSize) {
-            const fontSizes = { small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
-            document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
-        }
-
-         // ==============================
-        // BRIGHTNESS
-        // ==============================
-
-        const savedBrightness =
-            localStorage.getItem("brightness") || "100";
-
-        document.documentElement
-            .style
-            .setProperty(
-                "--saved-brightness",
-                savedBrightness
-            );
+        try {
+            if (localStorage.getItem("theme") === "dark") {
+                document.documentElement.classList.add("dark-mode");
+            }
+            const savedTextSize = localStorage.getItem("textSize");
+            if (savedTextSize) {
+                const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
+                document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
+            }
+        } catch (e) { /* localStorage unavailable */ }
     })();
     </script>
     <meta charset="UTF-8">
@@ -55,7 +42,7 @@ if (!$conn) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="../css/theme.css">
-    
+
     <style>
         /* Fallback Dark Mode Styles */
         body.dark-mode, html.dark-mode body {
@@ -91,46 +78,12 @@ if (!$conn) {
             pointer-events: none;
             z-index: 99999;
             display: none;
-            mix-blend-mode: multiply;
-        }
-        /* =========================================================
-        SCREEN BRIGHTNESS OVERLAY
-        ========================================================= */
-        #brightnessOverlay {
-            position: fixed;
-            inset: 0;
-
-            background: #000;
-
-            opacity: 0;
-
-            pointer-events: none;
-
-            z-index: 99998;
-
-            transition: opacity 0.15s ease;
         }
 
-        /* Night Light should stay above brightness */
-        #nightLightOverlay {
-            position: fixed;
-
-            top: 0;
-            left: 0;
-
-            width: 100vw;
-            height: 100vh;
-
-            background-color: rgba(255, 140, 0, 0.18);
-
-            pointer-events: none;
-
-            z-index: 99999;
-
-            display: none;
-
-            mix-blend-mode: multiply;
         }
+
+        .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 
@@ -139,8 +92,6 @@ if (!$conn) {
 <!-- Night Light Filter Overlay -->
 <div id="nightLightOverlay"></div>
 
-<div id="brightnessOverlay"></div>
-
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar Navigation -->
@@ -148,13 +99,12 @@ if (!$conn) {
             <div>
                 <!-- LOGO & BRAND -->
                 <div class="logo-section mb-4 d-flex align-items-center gap-2 px-2">
-                    <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2966/2966327.png';">
+                    <img src="../../img/logo.jpg" alt="VitalCore Logo" class="sidebar-logo" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.onerror=null; this.src='https://cdn-icons-png.flaticon.com/512/2966/2966327.png';">
                     <span class="sidebar-brand fw-bold fs-5">VitalCore</span>
                 </div>
 
                 <div class="sidebar-menu-wrapper">
-                    
-                 
+
                     <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
                     <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_clinical">
                         Clinical Services
@@ -229,10 +179,14 @@ if (!$conn) {
                     </ul>
 
                     <!-- SECTION: HARDWARE & SYSTEM -->
+                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_system">
+                        Hardware &amp; System
+                    </small>
+
                     <ul class="nav flex-column mb-3">
                         <!-- Administration -->
                         <li class="nav-item">
-                            <a class="nav-link active sidebar-collapse-link d-flex justify-content-between align-items-center"
+                            <a class="nav-link active sidebar-collapse-link active-parent d-flex justify-content-between align-items-center"
                             data-bs-toggle="collapse"
                             href="#adminMenu"
                             role="button"
@@ -248,7 +202,7 @@ if (!$conn) {
                             <div class="collapse show" id="adminMenu">
                                 <ul class="sidebar-submenu list-unstyled ps-4 py-1">
                                     <li class="py-1">
-                                        <a href="#" class="sidebar-submenu-link active text-decoration-none fw-bold text-primary">
+                                        <a href="setting.php" class="sidebar-submenu-link active text-decoration-none">
                                             <i class="bi bi-sliders me-2"></i>
                                             <span data-i18n="nav_settings">Settings</span>
                                         </a>
@@ -285,7 +239,7 @@ if (!$conn) {
 
             <!-- Dark Mode -->
             <div class="card mb-3 shadow-sm">
-                <div class="card-body d-flex justify-content-between align-items-center">
+                <div class="card-body active-parent d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="fw-bold mb-1">
                             <i class="bi bi-moon-stars-fill me-2 text-primary"></i>
@@ -299,24 +253,6 @@ if (!$conn) {
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="darkModeToggle" role="switch">
                     </div>
-                </div>
-            </div>
-
-            <!-- Brightness -->
-            <div class="card mb-3 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <h6 class="fw-bold mb-0">
-                            <i class="bi bi-brightness-high-fill me-2 text-warning"></i>
-                            <span data-i18n="brightness_title">Brightness</span>
-                        </h6>
-                        <span class="badge bg-secondary" id="brightnessValBadge">100%</span>
-                    </div>
-                    <small class="text-muted d-block mb-2" data-i18n="brightness_desc">
-                        Adjust screen brightness.
-                    </small>
-
-                    <input type="range" class="form-range" min="20" max="100" value="100" id="brightnessRange">
                 </div>
             </div>
 
@@ -385,7 +321,7 @@ if (!$conn) {
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <h6 class="fw-bold mb-0">
                             <i class="bi bi-clock-history me-2 text-info"></i>
-                            <span data-i18n="datetime_title">Date & Time Format</span>
+                            <span data-i18n="datetime_title">Date &amp; Time Format</span>
                         </h6>
                         <span class="badge bg-info text-dark" id="clockLivePreview">--:--</span>
                     </div>
@@ -407,16 +343,16 @@ if (!$conn) {
                         <div>
                             <h6 class="fw-bold mb-1">
                                 <i class="bi bi-cpu-fill me-2 text-primary"></i>
-                                Sensor Connection Status
+                                <span data-i18n="sensor_title">Sensor Connection Status</span>
                             </h6>
-                            <small class="text-muted">
+                            <small class="text-muted" data-i18n="sensor_desc">
                                 View the current status of connected medical sensors.
                             </small>
                         </div>
 
-                        <button class="btn btn-outline-primary btn-sm">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="refreshSensorsBtn">
                             <i class="bi bi-arrow-clockwise me-1"></i>
-                            Refresh
+                            <span data-i18n="sensor_refresh">Refresh</span>
                         </button>
                     </div>
 
@@ -424,27 +360,27 @@ if (!$conn) {
 
                     <div class="d-flex justify-content-between mb-2">
                         <span>Temperature Sensor (MLX90614)</span>
-                        <span class="badge bg-success">Connected</span>
+                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">
                         <span>Weight Sensor (HX711)</span>
-                        <span class="badge bg-success">Connected</span>
+                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">
                         <span>Height Sensor (TF-Luna)</span>
-                        <span class="badge bg-success">Connected</span>
+                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">
                         <span>Heart Rate / SpO₂ (MAX30102)</span>
-                        <span class="badge bg-success">Connected</span>
+                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
                     </div>
 
                     <div class="d-flex justify-content-between">
                         <span>Blood Pressure Monitor (Contec O8A)</span>
-                        <span class="badge bg-success">Connected</span>
+                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
                     </div>
                 </div>
             </div>
@@ -453,24 +389,36 @@ if (!$conn) {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 // ============================================================================
-// VITALCORE SETTINGS ENGINE (Fully Functional Preferences Engine)
+// VITALCORE SETTINGS ENGINE
 // ============================================================================
 
+// Safe localStorage helpers (won't crash if storage is blocked)
+const store = {
+    get(key, fallback = null) {
+        try {
+            const v = localStorage.getItem(key);
+            return v === null ? fallback : v;
+        } catch (e) { return fallback; }
+    },
+    set(key, value) {
+        try { localStorage.setItem(key, value); } catch (e) {}
+    }
+};
+
 // 1. DOM Elements
-const darkModeToggle   = document.getElementById("darkModeToggle");
-const brightnessRange  = document.getElementById("brightnessRange");
-const brightnessBadge  = document.getElementById("brightnessValBadge");
-const nightLightToggle = document.getElementById("nightLightToggle");
-const nightLightOverlay = document.getElementById("nightLightOverlay");
-const textScaleSelect  = document.getElementById("textScale");
-const languageSelect   = document.getElementById("languageSelect");
+const darkModeToggle       = document.getElementById("darkModeToggle");
+const nightLightToggle     = document.getElementById("nightLightToggle");
+const nightLightOverlay    = document.getElementById("nightLightOverlay");
+const textScaleSelect      = document.getElementById("textScale");
+const languageSelect       = document.getElementById("languageSelect");
 const dateTimeFormatSelect = document.getElementById("dateTimeFormat");
-const clockLivePreview = document.getElementById("clockLivePreview");
-const brightnessOverlay = document.getElementById("brightnessOverlay");
+const clockLivePreview     = document.getElementById("clockLivePreview");
+const refreshSensorsBtn    = document.getElementById("refreshSensorsBtn");
 
 // 2. Language Dictionary (English, Filipino, Cebuano)
 const i18n = {
@@ -493,12 +441,11 @@ const i18n = {
         header_subtitle: "Configure VitalCore appearance and display preferences.",
         dark_mode_title: "Dark Mode",
         dark_mode_desc: "Switch between light and dark theme.",
-        brightness_title: "Brightness",
-        brightness_desc: "Adjust screen brightness.",
         night_light_title: "Night Light",
         night_light_desc: "Reduce blue light for night viewing.",
         text_size_title: "Text Size",
         text_size_desc: "Change the size of text in the system.",
+        size_xsmall: "Extra Small",
         size_small: "Small",
         size_normal: "Normal",
         size_large: "Large",
@@ -506,7 +453,11 @@ const i18n = {
         language_title: "Language",
         language_desc: "Select the language used throughout the system.",
         datetime_title: "Date & Time Format",
-        datetime_desc: "Customize how dates and times are displayed."
+        datetime_desc: "Customize how dates and times are displayed.",
+        sensor_title: "Sensor Connection Status",
+        sensor_desc: "View the current status of connected medical sensors.",
+        sensor_refresh: "Refresh",
+        sensor_connected: "Connected"
     },
     fil: {
         section_main: "Pangunahin",
@@ -527,12 +478,11 @@ const i18n = {
         header_subtitle: "I-configure ang hitsura at kagustuhan sa display ng VitalCore.",
         dark_mode_title: "Dark Mode",
         dark_mode_desc: "Lumipat sa pagitan ng maliwanag at madilim na tema.",
-        brightness_title: "Liwanag ng Screen",
-        brightness_desc: "I-adjust ang liwanag ng screen.",
         night_light_title: "Night Light",
         night_light_desc: "Bawasan ang bughaw na liwanag sa gabi.",
         text_size_title: "Laki ng Teksto",
         text_size_desc: "Baguhin ang laki ng teksto sa sistema.",
+        size_xsmall: "Napakaliit",
         size_small: "Maliit",
         size_normal: "Pangkaraniwan",
         size_large: "Malaki",
@@ -540,7 +490,11 @@ const i18n = {
         language_title: "Wika",
         language_desc: "Pumili ng wikang gagamitin sa buong sistema.",
         datetime_title: "Format ng Petsa at Oras",
-        datetime_desc: "I-customize kung paano ipinapakita ang petsa at oras."
+        datetime_desc: "I-customize kung paano ipinapakita ang petsa at oras.",
+        sensor_title: "Katayuan ng Koneksyon ng Sensor",
+        sensor_desc: "Tingnan ang kasalukuyang katayuan ng mga nakakonektang medikal na sensor.",
+        sensor_refresh: "I-refresh",
+        sensor_connected: "Nakakonekta"
     },
     ceb: {
         section_main: "Pangunahing",
@@ -561,12 +515,11 @@ const i18n = {
         header_subtitle: "I-configure ang hitsura ug mga gusto sa display sa VitalCore.",
         dark_mode_title: "Dark Mode",
         dark_mode_desc: "Pagbalhin tali sa hayag ug ngitngit nga tema.",
-        brightness_title: "Kahayag sa Screen",
-        brightness_desc: "I-adjust ang kahayag sa screen.",
         night_light_title: "Night Light",
         night_light_desc: "Kuhai ang asul nga suga sa gabii.",
         text_size_title: "Gidak-on sa Teksto",
         text_size_desc: "Usba ang gidak-on sa teksto sa sistema.",
+        size_xsmall: "Gamay Kaayo",
         size_small: "Gamay",
         size_normal: "Normal",
         size_large: "Dako",
@@ -574,77 +527,41 @@ const i18n = {
         language_title: "Pinulongan",
         language_desc: "Pilia ang pinulongan nga gamiton sa tibuok sistema.",
         datetime_title: "Format sa Petsa ug Oras",
-        datetime_desc: "I-customize kon unsaon pagpakita ang petsa ug oras."
+        datetime_desc: "I-customize kon unsaon pagpakita ang petsa ug oras.",
+        sensor_title: "Kahimtang sa Koneksyon sa Sensor",
+        sensor_desc: "Tan-awa ang karon nga kahimtang sa konektado nga medikal nga mga sensor.",
+        sensor_refresh: "I-refresh",
+        sensor_connected: "Konektado"
     }
 };
 
-// 3. Apply Language Function
+// 3. Apply Language
 function applyLanguage(lang) {
     const dict = i18n[lang] || i18n.en;
+    document.documentElement.lang = i18n[lang] ? lang : "en";
     document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.getAttribute("data-i18n");
         if (dict[key]) {
-            el.innerText = dict[key];
+            el.textContent = dict[key];
         }
     });
-    localStorage.setItem("language", lang);
+    store.set("language", lang);
 }
 
-// 4. Dark Mode Logic
+// 4. Dark Mode
 darkModeToggle.addEventListener("change", function () {
-    if (this.checked) {
-        document.body.classList.add("dark-mode");
-        document.documentElement.classList.add("dark-mode");
-        localStorage.setItem("theme", "dark");
-    } else {
-        document.body.classList.remove("dark-mode");
-        document.documentElement.classList.remove("dark-mode");
-        localStorage.setItem("theme", "light");
-    }
+    document.body.classList.toggle("dark-mode", this.checked);
+    document.documentElement.classList.toggle("dark-mode", this.checked);
+    store.set("theme", this.checked ? "dark" : "light");
 });
 
-// 5. Brightness Logic
-brightnessRange.addEventListener("input", function() {
-    setBrightness(this.value);
+// 5. Night Light
+nightLightToggle.addEventListener("change", function () {
+    nightLightOverlay.style.display = this.checked ? "block" : "none";
+    store.set("nightLight", this.checked ? "enabled" : "disabled");
 });
 
-function setBrightness(val) {
-
-    val = parseInt(val);
-
-    /*
-        100% brightness = overlay opacity 0
-        20% brightness  = overlay opacity about 0.64
-
-        We intentionally don't make it fully black.
-    */
-
-    const brightnessLevel = val / 100;
-
-    const maxDarkness = 0.80;
-
-    const overlayOpacity =
-        (1 - brightnessLevel) * maxDarkness;
-
-    brightnessOverlay.style.opacity = overlayOpacity;
-
-    brightnessBadge.innerText = `${val}%`;
-
-    localStorage.setItem("brightness", val);
-}
-
-// 6. Night Light Logic
-nightLightToggle.addEventListener("change", function() {
-    if (this.checked) {
-        nightLightOverlay.style.display = "block";
-        localStorage.setItem("nightLight", "enabled");
-    } else {
-        nightLightOverlay.style.display = "none";
-        localStorage.setItem("nightLight", "disabled");
-    }
-});
-
-// 7. Text Size Logic
+// 6. Text Size
 const fontSizes = {
     xsmall: "80%",
     small: "85%",
@@ -652,69 +569,69 @@ const fontSizes = {
     large: "115%",
     xlarge: "130%"
 };
-textScaleSelect.addEventListener("change", function() {
-    const scale = this.value;
-    document.documentElement.style.fontSize = fontSizes[scale] || "100%";
-    localStorage.setItem("textSize", scale);
+textScaleSelect.addEventListener("change", function () {
+    document.documentElement.style.fontSize = fontSizes[this.value] || "100%";
+    store.set("textSize", this.value);
 });
 
-// 8. Language Logic
-languageSelect.addEventListener("change", function() {
+// 7. Language
+languageSelect.addEventListener("change", function () {
     applyLanguage(this.value);
 });
 
-// 9. Date & Time Format Logic & Live Preview Clock
+// 8. Date & Time Format + Live Preview Clock
 function updateClockPreview() {
     const now = new Date();
-    const fmt = dateTimeFormatSelect.value;
-    let timeStr = "";
-    if (fmt === "12h") {
-        timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    const opts = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
+    if (dateTimeFormatSelect.value === "12h") {
+        opts.hour12 = true;
     } else {
-        timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        opts.hourCycle = "h23"; // avoids "24:00:00" at midnight
     }
-    clockLivePreview.innerText = timeStr;
+    clockLivePreview.textContent = now.toLocaleTimeString("en-US", opts);
 }
-dateTimeFormatSelect.addEventListener("change", function() {
-    localStorage.setItem("dateTimeFormat", this.value);
+dateTimeFormatSelect.addEventListener("change", function () {
+    store.set("dateTimeFormat", this.value);
     updateClockPreview();
 });
 setInterval(updateClockPreview, 1000);
 
+// 9. Sensor Refresh (UI only - statuses are static until a backend endpoint is wired in)
+refreshSensorsBtn.addEventListener("click", function () {
+    const icon = this.querySelector("i");
+    icon.classList.add("spin");
+    this.disabled = true;
+    setTimeout(() => {
+        icon.classList.remove("spin");
+        this.disabled = false;
+    }, 800);
+});
+
 // 10. INITIALIZE ALL SAVED PREFERENCES ON LOAD
 (function initSettings() {
     // Theme
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-        document.documentElement.classList.add("dark-mode");
-        darkModeToggle.checked = true;
-    }
-
-    // Brightness
-    const savedBrightness = localStorage.getItem("brightness") || "100";
-    brightnessRange.value = savedBrightness;
-    setBrightness(savedBrightness);
+    const isDark = store.get("theme") === "dark";
+    darkModeToggle.checked = isDark;
+    document.body.classList.toggle("dark-mode", isDark);
+    document.documentElement.classList.toggle("dark-mode", isDark);
 
     // Night Light
-    const savedNightLight = localStorage.getItem("nightLight");
-    if (savedNightLight === "enabled") {
-        nightLightToggle.checked = true;
-        nightLightOverlay.style.display = "block";
-    }
+    const nightOn = store.get("nightLight") === "enabled";
+    nightLightToggle.checked = nightOn;
+    nightLightOverlay.style.display = nightOn ? "block" : "none";
 
     // Text Size
-    const savedTextSize = localStorage.getItem("textSize") || "normal";
-    textScaleSelect.value = savedTextSize;
+    const savedTextSize = store.get("textSize", "normal");
+    textScaleSelect.value = fontSizes[savedTextSize] ? savedTextSize : "normal";
     document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
 
     // Language
-    const savedLanguage = localStorage.getItem("language") || "en";
-    languageSelect.value = savedLanguage;
-    applyLanguage(savedLanguage);
+    const savedLanguage = store.get("language", "en");
+    languageSelect.value = i18n[savedLanguage] ? savedLanguage : "en";
+    applyLanguage(languageSelect.value);
 
-    // Date Time Format
-    const savedFmt = localStorage.getItem("dateTimeFormat") || "24h";
+    // Date & Time Format
+    const savedFmt = store.get("dateTimeFormat", "24h");
     dateTimeFormatSelect.value = savedFmt;
     updateClockPreview();
 })();
@@ -722,8 +639,8 @@ setInterval(updateClockPreview, 1000);
 
 </body>
 </html>
-<?php 
+<?php
 if ($conn) {
-    mysqli_close($conn); 
+    mysqli_close($conn);
 }
 ?>

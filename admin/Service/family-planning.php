@@ -280,13 +280,6 @@
                             </li>
 
                             <li>
-                                <a class="dropdown-item" href="child-immunization.php">
-                                    <i class="bi bi-shield-check text-success me-2"></i>
-                                    Child Immunization Grid
-                                </a>
-                            </li>
-
-                            <li>
                                 <a class="dropdown-item" href="family-planning.php">
                                     <i class="bi bi-people-fill text-primary me-2"></i>
                                     Family Planning Grid

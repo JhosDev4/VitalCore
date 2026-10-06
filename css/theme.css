@@ -1199,3 +1199,19 @@ body.dark-mode .form-check-input:checked {
     width: 3rem;
     height: 1.5rem;
 }
+
+/* Chevron animation */
+.collapse-chevron{
+    transition: transform .25s ease;
+}
+
+/* Rotate when menu is expanded */
+.sidebar-collapse-link[aria-expanded="true"] .collapse-chevron{
+    transform: rotate(180deg);
+}
+
+/* Dark mode chevron color */
+html.dark-mode .collapse-chevron,
+body.dark-mode .collapse-chevron{
+    color: #cbd5e1 !important;
+}

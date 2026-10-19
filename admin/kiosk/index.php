@@ -1,15 +1,14 @@
 <?php
 session_start();
 
-// Security Check: Redirect if not logged in or not a patient
+// Security check: redirect if not logged in or not a patient
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'patient') {
-    header("Location: ../login.php");
+    header("Location: ../../login.php"); // FIX: same path as the Back button / image paths
     exit();
 }
 
-$patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
+$patient_name = $_SESSION['name'] ?? 'Patient';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,23 +17,17 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
     <title>VitalCore Kiosk Panel</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
-    
+
     <style>
-        :root {
-            --vc-primary: #0a49c4;
-            --vc-success: #198754;
-            --vc-bg: #f4f7fc;
-        }
+        :root { --vc-primary: #0a49c4; }
         body {
-            background-color: var(--vc-bg);
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: url('../../img/back.jpg') center center/cover no-repeat;
+            background: #f4f7fc url('../../img/back.jpg') center center/cover no-repeat;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        /* REPLACE the single .kiosk-card rule with these two: */
         .kiosk-card {
             background: #ffffff;
             border-radius: 20px;
@@ -44,145 +37,49 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
             margin: auto;
             padding: 20px;
         }
-
-        /* vitals panel gets wider to accommodate the image column */
-        #panel-vitals.kiosk-card {
-            max-width: 950px;
-        }
+        #panel-vitals.kiosk-card { max-width: 950px; }
         .guide-box {
             background-color: #f8f9fa;
             border-left: 5px solid var(--vc-primary);
             border-radius: 8px;
         }
-        .kiosk-wrapper {
-            position: relative;
-        }
-
+        .kiosk-wrapper { position: relative; }
         .back-login-btn {
-            position: absolute;
-            top: 18px;
-            left: 18px;
-            z-index: 10;
-            color: #6c757d;
-            font-size: 50px;
-            text-decoration: none;
-            line-height: 1;
-            border: none;
-            background: transparent;
+            position: absolute; top: 18px; left: 18px; z-index: 10;
+            color: #6c757d; font-size: 50px; text-decoration: none;
+            line-height: 1; border: none; background: transparent;
         }
-
-        .back-login-btn:hover {
-            color: #0d6efd;
-        }
-
+        .back-login-btn:hover { color: #0d6efd; }
         .cancel-measurement-btn {
-            position: absolute;
-            top: 18px;
-            left: 18px;
-            z-index: 10;
-            color: #dc3545;
-            font-size: 25px;
-            text-decoration: none;
-            line-height: 1;
-            border: none;
-            background: transparent;
-            padding: 0;
+            position: absolute; top: 18px; left: 18px; z-index: 10;
+            color: #dc3545; font-size: 25px; line-height: 1;
+            border: none; background: transparent; padding: 0;
         }
-
-        .cancel-measurement-btn:hover {
-            color: #bb2d3b;
-        }
-
+        .cancel-measurement-btn:hover { color: #bb2d3b; }
         .step-number {
-            width: 28px;
-            height: 28px;
-            background-color: #0d6efd;
-            color: #ffffff;
-            font-weight: bold;
-            font-size: 0.9rem;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            width: 28px; height: 28px; background-color: #0d6efd; color: #fff;
+            font-weight: bold; font-size: .9rem; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        
-        .animation-container {
-            height: 250px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .guide-image {
-            width: 90%;
-            max-width: 700px;
-            height: auto;
-            max-height: 350px;
-            object-fit: contain;
-            display: block;
-            margin: auto;
-            animation: float 2s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-
-        /* Right-side sensor image */
         .sensor-photo-col {
-            flex: 0 0 340px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 10px;
+            flex: 0 0 340px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 10px;
         }
-
         .sensor-photo-col img {
-            width: 100%;
-            max-height: 420px;
-            object-fit: cover;
-            border-radius: 16px;
-            box-shadow: 0 6px 24px rgba(0,0,0,.18);
-            border: 4px solid #0d6efd;  /* blue ring matching the theme */
-            transition: opacity 0.4s ease;
+            width: 100%; max-height: 420px; object-fit: cover; border-radius: 16px;
+            box-shadow: 0 6px 24px rgba(0,0,0,.18); border: 4px solid #0d6efd;
         }
-
-        .sensor-photo-col img.hidden {
-            opacity: 0;
-        }
-
         .sensor-photo-label {
-            margin-top: 10px;
-            font-size: 0.85rem;
-            color: #64748b;
-            font-weight: 600;
-            text-align: center;
-            letter-spacing: 0.03em;
+            margin-top: 10px; font-size: .85rem; color: #64748b;
+            font-weight: 600; text-align: center; letter-spacing: .03em;
         }
-
-        /* Two-column wrapper inside the vitals panel */
-        .vitals-inner {
-            display: flex;
-            gap: 24px;
-            align-items: center;
-        }
-
-        .vitals-main-col {
-            flex: 1;
-            min-width: 0;
-        }
-
+        .vitals-inner { display: flex; gap: 24px; align-items: center; }
+        .vitals-main-col { flex: 1; min-width: 0; }
         @media (max-width: 700px) {
             .vitals-inner { flex-direction: column; }
             .sensor-photo-col { flex: unset; width: 100%; }
             #panel-vitals.kiosk-card { max-width: 600px; }
         }
-        
     </style>
 </head>
 <body>
@@ -193,12 +90,7 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
 
             <!-- GUIDE PANEL -->
             <div id="panel-guide" class="kiosk-card text-center kiosk-wrapper">
-
-                <!-- BACK TO LOGIN -->
-                <a href="../../login.php"
-                class="back-login-btn"
-                title="Back to Login"
-                aria-label="Back to Login">
+                <a href="../../login.php" class="back-login-btn" title="Back to Login" aria-label="Back to Login">
                     <i class="bi bi-arrow-left"></i>
                 </a>
 
@@ -222,7 +114,7 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
                     </div>
                     <div class="d-flex align-items-start gap-3 mb-3">
                         <span class="step-number">3</span>
-                        <p class="text-muted m-0 fw-semibold text-danger">Remain completely still and avoid speaking to ensure an exact medical measurement is taken.</p>
+                        <p class="m-0 fw-semibold text-danger">Remain completely still and avoid speaking to ensure an exact medical measurement is taken.</p>
                     </div>
                     <div class="d-flex align-items-start gap-3">
                         <span class="step-number">4</span>
@@ -237,62 +129,40 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
 
             <!-- VITALS MEASUREMENT PANEL -->
             <div id="panel-vitals" class="kiosk-card d-none text-center position-relative">
-
-                <!-- Cancel -->
-                <button type="button"
-                        id="cancel-measurement"
-                        class="cancel-measurement-btn"
-                        title="Cancel Measurement"
-                        aria-label="Cancel Measurement">
+                <button type="button" id="cancel-measurement" class="cancel-measurement-btn"
+                        title="Cancel Measurement" aria-label="Cancel Measurement">
                     <i class="bi bi-x-circle"></i>
                 </button>
 
-                <!-- VitalCore Measurement -->
-                <div class="mb-3">
-                    <span class="badge bg-primary fs-6">VitalCore Measurement</span>
-                </div>
-
+                <div class="mb-3"><span class="badge bg-primary fs-6">VitalCore Measurement</span></div>
                 <h2 id="sensorTitle" class="fw-bold mb-3 display-6"></h2>
 
-                <!-- Two-column layout -->
                 <div class="vitals-inner">
-
                     <!-- LEFT: measurement UI -->
                     <div class="vitals-main-col">
-                        <div class="text-center mb-2">
-                            <div id="sensorAnimation"></div>
-                        </div>
-
                         <div class="my-3 text-center">
-                            <div class="position-relative d-inline-block">
-                                <div id="sensorCircle"
-                                    class="rounded-circle border border-4 border-primary d-inline-flex align-items-center justify-content-center p-2"
-                                    style="width:230px;height:230px;">
-                                    <div id="countdownIcon" class="w-100 h-100 d-flex align-items-center justify-content-center"></div>
-                                </div>
+                            <div id="sensorCircle"
+                                 class="rounded-circle border border-4 border-primary d-inline-flex align-items-center justify-content-center p-2"
+                                 style="width:230px;height:230px;">
+                                <div id="countdownIcon" class="w-100 h-100 d-flex align-items-center justify-content-center"></div>
                             </div>
                         </div>
-
-                        <div id="measurementStatus"
-                            class="fw-bold text-success fs-5 mt-2"></div>
+                        <div id="measurementStatus" class="fw-bold text-success fs-5 mt-2"></div>
                     </div>
 
-                    <!-- RIGHT: sensor photo (only shown when sensor has an image) -->
-                    <div class="sensor-photo-col" id="sensorPhotoCol" style="display:none !important;">
+                    <!-- RIGHT: sensor photo (shown only when the sensor has an image) -->
+                    <div class="sensor-photo-col d-none" id="sensorPhotoCol">
                         <img id="sensorPhoto" src="" alt="Sensor guide photo">
                         <div class="sensor-photo-label" id="sensorPhotoLabel"></div>
                     </div>
-
                 </div>
 
                 <div class="text-center mt-4">
-                    <button id="startMeasurementBtn"
-                            onclick="beginSequentialLiveProcessing()"
+                    <button id="startMeasurementBtn" onclick="beginSequentialLiveProcessing()"
                             class="btn btn-success btn-lg px-5">
                         Start Measurement
                     </button>
                 </div>
-
             </div>
 
         </div>
@@ -334,46 +204,32 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
             </div>
             <div class="modal-body px-4 py-2">
                 <div class="form-check form-switch p-3 border-bottom d-flex justify-content-between align-items-center ps-0">
-                    <label class="form-check-label fw-semibold text-dark" for="chk-height">
-                        <i class="bi bi-person-bounding-box text-muted me-2"></i>Height Sensor
-                    </label>
-                    <input class="form-check-input ms-0 target-checkbox" type="checkbox" id="chk-height" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="chk-height"><i class="bi bi-person-bounding-box text-muted me-2"></i>Height Sensor</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="chk-height" checked>
                 </div>
                 <div class="form-check form-switch p-3 border-bottom d-flex justify-content-between align-items-center ps-0">
-                    <label class="form-check-label fw-semibold text-dark" for="chk-weight">
-                        <i class="bi bi-speedometer2 text-muted me-2"></i>Weight Platform
-                    </label>
-                    <input class="form-check-input ms-0 target-checkbox" type="checkbox" id="chk-weight" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="chk-weight"><i class="bi bi-speedometer2 text-muted me-2"></i>Weight Platform</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="chk-weight" checked>
                 </div>
                 <div class="form-check form-switch p-3 border-bottom d-flex justify-content-between align-items-center ps-0">
-                    <label class="form-check-label fw-semibold text-dark" for="chk-temp">
-                        <i class="bi bi-thermometer-half text-muted me-2"></i>Infrared Temperature
-                    </label>
-                    <input class="form-check-input ms-0 target-checkbox" type="checkbox" id="chk-temp" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="chk-temp"><i class="bi bi-thermometer-half text-muted me-2"></i>Infrared Temperature</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="chk-temp" checked>
                 </div>
                 <div class="form-check form-switch p-3 border-bottom d-flex justify-content-between align-items-center ps-0">
-                    <label class="form-check-label fw-semibold text-dark" for="chk-heart">
-                        <i class="bi bi-heart-pulse text-muted me-2"></i>Heart Pulse Rate
-                    </label>
-                    <input class="form-check-input ms-0 target-checkbox" type="checkbox" id="chk-heart" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="chk-heart"><i class="bi bi-heart-pulse text-muted me-2"></i>Heart Pulse Rate</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="chk-heart" checked>
                 </div>
                 <div class="form-check form-switch p-3 border-bottom d-flex justify-content-between align-items-center ps-0">
-                    <label class="form-check-label fw-semibold text-dark" for="chk-bp">
-                        <i class="bi bi-activity text-muted me-2"></i>Blood Pressure Cuff
-                    </label>
-                    <input class="form-check-input ms-0 target-checkbox" type="checkbox" id="chk-bp" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="chk-bp"><i class="bi bi-activity text-muted me-2"></i>Blood Pressure Cuff</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="chk-bp" checked>
                 </div>
                 <div class="form-check form-switch p-3 border-bottom d-flex justify-content-between align-items-center ps-0">
-                    <label class="form-check-label fw-semibold text-dark" for="chk-spo2">
-                        <i class="bi bi-droplet-half text-muted me-2"></i>Oxygen Saturation (SpO2)
-                    </label>
-                    <input class="form-check-input ms-0 target-checkbox" type="checkbox" id="chk-spo2" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="chk-spo2"><i class="bi bi-droplet-half text-muted me-2"></i>Oxygen Saturation (SpO2)</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="chk-spo2" checked>
                 </div>
                 <div class="form-check form-switch p-3 border-bottom-0 d-flex justify-content-between align-items-center ps-0">
-                    <label class="form-check-label fw-semibold text-dark" for="chk-bmi">
-                        <i class="bi bi-calculator text-muted me-2"></i>Body Mass Index (BMI)
-                    </label>
-                    <input class="form-check-input ms-0 target-checkbox" type="checkbox" id="chk-bmi" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="chk-bmi"><i class="bi bi-calculator text-muted me-2"></i>Body Mass Index (BMI)</label>
+                    <input class="form-check-input ms-0" type="checkbox" id="chk-bmi" checked>
                 </div>
             </div>
             <div class="modal-footer border-top-0 pb-4 px-4 gap-2">
@@ -388,63 +244,215 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const guidePanel = document.getElementById('panel-guide');
-    const vitalsPanel = document.getElementById('panel-vitals');
-    let selectedService = '';
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const guidePanel = $('panel-guide');
+const vitalsPanel = $('panel-vitals');
+let selectedService = '';
 
-    function openCustomLayout(){
-        const modal = new bootstrap.Modal(document.getElementById('serviceTypeModal'));
-        modal.show();
+/* ───────────── Setup flow ───────────── */
+
+function openCustomLayout() {
+    // FIX: getOrCreateInstance avoids stacking a new Modal instance on every click
+    bootstrap.Modal.getOrCreateInstance($('serviceTypeModal')).show();
+}
+
+function saveServiceType() {
+    selectedService = $('serviceType').value;
+    if (selectedService === '') return;
+
+    configureServiceSensors();
+    bootstrap.Modal.getOrCreateInstance($('serviceTypeModal')).hide();
+    bootstrap.Modal.getOrCreateInstance($('customSetupModal')).show();
+}
+
+function saveAndContinue() {
+    guidePanel.classList.add('d-none');
+    vitalsPanel.classList.remove('d-none');
+}
+
+function configureServiceSensors() {
+    ['height', 'weight', 'temp', 'heart', 'bp', 'spo2', 'bmi']
+        .forEach(k => $('chk-' + k).checked = true);
+
+    // FIX: removed the dead 'immunization' branch (that option doesn't exist in the dropdown)
+    if (selectedService === 'prenatal') {
+        $('chk-height').checked = true;
+    }
+    if (selectedService === 'family') {
+        $('chk-heart').checked = true;
+        $('chk-spo2').checked = true;
+    }
+}
+
+/* ───────────── UI helpers ───────────── */
+
+const setStatus = html => { $('measurementStatus').innerHTML = html; };
+const setIcon   = html => { $('countdownIcon').innerHTML = html; };
+
+const okIcon   = `<i class="bi bi-check-circle-fill text-success" style="font-size:100px;"></i>`;
+const failIcon = `<i class="bi bi-x-circle-fill text-danger" style="font-size:100px;"></i>`;
+const spinnerWith = svg => `
+    <div class="position-relative d-inline-flex align-items-center justify-content-center w-100 h-100">
+        <div class="spinner-border text-primary position-absolute w-100 h-100" role="status" style="border-width: 5px;"></div>
+        <div class="d-flex align-items-center justify-content-center" style="z-index:1;">${svg}</div>
+    </div>`;
+
+function showPhoto(sensor) {
+    const col = $('sensorPhotoCol');
+    col.classList.toggle('d-none', !sensor.image); // FIX: replaces the inline-style/!important juggling
+    if (sensor.image) {
+        $('sensorPhoto').src = sensor.image;
+        $('sensorPhoto').alt = sensor.title + ' sensor photo';
+        $('sensorPhotoLabel').textContent = sensor.title;
+    }
+}
+
+/* ───────────── Network helper (with timeout) ───────────── */
+
+// FIX: every request now has a timeout so a dead sensor can't freeze the kiosk forever
+async function fetchJson(url, timeoutMs) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+        const text = await res.text();
+        try { return JSON.parse(text); }
+        catch (e) {
+            // Tolerate PHP warnings/notices printed before or after the JSON
+            const start = text.indexOf('{'), end = text.lastIndexOf('}');
+            if (start !== -1 && end > start) {
+                try { return JSON.parse(text.slice(start, end + 1)); } catch (_) {}
+            }
+            throw new Error('Invalid JSON response: ' + text);
+        }
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+/* ───────────── Result handlers (return HTML on success, null on failure) ───────────── */
+
+function clearBp(valid) {
+    ['sys', 'dia', 'pr'].forEach(k => sessionStorage.removeItem('current_bp_' + k));
+    sessionStorage.setItem('current_bp_valid', valid ? '1' : '0');
+}
+
+function handleBp(data) {
+    clearBp(false); // never leave an old BP value behind
+    if (!(data.success === true && data.status === 0)) return null;
+
+    const output = Array.isArray(data.output) ? data.output.join('\n') : '';
+    const m = output.match(/SYS\s*=\s*(\d+)\s*mmHg[\s\S]*?DIA\s*=\s*(\d+)\s*mmHg[\s\S]*?PR\s*=\s*(\d+)\s*bpm/i);
+    if (!m) return null;
+
+    const [sys, dia, pr] = [m[1], m[2], m[3]].map(Number);
+    sessionStorage.setItem('current_bp_sys', sys);
+    sessionStorage.setItem('current_bp_dia', dia);
+    sessionStorage.setItem('current_bp_pr', pr);
+    sessionStorage.setItem('current_bp_valid', '1');
+    return `✓ Blood Pressure Completed<br><small>SYS ${sys} / DIA ${dia} mmHg — PR ${pr} bpm</small>`;
+}
+
+function handleHeight(data) {
+    const ok =
+        data.success === true  ||
+        data.success === 'true' ||
+        data.success === 1;
+
+    let raw =
+        data.height     ??
+        data.height_cm  ??
+        data.distance   ??
+        data.value;
+
+    let h = Number(raw);
+
+    if (!Number.isFinite(h) && Array.isArray(data.output)) {
+        const heightLine = data.output.find(line =>
+            /Height:\s*[\d.]+\s*cm/i.test(String(line))
+        );
+        if (heightLine) {
+            const match = String(heightLine).match(/Height:\s*([\d.]+)\s*cm/i);
+            if (match) h = Number(match[1]);
+        }
     }
 
-    function saveServiceType(){
-        selectedService = document.getElementById('serviceType').value;
-        if(selectedService === ''){
-            return;
-        }
+    // FIX: status can be integer 0, string "0", or missing entirely
+    const statusOk =
+        data.status === 0    ||
+        data.status === '0'  ||
+        data.status === null ||
+        data.status === undefined;
 
-        configureServiceSensors();
-
-        bootstrap.Modal.getInstance(document.getElementById('serviceTypeModal')).hide();
-        const customModal = new bootstrap.Modal(document.getElementById('customSetupModal'));
-        customModal.show();
+    if (ok && statusOk && Number.isFinite(h) && h > 30 && h < 300) {
+        console.log('Height measurement successful:', h);
+        return `✓ Height Completed<br><small>${h.toFixed(1)} cm</small>`;
     }
 
-    function saveAndContinue(){
-        guidePanel.classList.add('d-none');
-        vitalsPanel.classList.remove('d-none');
+    // Log exactly why it failed so you can debug further
+    console.warn('Height rejected — ok:', ok, 'statusOk:', statusOk, 'h:', h, 'raw data:', data);
+    return null;
+}
+
+
+function handleWeight(data) {
+
+    /*
+     * Always remove any previous weight first.
+     */
+    sessionStorage.removeItem("current_weight");
+
+    const w = Number(data.weight);
+
+    if (
+        data.success === true &&
+        data.status === "READY" &&
+        Number.isFinite(w) &&
+        w >= 0 &&
+        w < 500
+    ) {
+
+        /*
+         * Save the NEW weight for measure-result.php
+         */
+        sessionStorage.setItem(
+            "current_weight",
+            w.toFixed(1)
+        );
+
+        console.log(
+            "NEW WEIGHT SAVED:",
+            w.toFixed(1),
+            "kg"
+        );
+
+        return `
+            ✓ Weight Completed<br>
+            <small>${w.toFixed(1)} kg</small>
+        `;
     }
 
-    function configureServiceSensors(){
-        document.getElementById('chk-height').checked = true;
-        document.getElementById('chk-weight').checked = true;
-        document.getElementById('chk-temp').checked = true;
-        document.getElementById('chk-heart').checked = true;
-        document.getElementById('chk-bp').checked = true;
-        document.getElementById('chk-spo2').checked = true;
-        document.getElementById('chk-bmi').checked = true;
+    console.log(
+        "Weight not ready:",
+        data
+    );
 
-        if(selectedService === 'prenatal'){
-            document.getElementById('chk-height').checked = false;
-        }
-        if(selectedService === 'immunization'){
-            document.getElementById('chk-heart').checked = false;
-            document.getElementById('chk-spo2').checked = false;
-            document.getElementById('chk-bp').checked = false;
-        }
-        if(selectedService === 'family'){
-            document.getElementById('chk-heart').checked = false;
-            document.getElementById('chk-spo2').checked = false;
-        }
-    }
+    return null;
+}
 
-        const sensors = [
-            {
-                title: "Blood Pressure Measurement",
-                checkId: "chk-bp",
-                image: "../../img/sensor_bp.jpg",
-                guide: "Wear the cuff on your LEFT arm. The cuff is located on the LEFT side of the kiosk.",
-                svg: `<svg viewBox="0 0 240 240" width="180" height="180">
+const handleDefault = data => data.success === true ? '✓ Completed' : null;
+
+/* ───────────── Sensors ───────────── */
+
+const sensors = [
+    {
+        title: "Blood Pressure Measurement",
+        checkIds: ["chk-bp"],
+        image: "../../img/sensor_bp.jpg",
+        guide: "Wear the cuff on your LEFT arm. The cuff is located on the LEFT side of the kiosk.",
+        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
             <style>
                 .kiosk-body { fill: #ffffff; stroke: #0a49c4; stroke-width: 2.5; }
                 .screen-blue { fill: #0d6efd; }
@@ -455,12 +463,12 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
                 .pulse-squeeze { animation: cuffSqueeze 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
                 .arm-enter { animation: armSlide 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
                 @keyframes cuffSqueeze {
-                0%, 100% { transform: scale(1); opacity: 0.6; stroke-width: 2; }
-                50% { transform: scale(1.08); opacity: 1; stroke-width: 5; stroke: #dc3545; }
+                    0%, 100% { transform: scale(1); opacity: 0.6; stroke-width: 2; }
+                    50% { transform: scale(1.08); opacity: 1; stroke-width: 5; stroke: #dc3545; }
                 }
                 @keyframes armSlide {
-                0% { transform: translateX(22px); opacity: 0.4; }
-                60%, 100% { transform: translateX(0); opacity: 1; }
+                    0% { transform: translateX(22px); opacity: 0.4; }
+                    60%, 100% { transform: translateX(0); opacity: 1; }
                 }
             </style>
             <rect x="30" y="195" width="180" height="14" rx="4" fill="#cbd5e1" stroke="#64748b" stroke-width="2"/>
@@ -478,16 +486,17 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
                 <rect x="51" y="113" width="30" height="24" rx="5" class="cuff-wrap"/>
                 <rect x="85" y="119" width="22" height="12" rx="6" class="skin-arm"/>
             </g>
-            </svg>`,
-                        icon: "bi-activity",
-                        seconds: 10,
-                        endpoint: "http://192.168.1.101/measure_bp.php"
-                    },
-                    {
-                        title: "Height Measurement",
-                        checkId: "chk-height",
-                        guide: "Stand straight in front of the kiosk. Look forward and do not move.",
-                        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
+        </svg>`,
+        prepSeconds: 0,        // cuff inflates on request, no countdown needed
+        timeoutMs: 90000,      // a BP cycle is slow
+        handle: handleBp,
+        endpoint: "http://192.168.1.101/measure_bp.php"
+    },
+    {
+        title: "Height Measurement",
+        checkIds: ["chk-height"],
+        guide: "Stand straight in front of the kiosk. Look forward and do not move.",
+        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
             <style>
                 .kiosk-body { fill: #ffffff; stroke: #0a49c4; stroke-width: 2.5; }
                 .screen-blue { fill: #0d6efd; }
@@ -508,16 +517,18 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
             <rect x="67" y="88" width="26" height="54" rx="8" class="person"/>
             <rect x="68" y="140" width="11" height="62" rx="5" class="person"/>
             <rect x="81" y="140" width="11" height="62" rx="5" class="person"/>
-            </svg>`,
-                        icon: "bi-person-standing",
-                        seconds: 10,
-                        endpoint: "http://192.168.1.101/measure_height.php"
-                    },
-                    {
-                        title: "Weight Measurement",
-                        checkId: "chk-weight",
-                        guide: "Stand on the weighing platform and remain still.",
-                        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
+        </svg>`,
+        prepSeconds: 10,
+        timeoutMs: 15000,
+        pollSeconds: 10,  
+        handle: handleHeight,
+        endpoint: "http://192.168.1.101/measure_height.php"
+    },
+    {
+        title: "Weight Measurement",
+        checkIds: ["chk-weight"],
+        guide: "Stand on the weighing platform and remain still.",
+        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
             <style>
                 .kiosk-body { fill: #ffffff; stroke: #0a49c4; stroke-width: 2.5; }
                 .screen-blue { fill: #0d6efd; }
@@ -539,17 +550,22 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
                 <rect x="83" y="137" width="11" height="60" rx="5" class="person"/>
                 <rect x="96" y="137" width="11" height="60" rx="5" class="person"/>
             </g>
-            </svg>`,
-                        icon: "bi-speedometer2",
-                        seconds: 10,
-                        endpoint: "http://192.168.1.101/measure_weight.php"
-                    },
-                    {
-                        title: "Temperature Measurement",
-                        checkId: "chk-temp",
-                        image: "../../img/sensor_temp.jpg", 
-                        guide: "Place your RIGHT hand near the temperature sensor located on the RIGHT side of the monitor.",
-                        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
+        </svg>`,
+        prepSeconds: 10,
+        timeoutMs: 5000,
+        // FIX: measure_weight.php returns success:false immediately while the scale is still
+        // settling (status CONNECTED / NO_DATA). Keep asking for up to 20s instead of giving up
+        // after a single request.
+        pollSeconds: 20,
+        handle: handleWeight,
+        endpoint: "http://192.168.1.101/measure_weight.php"
+    },
+    {
+        title: "Temperature Measurement",
+        checkIds: ["chk-temp"],
+        image: "../../img/sensor_temp.jpg",
+        guide: "Place your RIGHT hand near the temperature sensor located on the RIGHT side of the monitor.",
+        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
             <style>
                 .kiosk-body { fill: #ffffff; stroke: #0a49c4; stroke-width: 2.5; }
                 .screen-blue { fill: #0d6efd; }
@@ -573,17 +589,19 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
                 <rect x="161" y="142" width="11" height="60" rx="5" class="person"/>
                 <rect x="110" y="110" width="45" height="11" rx="5" class="person"/>
             </g>
-            </svg>`,
-                        icon: "bi-thermometer-half",
-                        seconds: 10,
-                        endpoint: "http://192.168.1.101/measure_temperature.php"
-                    },
-                    {
-                        title: "Heart Rate & SpO₂ Measurement",
-                        checkId: "chk-spo2",
-                        image: "../../img/Heart_SpO2.jpg",
-                        guide: "Place your index finger on the sensor and keep still.",
-                        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
+        </svg>`,
+        prepSeconds: 10,
+        timeoutMs: 20000,
+        handle: handleDefault,
+        endpoint: "http://192.168.1.101/measure_temperature.php"
+    },
+    {
+        title: "Heart Rate & SpO₂ Measurement",
+        // FIX: runs if EITHER heart rate or SpO2 is enabled (replaces the confusing nested if/else)
+        checkIds: ["chk-spo2", "chk-heart"],
+        image: "../../img/Heart_SpO2.jpg",
+        guide: "Place your index finger on the sensor and keep still.",
+        svg: `<svg viewBox="0 0 240 240" width="180" height="180">
             <style>
                 .kiosk-body { fill: #ffffff; stroke: #0a49c4; stroke-width: 2.5; }
                 .screen-blue { fill: #0d6efd; }
@@ -606,44 +624,200 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
                 <rect x="171" y="142" width="11" height="60" rx="5" class="person"/>
                 <rect x="115" y="112" width="50" height="11" rx="5" class="person"/>
             </g>
-            </svg>`,
-                        icon: "bi-heart-pulse",
-                        seconds: 10,
-                        endpoint: "http://192.168.1.101/measure_max30102.php"
-                    }
-                ];
+        </svg>`,
+        prepSeconds: 10,
+        timeoutMs: 20000,
+        handle: handleDefault,
+        endpoint: "http://192.168.1.101/measure_max30102.php"
+    }
+];
 
-    async function beginSequentialLiveProcessing(){
-        document.getElementById('startMeasurementBtn').style.display = 'none';
+/* ───────────── Run one sensor ───────────── */
 
-        // Run only the checked sensors
-        for(let sensor of sensors){
-            // Check if this sensor is enabled
-            if (sensor.checkId && !document.getElementById(sensor.checkId).checked) {
-                // Also check heart rate condition for the spo2 sensor
-                if (sensor.checkId === 'chk-spo2' && document.getElementById('chk-heart').checked) {
-                    // if heart rate is checked, we still run the sensor
-                } else {
-                    continue; // Skip deactivated sensor
-                }
-            }
+async function runSensor(sensor) {
+    $('sensorTitle').innerText = sensor.title;
+    showPhoto(sensor);
+    setIcon(spinnerWith(sensor.svg));
 
-            await runSensor(sensor);
+    // FIX: the guide text was never shown and the "countdown" had no visible numbers
+    for (let r = sensor.prepSeconds; r > 0; r--) {
+        setStatus(`${sensor.guide}<br><small class="text-muted">Starting in ${r}s</small>`);
+        await sleep(1000);
+    }
+
+    setStatus(`Measuring...<br><small class="text-muted">${sensor.guide}</small>`);
+
+    try {
+        const deadline = Date.now() + (sensor.pollSeconds || 0) * 1000;
+        let result = null;
+
+        while (true) {
+            const data = await fetchJson(sensor.endpoint, sensor.timeoutMs);
+            console.log(sensor.title + ' response:', data);
+            result = sensor.handle(data);
+            if (result || Date.now() >= deadline) break;
+            await sleep(1000);
         }
 
-        // Collect all sensor checkbox states to send to PHP
-        const activeSensors = {
-            height: document.getElementById('chk-height').checked ? 1 : 0,
-            weight: document.getElementById('chk-weight').checked ? 1 : 0,
-            temp: document.getElementById('chk-temp').checked ? 1 : 0,
-            heart: document.getElementById('chk-heart').checked ? 1 : 0,
-            bp: document.getElementById('chk-bp').checked ? 1 : 0,
-            spo2: document.getElementById('chk-spo2').checked ? 1 : 0,
-            bmi: document.getElementById('chk-bmi').checked ? 1 : 0
-        };
+        if (result) {
+            setStatus(result);
+            setIcon(okIcon);
+        } else {
+            setStatus(sensor.title + ' Failed');
+            setIcon(failIcon);
+        }
+    } catch (err) {
+        console.error(sensor.title + ' request error:', err);
+        if (sensor.handle === handleBp) clearBp(false);
+        setStatus(sensor.title + ' Error');
+        setIcon(failIcon);
+    }
 
-        // Save selected service type and active sensors to PHP session
-        await fetch('save_service.php', {
+    await sleep(1500); // let the patient read the result
+}
+
+/* ───────────── Main sequence ───────────── */
+
+async function beginSequentialLiveProcessing() {
+
+    sessionStorage.removeItem("current_weight");
+
+    const startBtn = $('startMeasurementBtn');
+
+    const toRun = sensors.filter(s => s.checkIds.some(id => $(id).checked));
+    if (toRun.length === 0) {
+        setStatus('<span class="text-danger">No sensors are enabled. Cancel and select at least one.</span>');
+        return;
+    }
+
+    startBtn.style.display = 'none';
+
+    for (const sensor of toRun) {
+        await runSensor(sensor);
+    }
+
+    const checked = k => $('chk-' + k).checked;
+    const activeSensors = {
+        height: checked('height') ? 1 : 0,
+        weight: checked('weight') ? 1 : 0,
+        temp:   checked('temp')   ? 1 : 0,
+        heart:  checked('heart')  ? 1 : 0,
+        bp:     checked('bp')     ? 1 : 0,
+        spo2:   checked('spo2')   ? 1 : 0,
+        // FIX: BMI is impossible without both height and weight
+        bmi:    (checked('bmi') && checked('height') && checked('weight')) ? 1 : 0
+    };
+
+    /*
+ * =========================================================
+ * SAVE WEIGHT RESULT
+ * =========================================================
+ *
+ * The continuous weight monitor gives us the weight through
+ * sessionStorage. Save that NEW weight into weight_readings
+ * before opening measure-result.php.
+ */
+
+if (checked('weight')) {
+
+    const currentWeight =
+        sessionStorage.getItem('current_weight');
+
+    console.log(
+        "CURRENT WEIGHT BEFORE SAVE:",
+        currentWeight
+    );
+
+    if (
+        currentWeight !== null &&
+        currentWeight !== '' &&
+        Number.isFinite(Number(currentWeight)) &&
+        Number(currentWeight) >= 0 &&
+        Number(currentWeight) < 500
+    ) {
+
+        try {
+
+            const weightResponse = await fetch(
+                'save_weight.php',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        weight: Number(currentWeight)
+                    })
+                }
+            );
+
+            if (!weightResponse.ok) {
+                throw new Error(
+                    'HTTP ' +
+                    weightResponse.status
+                );
+            }
+
+            const weightText =
+                await weightResponse.text();
+
+            console.log(
+                "save_weight.php response:",
+                weightText
+            );
+
+        } catch (err) {
+
+            console.error(
+                "Failed to save weight:",
+                err
+            );
+
+            $('sensorTitle').innerText = '';
+            setIcon(failIcon);
+
+            setStatus(
+                '<span class="text-danger">' +
+                'Could not save the weight measurement. ' +
+                'Please inform the staff.' +
+                '</span>'
+            );
+
+            return;
+        }
+
+    } else {
+
+        console.error(
+            "No valid current weight found."
+        );
+
+        $('sensorTitle').innerText = '';
+        setIcon(failIcon);
+
+        setStatus(
+            '<span class="text-danger">' +
+            'Weight measurement was not received. ' +
+            'Please repeat the measurement.' +
+            '</span>'
+        );
+
+        return;
+    }
+}
+
+
+/*
+ * =========================================================
+ * SAVE SERVICE CONFIGURATION
+ * =========================================================
+ */
+
+try {
+
+    const res = await fetch(
+        'save_service.php',
+        {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -652,283 +826,46 @@ $patient_name = isset($_SESSION['name']) ? $_SESSION['name'] : 'Patient';
                 service_type: selectedService,
                 active_sensors: activeSensors
             })
-        });
+        }
+    );
 
-        // Go to result page
-        window.location.href = "measure-result.php";
+    if (!res.ok) {
+        throw new Error(
+            'HTTP ' + res.status
+        );
     }
 
-    async function runSensor(sensor){
+} catch (err) {
 
-        document.getElementById("sensorTitle").innerText = sensor.title;
+    console.error(
+        'save_service.php failed:',
+        err
+    );
 
-        
-        // ── Show / hide the right-side sensor photo ──────────────────────────
-        const photoCol   = document.getElementById('sensorPhotoCol');
-        const photoImg   = document.getElementById('sensorPhoto');
-        const photoLabel = document.getElementById('sensorPhotoLabel');
-        if (sensor.image) {
-            photoImg.src              = sensor.image;
-            photoImg.alt              = sensor.title + ' sensor photo';
-            photoLabel.textContent    = sensor.title;
-            photoCol.style.display    = '';          // show column
-            photoCol.style.removeProperty('display'); // remove the !important override
-            photoCol.removeAttribute('style');
-            photoCol.style.display    = 'flex';
-        } else {
-            photoCol.style.setProperty('display', 'none', 'important');
-        }
+    $('sensorTitle').innerText = '';
+    setIcon(failIcon);
 
-      /*
-        * BLOOD PRESSURE
-        */
-        if (sensor.title === "Blood Pressure Measurement") {
+    setStatus(
+        '<span class="text-danger">' +
+        'Could not save your results. ' +
+        'Please inform the staff.' +
+        '</span>'
+    );
 
-            document.getElementById("measurementStatus").innerHTML =
-                "Starting Blood Pressure Measurement...";
+    return;
+}
 
-            document.getElementById("countdownIcon").innerHTML = `
-                <div class="position-relative d-inline-flex align-items-center justify-content-center w-100 h-100">
-                    <div class="spinner-border text-primary position-absolute w-100 h-100" role="status" style="border-width: 5px;"></div>
-                    <div class="d-flex align-items-center justify-content-center" style="z-index:1;">
-                        ${sensor.svg}
-                    </div>
-                </div>
-            `;
 
-            try {
+/*
+ * =========================================================
+ * OPEN RESULT PAGE
+ * =========================================================
+ */
 
-                console.log("Starting CONTEC O8A...");
-                console.log("Endpoint:", sensor.endpoint);
-                console.log("Starting sensor:", sensor.title);
-                console.log("Endpoint:", sensor.endpoint);
+window.location.href = "measure-result.php";
+}
 
-                const response = await fetch(sensor.endpoint, {
-                    method: "GET",
-                    cache: "no-store"
-                });
-
-                if (!response.ok) {
-                    throw new Error(
-                        "HTTP " + response.status + " " + response.statusText
-                    );
-                }
-
-                const data = await response.json();
-
-                console.log("BP response:", data);
-
-                /*
-                * IMPORTANT:
-                * Only accept this measurement if measure_bp.py
-                * completed successfully.
-                */
-                if (data.success === true && data.status === 0) {
-
-                    const output = Array.isArray(data.output)
-                        ? data.output.join("\n")
-                        : "";
-
-                    console.log("BP output:", output);
-
-                    /*
-                    * Make sure this response actually contains
-                    * a NEW blood pressure result.
-                    */
-                    const bpMatch = output.match(
-                        /SYS\s*=\s*(\d+)\s*mmHg[\s\S]*?DIA\s*=\s*(\d+)\s*mmHg[\s\S]*?PR\s*=\s*(\d+)\s*bpm/i
-                    );
-
-                    if (bpMatch) {
-
-                        const systolic = parseInt(bpMatch[1]);
-                        const diastolic = parseInt(bpMatch[2]);
-                        const pulse = parseInt(bpMatch[3]);
-
-                        console.log("NEW BP RESULT:");
-                        console.log("SYS:", systolic);
-                        console.log("DIA:", diastolic);
-                        console.log("PR:", pulse);
-
-                        /*
-                        * Store the NEW values for this measurement session.
-                        */
-                        sessionStorage.setItem(
-                            "current_bp_sys",
-                            systolic
-                        );
-
-                        sessionStorage.setItem(
-                            "current_bp_dia",
-                            diastolic
-                        );
-
-                        sessionStorage.setItem(
-                            "current_bp_pr",
-                            pulse
-                        );
-
-                        sessionStorage.setItem(
-                            "current_bp_valid",
-                            "1"
-                        );
-
-                        document.getElementById("measurementStatus").innerHTML =
-                            `✓ Blood Pressure Completed<br>
-                            <small>SYS ${systolic} / DIA ${diastolic} mmHg — PR ${pulse} bpm</small>`;
-
-                        document.getElementById("countdownIcon").innerHTML = `
-                            <i class="bi bi-check-circle-fill text-success"
-                            style="font-size:100px;"></i>
-                        `;
-
-                    } else {
-
-                        /*
-                        * Python reported success, but there was no
-                        * recognizable NEW BP result.
-                        */
-                        console.error(
-                            "BP process succeeded but no SYS/DIA/PR result was found."
-                        );
-
-                        sessionStorage.removeItem("current_bp_sys");
-                        sessionStorage.removeItem("current_bp_dia");
-                        sessionStorage.removeItem("current_bp_pr");
-                        sessionStorage.setItem("current_bp_valid", "0");
-
-                        document.getElementById("measurementStatus").innerHTML =
-                            "Blood Pressure Failed";
-
-                        document.getElementById("countdownIcon").innerHTML = `
-                            <i class="bi bi-x-circle-fill text-danger"
-                            style="font-size:100px;"></i>
-                        `;
-                    }
-
-                } else {
-
-                    /*
-                    * measure_bp.py failed.
-                    * NEVER use an old BP value.
-                    */
-                    console.error("BP measurement failed:", data);
-
-                    sessionStorage.removeItem("current_bp_sys");
-                    sessionStorage.removeItem("current_bp_dia");
-                    sessionStorage.removeItem("current_bp_pr");
-                    sessionStorage.setItem("current_bp_valid", "0");
-
-                    document.getElementById("measurementStatus").innerHTML =
-                        "Blood Pressure Failed";
-
-                    document.getElementById("countdownIcon").innerHTML = `
-                        <i class="bi bi-x-circle-fill text-danger"
-                        style="font-size:100px;"></i>
-                    `;
-                }
-
-            } catch (err) {
-
-                console.error("BP request error:", err);
-
-                /*
-                * Request itself failed.
-                * Clear any old BP values.
-                */
-                sessionStorage.removeItem("current_bp_sys");
-                sessionStorage.removeItem("current_bp_dia");
-                sessionStorage.removeItem("current_bp_pr");
-                sessionStorage.setItem("current_bp_valid", "0");
-
-                document.getElementById("measurementStatus").innerHTML =
-                    "Blood Pressure Error";
-
-                document.getElementById("countdownIcon").innerHTML = `
-                    <i class="bi bi-x-circle-fill text-danger"
-                    style="font-size:100px;"></i>
-                `;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            return;
-        }
-
-        /*
-        * ALL OTHER SENSORS
-        */
-
-        let remaining = sensor.seconds;
-
-        document.getElementById("countdownIcon").innerHTML = `
-            <div class="position-relative d-inline-flex align-items-center justify-content-center w-100 h-100">
-                <div class="spinner-border text-primary position-absolute w-100 h-100" role="status" style="border-width: 5px;"></div>
-                <div class="d-flex align-items-center justify-content-center" style="z-index:1;">
-                    ${sensor.svg}
-                </div>
-            </div>
-        `;
-
-        return new Promise(resolve=>{
-
-            const timer = setInterval(()=>{
-
-                remaining--;
-
-                if(remaining <= 0){
-
-                    clearInterval(timer);
-
-                    document.getElementById("measurementStatus").innerHTML =
-                        "Measuring...";
-
-                    fetch(sensor.endpoint)
-                    .then(res => {
-                        if (!res.ok) throw new Error("HTTP " + res.status);
-                        return res.text();                      // get raw text first
-                    })
-                    .then(text => {
-                        let data;
-                        try {
-                            data = JSON.parse(text);
-                        } catch(e) {
-                            console.warn("Non-JSON response from", sensor.endpoint, text);
-                            // Treat as success if the device responded at all
-                            data = { success: true };
-                        }
-
-                        if (data.success === true) {
-                            document.getElementById("measurementStatus").innerHTML = "✓ Completed";
-                            document.getElementById("countdownIcon").innerHTML = `
-                                <i class="bi bi-check-circle-fill text-success" style="font-size:100px;"></i>
-                            `;
-                        } else {
-                            document.getElementById("measurementStatus").innerHTML = "Measurement Failed";
-                            document.getElementById("countdownIcon").innerHTML = `
-                                <i class="bi bi-x-circle-fill text-danger" style="font-size:100px;"></i>
-                            `;
-                        }
-                        setTimeout(resolve, 1500);
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        document.getElementById("measurementStatus").innerHTML = "Measurement Error";
-                        document.getElementById("countdownIcon").innerHTML = `
-                            <i class="bi bi-x-circle-fill text-danger" style="font-size:100px;"></i>
-                        `;
-                        setTimeout(resolve, 1500);
-                    });
-
-                }
-
-            },1000);
-
-        });
-    }
-document.getElementById('cancel-measurement').addEventListener('click', function () {
-    window.location.reload();
-});    
+$('cancel-measurement').addEventListener('click', () => window.location.reload());
 </script>
 </body>
 </html>

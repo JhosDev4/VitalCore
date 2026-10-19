@@ -1,22 +1,76 @@
 <?php
+
 /** @var mysqli $conn */
+
 require_once('../../db_conn.php');
 
-$weight = $_POST['weight'] ?? '';
+header('Content-Type: application/json');
 
-if($weight != ''){
+$data = json_decode(
+    file_get_contents("php://input"),
+    true
+);
 
-    $weight = mysqli_real_escape_string($conn, $weight);
+if (
+    !isset($data['weight']) ||
+    !is_numeric($data['weight'])
+) {
 
-    mysqli_query(
-        $conn,
-        "INSERT INTO weight_readings(weight)
-         VALUES('$weight')"
-    );
+    echo json_encode([
+        "success" => false,
+        "message" => "Invalid weight"
+    ]);
 
-    echo "SUCCESS";
+    exit();
 }
-else{
-    echo "NO DATA";
+
+$weight = floatval($data['weight']);
+
+if ($weight < 0 || $weight >= 500) {
+
+    echo json_encode([
+        "success" => false,
+        "message" => "Invalid weight range"
+    ]);
+
+    exit();
 }
-?>
+
+$stmt = mysqli_prepare(
+    $conn,
+    "INSERT INTO weight_readings (weight)
+     VALUES (?)"
+);
+
+if (!$stmt) {
+
+    echo json_encode([
+        "success" => false,
+        "message" => mysqli_error($conn)
+    ]);
+
+    exit();
+}
+
+mysqli_stmt_bind_param(
+    $stmt,
+    "d",
+    $weight
+);
+
+if (mysqli_stmt_execute($stmt)) {
+
+    echo json_encode([
+        "success" => true,
+        "weight" => round($weight, 1)
+    ]);
+
+} else {
+
+    echo json_encode([
+        "success" => false,
+        "message" => mysqli_stmt_error($stmt)
+    ]);
+}
+
+mysqli_stmt_close($stmt);

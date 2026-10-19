@@ -14,6 +14,11 @@ if (
     exit();
 }
 
+// CSRF token for the Edit Vitals save request
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die("Patient not found.");
 }
@@ -30,6 +35,7 @@ if (!$patient) { die("Patient not found."); }
 $temp = $weight = $height = $bmi = $heart_rate = $spo2 = $systolic = $diastolic = '--';
 $last_visited = 'No visits recorded';
 $doc_date     = date('F d, Y');
+$current_mid  = 0;
 
 if ($measurement_id > 0) {
     $measurementQuery = mysqli_query($conn, "SELECT * FROM measurements WHERE id = $measurement_id LIMIT 1");
@@ -39,6 +45,7 @@ if ($measurement_id > 0) {
 
 if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
     $measurement    = mysqli_fetch_assoc($measurementQuery);
+    $current_mid    = (int)$measurement['id'];
     $temp           = $measurement['temperature'] ?? '--';
     $weight         = $measurement['weight']      ?? '--';
     $height         = $measurement['height']      ?? '--';
@@ -63,10 +70,34 @@ $spo2_val       = (is_numeric($spo2)       && (int)$spo2 > 0)       ? (int)$spo2
 $systolic_val   = (is_numeric($systolic)   && (int)$systolic > 0)   ? (int)$systolic     : null;
 $diastolic_val  = (is_numeric($diastolic)  && (int)$diastolic > 0)  ? (int)$diastolic    : null;
 
+// Values passed to the Edit Vitals modal
+$vitals_js = json_encode([
+    'temperature' => $temp_val,
+    'weight'      => $weight_val,
+    'height'      => $height_val,
+    'heart_rate'  => $heart_rate_val,
+    'spo2'        => $spo2_val,
+    'systolic'    => $systolic_val,
+    'diastolic'   => $diastolic_val,
+]);
+
 // Display strings
 $temp_disp       = ($temp_val !== null)   ? number_format($temp_val, 1) . ' °C' : '--';
 $weight_disp     = ($weight_val !== null) ? number_format($weight_val, 1) . ' kg' : '--';
-$height_disp     = ($height_val !== null) ? number_format($height_val, 1) . ' cm' : '--';
+// cm display
+$height_disp = ($height_val !== null) ? number_format($height_val, 1) . ' cm' : '--';
+
+// cm → feet & inches conversion
+if ($height_val !== null) {
+    $total_inches  = $height_val / 2.54;
+    $feet          = (int) floor($total_inches / 12);
+    $inches        = (int) round(fmod($total_inches, 12));
+    // handle edge case where inches rounds up to 12
+    if ($inches === 12) { $feet++; $inches = 0; }
+    $height_ft_disp = "{$feet}'{$inches}\"";
+} else {
+    $height_ft_disp = '--';
+}
 $bmi_disp        = ($bmi_val !== null)    ? number_format($bmi_val, 2) : '--';
 $heart_rate_disp = ($heart_rate_val !== null) ? $heart_rate_val . ' BPM' : '--';
 $spo2_disp       = ($spo2_val !== null)   ? $spo2_val . '%' : '--';
@@ -335,14 +366,34 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         }
         .pp-item label { font-weight: 600; white-space: nowrap; }
 
+        /* Prevent individual table rows and signatures from slicing horizontally mid-text */
+        tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .signature-section {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
         @media print {
             .no-print { display: none !important; }
-            body { background: white !important; }
-            .document-wrapper { box-shadow: none !important; }
+            body { background: white !important; margin: 0 !important; padding: 0 !important; }
+            .document-wrapper {
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 auto !important;
+                padding: 10px 20px !important;
+                max-width: 100% !important;
+            }
         }
     </style>
 </head>
 <body>
+
+<!-- Night Light Filter Overlay -->
+<div id="nightLightOverlay"></div>
 
 <!-- TOP ACTION TOOLBAR -->
 <div class="no-print bg-white border-bottom p-3 mb-3 sticky-top shadow-sm">
@@ -455,7 +506,12 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                     <td contenteditable="true">35+</td>
                 </tr>
                 <tr>
-                    <td class="text-start"><strong>Height:</strong> <?= $height_disp ?></td>
+                    <td class="text-start">
+                        <strong>Height:</strong> <?= $height_disp ?>
+                        <?php if ($height_val !== null): ?>
+                            <span style="font-size:0.85em; color:#64748b;">&nbsp;(<?= $height_ft_disp ?>)</span>
+                        <?php endif; ?>
+                    </td>
                     <td colspan="2" contenteditable="true">Below 145 cm</td>
                     <td colspan="3" class="text-start ps-3"><strong>BMI:</strong> <?= $bmi_disp ?></td>
                 </tr>
@@ -467,18 +523,18 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
     <div class="pn-section mt-3">
         <div class="pn-header">OBSTETRICAL HISTORY</div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
-            
+
             <!-- G_ L_ P_ O_ ( _ _ _ _ ) with TPAL underneath -->
             <div style="font-size:0.85rem; font-weight:700; margin-bottom:8px; padding-left:4px;">
                 G <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;
                 L <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;
                 P <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;
                 O <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;&nbsp;&nbsp;
-                ( 
+                (
                   <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;&nbsp;&nbsp;
                   <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;&nbsp;&nbsp;
                   <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;&nbsp;&nbsp;
-                  <span contenteditable="true" class="blank-line blank-line-sm"></span> 
+                  <span contenteditable="true" class="blank-line blank-line-sm"></span>
                 )
                 <div style="font-size:0.62rem; color:#666; margin-left:145px; margin-top:-2px; letter-spacing: 22px;">
                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;T&nbsp;P&nbsp;A&nbsp;L
@@ -569,9 +625,9 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         <div class="legend-box px-2 pb-2">
             <div>
                 <span class="legend-square" style="background:#b0c6e8;"></span>Refer to Physician/RHU (and follow-up)
-                
+
                 <span class="legend-square" style="background:#f7b0a7;"></span>Close observation or action by midwife/nurse
-                
+
                 <span class="dot-circle" style="width:12px; height:12px; margin-right:4px;"></span>Hospital delivery recommeded</div>
         </div>
         <div style="font-size:0.65rem; color:#666; padding-left:8px; margin-top:-4px;" class="mb-2">
@@ -582,7 +638,15 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
 
     <!-- SECTION 5 — VITAL SIGNS TELEMETRY (FROM DB) -->
     <div class="pn-section mt-3">
-        <div class="pn-header"><i class="bi bi-heart-pulse-fill me-1"></i> Vital Signs Telemetry Measurements</div>
+        <div class="pn-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-heart-pulse-fill me-1"></i> Vital Signs Telemetry Measurements</span>
+            <?php if ($current_mid > 0): ?>
+            <button type="button" class="btn btn-light btn-sm py-0 px-2 fw-bold no-print"
+                    data-html2canvas-ignore="true" onclick="openEditVitals()" style="font-size:0.7rem;">
+                <i class="bi bi-pencil-square me-1"></i> Edit Vitals
+            </button>
+            <?php endif; ?>
+        </div>
         <table class="vitals-table" style="border-top:none;">
             <thead>
                 <tr>
@@ -595,43 +659,48 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             <tbody>
                 <tr>
                     <td><strong>Blood Pressure</strong></td>
-                    <td contenteditable="true"><?= $bp_disp ?></td>
+                    <td><?= $bp_disp ?></td>
                     <td>120/80 mmHg</td>
                     <td><span class="status-badge <?= $bp_class ?>"><?= $bp_status ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>Heart Rate</strong></td>
-                    <td contenteditable="true"><?= $heart_rate_disp ?></td>
+                    <td><?= $heart_rate_disp ?></td>
                     <td>60 – 100 BPM</td>
                     <td><span class="status-badge <?= $heart_class ?>"><?= $heart_status ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>SpO2 (Blood Oxygen)</strong></td>
-                    <td contenteditable="true"><?= $spo2_disp ?></td>
+                    <td><?= $spo2_disp ?></td>
                     <td>95% – 100%</td>
                     <td><span class="status-badge <?= $spo2_class ?>"><?= $spo2_status ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>Body Temperature</strong></td>
-                    <td contenteditable="true"><?= $temp_disp ?></td>
+                    <td><?= $temp_disp ?></td>
                     <td>36.0 °C – 37.5 °C</td>
                     <td><span class="status-badge <?= $temp_class ?>"><?= $temp_status ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>Body Weight</strong></td>
-                    <td contenteditable="true"><?= $weight_disp ?></td>
+                    <td><?= $weight_disp ?></td>
                     <td>--</td>
                     <td><span class="status-badge badge-secondary"><?= $weight_status ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>Height</strong></td>
-                    <td contenteditable="true"><?= $height_disp ?></td>
+                    <td>
+                        <?= $height_disp ?>
+                        <?php if ($height_val !== null): ?>
+                            <span class="text-muted" style="font-size:0.85em;">&nbsp;(<?= $height_ft_disp ?>)</span>
+                        <?php endif; ?>
+                    </td>
                     <td>--</td>
                     <td><span class="status-badge badge-secondary"><?= $height_status ?></span></td>
                 </tr>
                 <tr>
                     <td><strong>BMI Score</strong></td>
-                    <td contenteditable="true"><?= $bmi_disp ?></td>
+                    <td><?= $bmi_disp ?></td>
                     <td>18.5 – 24.9</td>
                     <td><span class="status-badge <?= $bmi_class ?>"><?= $bmi_status ?></span></td>
                 </tr>
@@ -643,21 +712,21 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
     <div class="pn-section mt-3">
         <div class="pn-header">PRESENT PREGNANCY</div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
-            
+
             <!-- LMP and EDC Row with Header Badges -->
             <div class="d-flex justify-content-between align-items-center mb-4" style="font-size:0.75rem;">
                 <div class="d-flex gap-2">
                     <div>
-                        <strong class="text-danger">LMP:</strong> 
-                        MONTH <span contenteditable="true" class="blank-line blank-line-sm"></span> 
-                        DAY <span contenteditable="true" class="blank-line blank-line-sm"></span> 
+                        <strong class="text-danger">LMP:</strong>
+                        MONTH <span contenteditable="true" class="blank-line blank-line-sm"></span>
+                        DAY <span contenteditable="true" class="blank-line blank-line-sm"></span>
                         YEAR <span contenteditable="true" class="blank-line blank-line-sm"></span>
                         <span class="badge" style="background:#b0c6e8; color:#1e3a8a;">Refer to Hospital</span>
                     </div>
                     <div>
-                        <strong class="text-danger">EDC:</strong> 
-                        MONTH <span contenteditable="true" class="blank-line blank-line-sm"></span> 
-                        DAY <span contenteditable="true" class="blank-line blank-line-sm"></span> 
+                        <strong class="text-danger">EDC:</strong>
+                        MONTH <span contenteditable="true" class="blank-line blank-line-sm"></span>
+                        DAY <span contenteditable="true" class="blank-line blank-line-sm"></span>
                         YEAR <span contenteditable="true" class="blank-line blank-line-sm"></span>
                         <span class="badge" style="background:#f7b0a7; color:#881337;">Refer to Physician / RHU</span>
                     </div>
@@ -686,7 +755,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                     <tr>
                         <td class="text-start">Date of Visit</td>
                         <?php for ($i = 1; $i <= 1; $i++): ?><td contenteditable="true"></td><?php endfor; ?>
-                        <?php for ($i = 2; $i <= 12; $i++): ?><td class="row-blue" contenteditable="true"></td><?php endfor; ?> 
+                        <?php for ($i = 2; $i <= 12; $i++): ?><td class="row-blue" contenteditable="true"></td><?php endfor; ?>
                     </tr>
                     <tr>
                         <td class="text-start">Vaginal Bleeding (Y/N)</td>
@@ -708,12 +777,12 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                     <tr>
                         <td class="text-start">BP 140/90 and above (Y/N)</td>
                         <?php for ($i = 1; $i <= 1; $i++): ?><td contenteditable="true"></td><?php endfor; ?>
-                        <?php for ($i = 2; $i <= 12; $i++): ?><td class="row-blue" contenteditable="true"></td><?php endfor; ?> 
+                        <?php for ($i = 2; $i <= 12; $i++): ?><td class="row-blue" contenteditable="true"></td><?php endfor; ?>
                     </tr>
                     <tr>
                         <td class="text-start">Fever 39 and above (Y/N)</td>
                         <?php for ($i = 1; $i <= 1; $i++): ?><td contenteditable="true"></td><?php endfor; ?>
-                        <?php for ($i = 2; $i <= 12; $i++): ?><td class="row-pink" contenteditable="true"></td><?php endfor; ?> 
+                        <?php for ($i = 2; $i <= 12; $i++): ?><td class="row-pink" contenteditable="true"></td><?php endfor; ?>
                     </tr>
                     <tr>
                         <td class="text-start">Pallor (Y/N)</td>
@@ -967,12 +1036,115 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
 </div>
 </div>
 
+<?php if ($current_mid > 0): ?>
+<!-- EDIT VITALS MODAL -->
+<div class="modal fade no-print" id="editVitalsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil-square me-1"></i> Edit Vital Signs</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning py-2 small mb-3">
+          Use this only to correct sensor errors or inaccurate readings. Leave a field blank to clear it.
+        </div>
+        <div id="evError" class="alert alert-danger py-2 small d-none"></div>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label small fw-bold">Systolic (mmHg)</label>
+            <input type="number" id="ev_systolic" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Diastolic (mmHg)</label>
+            <input type="number" id="ev_diastolic" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Heart Rate (BPM)</label>
+            <input type="number" id="ev_heart_rate" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">SpO2 (%)</label>
+            <input type="number" id="ev_spo2" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Temperature (°C)</label>
+            <input type="number" step="0.1" id="ev_temperature" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Weight (kg)</label>
+            <input type="number" step="0.1" id="ev_weight" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Height (cm)</label>
+            <input type="number" step="0.1" id="ev_height" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">BMI (automatic)</label>
+            <input type="text" id="ev_bmi" class="form-control form-control-sm bg-light" readonly></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success btn-sm fw-bold" id="evSaveBtn" onclick="saveVitals()">
+          <i class="bi bi-check-lg me-1"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php endif; ?>
+
 <script>
 const defaultFileName = '<?= $safe_filename; ?>';
-const storageKey = 'prenatal_chart_draft_v6_<?= $patient_id; ?>_<?= $measurement_id; ?>';
+const storageKey = 'prenatal_chart_draft_v7_<?= $patient_id; ?>_<?= $measurement_id; ?>';
 let saveTimeout = null;
 
-// Silent background auto-save
+// ---- Edit Vitals ----
+const CURRENT_MID = <?= (int)$current_mid; ?>;
+const PATIENT_ID  = <?= (int)$patient_id; ?>;
+const CSRF_TOKEN  = '<?= $_SESSION['csrf_token']; ?>';
+const VITALS      = <?= $vitals_js; ?>;
+const evFields = ['temperature','weight','height','heart_rate','spo2','systolic','diastolic'];
+
+function openEditVitals() {
+    evFields.forEach(f => {
+        document.getElementById('ev_' + f).value = VITALS[f] ?? '';
+    });
+    document.getElementById('evError').classList.add('d-none');
+    updateBmiPreview();
+    new bootstrap.Modal(document.getElementById('editVitalsModal')).show();
+}
+
+// Live automatic BMI
+function updateBmiPreview() {
+    const w = parseFloat(document.getElementById('ev_weight').value);
+    const h = parseFloat(document.getElementById('ev_height').value);
+    const out = document.getElementById('ev_bmi');
+    if (w > 0 && h > 0) {
+        const m = h / 100;
+        out.value = (w / (m * m)).toFixed(2);
+    } else {
+        out.value = '--';
+    }
+}
+
+async function saveVitals() {
+    const btn = document.getElementById('evSaveBtn');
+    const err = document.getElementById('evError');
+    err.classList.add('d-none');
+
+    const payload = { measurement_id: CURRENT_MID, patient_id: PATIENT_ID, csrf: CSRF_TOKEN };
+    evFields.forEach(f => payload[f] = document.getElementById('ev_' + f).value.trim());
+
+    btn.disabled = true;
+    try {
+        const res  = await fetch('update_vital.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            location.reload();   // reloads values, BMI and all status badges from the database
+            return;
+        }
+        err.textContent = data.message || 'Unable to save.';
+        err.classList.remove('d-none');
+    } catch (e) {
+        err.textContent = 'Network error. Please try again.';
+        err.classList.remove('d-none');
+    }
+    btn.disabled = false;
+}
+
+// ---- Draft auto-save ----
 function saveDraft() {
     const fields = {};
     const editables = document.querySelectorAll('[contenteditable="true"]');
@@ -982,7 +1154,6 @@ function saveDraft() {
     localStorage.setItem(storageKey, JSON.stringify(fields));
 }
 
-// Restore saved draft on page load
 function loadSavedDraft() {
     const savedData = localStorage.getItem(storageKey);
     if (!savedData) return;
@@ -1004,17 +1175,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add("dark-mode");
     }
 
+    // Live BMI preview in modal
+    ['ev_weight', 'ev_height'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateBmiPreview);
+    });
+
     loadSavedDraft();
 
     const editables = document.querySelectorAll('[contenteditable="true"]');
     editables.forEach(el => {
-        // Auto-save on text input
         el.addEventListener('input', () => {
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(saveDraft, 300);
         });
 
-        // Click listener to toggle check icon on choice cells (NO, YES, Y, N) without touching dot circles
         el.addEventListener('click', (e) => {
             const rawText = el.innerText.replace(/[^A-Za-z]/g, '').trim().toUpperCase();
             if (['YES', 'NO', 'Y', 'N'].includes(rawText)) {
@@ -1034,34 +1209,48 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function saveAsPDF() {
+    window.scrollTo(0, 0);
     const element = document.getElementById('document-wrapper');
-    const pdfBlob = await html2pdf().set({
-        margin: [6, 6, 6, 6],
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(element).output('blob');
 
-    if ('showSaveFilePicker' in window) {
-        try {
-            const handle = await window.showSaveFilePicker({
-                suggestedName: defaultFileName + '.pdf',
-                types: [{ description: 'PDF Document (*.pdf)', accept: { 'application/pdf': ['.pdf'] } }]
-            });
-            const writable = await handle.createWritable();
-            await writable.write(pdfBlob);
-            await writable.close();
-        } catch (err) {
-            if (err.name !== 'AbortError') fallbackDownload(pdfBlob, defaultFileName + '.pdf');
+    try {
+        const opt = {
+            margin: [6, 6, 6, 6],
+            filename: defaultFileName + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: 'css' }
+        };
+
+        const pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: defaultFileName + '.pdf',
+                    types: [{ description: 'PDF Document (*.pdf)', accept: { 'application/pdf': ['.pdf'] } }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(pdfBlob);
+                await writable.close();
+            } catch (err) {
+                if (err.name !== 'AbortError') fallbackDownload(pdfBlob, defaultFileName + '.pdf');
+            }
+        } else {
+            fallbackDownload(pdfBlob, defaultFileName + '.pdf');
         }
-    } else {
-        fallbackDownload(pdfBlob, defaultFileName + '.pdf');
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Unable to generate the PDF. Please try again.');
     }
 }
 
 async function saveAsWord() {
     const element = document.getElementById('document-wrapper');
     const clone = element.cloneNode(true);
+
+    // Remove the Edit Vitals button from the Word export
+    clone.querySelectorAll('[data-html2canvas-ignore]').forEach(e => e.remove());
 
     const clinicHeader = clone.querySelector('.clinic-header');
     if (clinicHeader) {
@@ -1104,7 +1293,7 @@ async function saveAsWord() {
         const items = Array.from(grid.querySelectorAll('.info-item'));
         const table = document.createElement('table');
         table.style.cssText = 'width:100%; border-collapse:collapse; background-color:#f8fafc; border:1px solid #dbe3ef; border-radius:6px; margin-bottom:10px; font-size:11px;';
-        
+
         let currentRow = document.createElement('tr');
         let colCount = 0;
 
@@ -1217,7 +1406,7 @@ async function saveAsWord() {
                 types: [{ description: 'Word Document (*.doc)', accept: { 'application/msword': ['.doc', '.docx'] } }]
             });
             const writable = await handle.createWritable();
-            await writable.write(pdfBlob);
+            await writable.write(wordBlob);
             await writable.close();
         } catch (err) {
             if (err.name !== 'AbortError') fallbackDownload(wordBlob, defaultFileName + '.doc');
@@ -1238,6 +1427,7 @@ function fallbackDownload(blob, filename) {
     URL.revokeObjectURL(url);
 }
 </script>
+
 <!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
 <script>
 (function applySystemSettings() {
@@ -1254,12 +1444,6 @@ function fallbackDownload(blob, filename) {
             document.documentElement.classList.toggle("dark-mode", isDark);
             localStorage.setItem("theme", isDark ? "dark" : "light");
         });
-    }
-
-    // 2. Brightness
-    const savedBrightness = localStorage.getItem("brightness");
-    if (savedBrightness) {
-        document.body.style.filter = `brightness(${savedBrightness}%)`;
     }
 
     // 3. Night Light

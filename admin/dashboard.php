@@ -424,11 +424,6 @@ $followup_total = count($followup_rows);
                         <i class="bi bi-exclamation-triangle-fill warning-icon"></i>
                         <span data-i18n="sensors_status">Sensors Status</span>
                     </a>
-
-                     <button id="darkModeToggle" type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-                        <i class="bi bi-moon-stars-fill me-1"></i>
-                        <span data-i18n="dark_mode_title">Dark Mode</span>
-                    </button>
                 </div>
             </div>
 

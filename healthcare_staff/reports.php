@@ -159,14 +159,6 @@ $prenatal_count = mysqli_fetch_assoc(mysqli_query(
      AND $whereMeasurements"
 ))['total'] ?? 0;
 
-$immunization_count = mysqli_fetch_assoc(mysqli_query(
-    $conn,
-    "SELECT COUNT(*) AS total
-     FROM measurements
-     WHERE (service_type LIKE '%immuniz%')
-     AND $whereMeasurements"
-))['total'] ?? 0;
-
 $family_count = mysqli_fetch_assoc(mysqli_query(
     $conn,
     "SELECT COUNT(*) AS total
@@ -217,7 +209,7 @@ $roster_count = $patient_roster_q ? mysqli_num_rows($patient_roster_q) : 0;
 
 /* ==========================================================
    INITIALIZE ALL 35 BARANGAYS WITH 0 COUNTS
-========================================================== */
+========================================================= */
 $barangay_counts = array_fill_keys($all_barangays, 0);
 
 $brgy_q = mysqli_query($conn, "SELECT
@@ -272,7 +264,7 @@ if ($brgy_q) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Bootstrap 5.3 CSS (the *-subtle classes used on this page need 5.3, matching the JS bundle) -->
+    <!-- Bootstrap 5.3 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.9.1/font/bootstrap-icons.css">
@@ -523,7 +515,7 @@ if ($brgy_q) {
                                     for ($y = $current_year + 24; $y >= 2025; $y--):
                                     ?>
                                         <option value="<?= $y; ?>" <?= ($filter_year == $y) ? 'selected' : ''; ?>>
-                                            <?= $y; ?>
+                                             <?= $y; ?>
                                         </option>
                                     <?php endfor; ?>
                                 </select>
@@ -865,10 +857,6 @@ if ($brgy_q) {
                     <tr>
                         <td style="padding: 6px; border: 1px solid #333;">Prenatal Check-up</td>
                         <td style="padding: 6px; border: 1px solid #333; text-align: right; font-weight: bold;"><?= number_format($prenatal_count); ?></td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 6px; border: 1px solid #333;">Child Immunization</td>
-                        <td style="padding: 6px; border: 1px solid #333; text-align: right; font-weight: bold;"><?= number_format($immunization_count); ?></td>
                     </tr>
                     <tr>
                         <td style="padding: 6px; border: 1px solid #333;">Family Planning</td>

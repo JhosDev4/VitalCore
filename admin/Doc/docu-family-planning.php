@@ -20,6 +20,11 @@ if (
     exit();
 }
 
+// CSRF token for the Edit Vitals save request
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die("Patient not found.");
 }
@@ -263,6 +268,7 @@ $diastolic  = null;
 
 $last_visited = 'No visits recorded';
 $doc_date     = date('F d, Y');
+$current_mid  = 0;
 
 if ($measurement_id > 0) {
     $measurementQuery = mysqli_query(
@@ -280,6 +286,7 @@ if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
 
     $measurement = mysqli_fetch_assoc($measurementQuery);
 
+    $current_mid = (int)$measurement['id'];
     $temp       = $measurement['temperature'] ?? null;
     $weight     = $measurement['weight'] ?? null;
     $height     = $measurement['height'] ?? null;
@@ -311,13 +318,36 @@ $spo2_val       = (is_numeric($spo2) && (int)$spo2 > 0) ? (int)$spo2 : null;
 $systolic_val   = (is_numeric($systolic) && (int)$systolic > 0) ? (int)$systolic : null;
 $diastolic_val  = (is_numeric($diastolic) && (int)$diastolic > 0) ? (int)$diastolic : null;
 
+// Values passed to the Edit Vitals modal
+$vitals_js = json_encode([
+    'temperature' => $temp_val,
+    'weight'      => $weight_val,
+    'height'      => $height_val,
+    'heart_rate'  => $heart_rate_val,
+    'spo2'        => $spo2_val,
+    'systolic'    => $systolic_val,
+    'diastolic'   => $diastolic_val,
+]);
+
 /* =========================================================
    4. DISPLAY VALUES
 ========================================================= */
 
 $temp_disp       = ($temp_val !== null) ? number_format($temp_val, 1) . ' °C' : '--';
 $weight_disp     = ($weight_val !== null) ? number_format($weight_val, 1) . ' kg' : '--';
-$height_disp     = ($height_val !== null) ? number_format($height_val, 1) . ' cm' : '--';
+$height_disp = ($height_val !== null) ? number_format($height_val, 1) . ' cm' : '--';
+
+// cm → feet & inches conversion
+if ($height_val !== null) {
+    $total_inches  = $height_val / 2.54;
+    $feet          = (int) floor($total_inches / 12);
+    $inches        = (int) round(fmod($total_inches, 12));
+    // handle edge case where inches rounds up to 12
+    if ($inches === 12) { $feet++; $inches = 0; }
+    $height_ft_disp = "{$feet}'{$inches}\"";
+} else {
+    $height_ft_disp = '--';
+}
 $bmi_disp        = ($bmi_val !== null) ? number_format($bmi_val, 2) : '--';
 $heart_rate_disp = ($heart_rate_val !== null) ? $heart_rate_val . ' BPM' : '--';
 $spo2_disp       = ($spo2_val !== null) ? $spo2_val . '%' : '--';
@@ -367,6 +397,7 @@ if ($bmi_val !== null) {
     else { $bmi_status = 'Obese'; $bmi_class = 'badge-danger'; }
 }
 
+$height_status = ($height_val !== null) ? 'Recorded' : '--';
 /* =========================================================
    10. FETCH FAMILY PLANNING RECORD FOR THIS VISIT
 ========================================================= */
@@ -470,13 +501,13 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../../css/document.css">
+    <link rel="stylesheet" href="../../css/Document.css">
     <link rel="stylesheet" href="../../css/theme.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
         .fp-title { color: #0a49c4; font-weight: 800; }
-        
+
         html.dark-mode .clinic-name,
         body.dark-mode .clinic-name {
             color: #0a49c4 !important;
@@ -489,12 +520,101 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
         .fp-section-note { font-size: 0.75rem; color: #6c757d; margin-top: -8px; margin-bottom: 12px; }
         .remarks-content { min-height: 75px; line-height: 1.6; }
 
-        #familyPlanningModal .modal-dialog { max-height: 88vh; }
-        #familyPlanningModal .modal-content { max-height: 88vh !important; display: flex; flex-direction: column; }
-        #familyPlanningModal .modal-body { overflow-y: auto !important; max-height: calc(88vh - 130px) !important; padding-right: 15px; }
-        #familyPlanningModal .modal-footer { flex-shrink: 0; position: sticky; bottom: 0; z-index: 1050; border-top: 1px solid #dee2e6; }
-        textarea[name="remarks"] { overflow-y: hidden !important; min-height: 110px; resize: none; }
-        body.dark-mode #familyPlanningModal .modal-footer { background-color: #111827 !important; border-top-color: #334155 !important; }
+        /* =========================================================
+           ROBUST MODAL FIXES (Prevents cut-off below screen)
+        ========================================================= */
+        #familyPlanningModal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 1055 !important;
+            overflow: hidden !important;
+        }
+
+        #familyPlanningModal .modal-dialog {
+            max-height: calc(100vh - 3rem) !important;
+            margin: 1.5rem auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        #familyPlanningModal form.modal-content {
+            max-height: calc(100vh - 3rem) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            border-radius: 12px;
+        }
+
+        #familyPlanningModal .modal-header {
+            flex-shrink: 0 !important;
+            padding: 1rem 1.5rem;
+        }
+
+        #familyPlanningModal .modal-body {
+            flex: 1 1 auto !important;
+            overflow-y: auto !important;
+            max-height: calc(100vh - 12rem) !important;
+            padding: 1.25rem 1.5rem;
+        }
+
+        #familyPlanningModal .modal-footer {
+            flex-shrink: 0 !important;
+            border-top: 1px solid #dee2e6;
+            padding: 0.75rem 1.5rem;
+        }
+
+        textarea[name="remarks"] {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        body.dark-mode #familyPlanningModal form.modal-content {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+        }
+
+        body.dark-mode #familyPlanningModal .modal-header {
+            background-color: #111827 !important;
+            border-bottom: 1px solid #334155 !important;
+        }
+
+        body.dark-mode #familyPlanningModal .modal-footer {
+            background-color: #111827 !important;
+            border-top: 1px solid #334155 !important;
+        }
+
+        body.dark-mode #familyPlanningModal .form-control,
+        body.dark-mode #familyPlanningModal .form-select {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-mode #familyPlanningModal .form-label {
+            color: #cbd5e1 !important;
+        }
+
+        /* Edit Vitals modal – dark mode */
+        body.dark-mode #editVitalsModal .modal-content {
+            background-color: #0f172a !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+        }
+        body.dark-mode #editVitalsModal .modal-header,
+        body.dark-mode #editVitalsModal .modal-footer {
+            background-color: #111827 !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode #editVitalsModal .form-control {
+            background-color: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f8fafc !important;
+        }
+        body.dark-mode #editVitalsModal .form-label { color: #cbd5e1 !important; }
 
         @media print {
             .no-print { display: none !important; }
@@ -603,8 +723,14 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
             <div class="info-item" style="grid-column: span 2;"><span class="info-label">Occupation:</span><span class="info-value"><?= $occupation; ?></span></div>
         </div>
 
-        <div class="section-header">
-            <i class="bi bi-heart-pulse-fill text-danger"></i> Vital Signs & Physical Measurements
+        <div class="section-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-heart-pulse-fill text-danger"></i> Vital Signs & Physical Measurements</span>
+            <?php if ($current_mid > 0): ?>
+            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fw-bold no-print"
+                    data-html2canvas-ignore="true" onclick="openEditVitals()" style="font-size:0.7rem;">
+                <i class="bi bi-pencil-square me-1"></i> Edit Vitals
+            </button>
+            <?php endif; ?>
         </div>
 
         <div class="fp-section-note">
@@ -625,7 +751,16 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
                 <tr><td><strong>SpO₂</strong></td><td><?= $spo2_disp; ?></td><td><span class="status-badge <?= $spo2_class; ?>"><?= $spo2_status; ?></span></td></tr>
                 <tr><td><strong>Body Temperature</strong></td><td><?= $temp_disp; ?></td><td><span class="status-badge <?= $temp_class; ?>"><?= $temp_status; ?></span></td></tr>
                 <tr><td><strong>Body Weight</strong></td><td><?= $weight_disp; ?></td><td><span class="status-badge badge-secondary"><?= $weight_val !== null ? 'Recorded' : '--'; ?></span></td></tr>
-                <tr><td><strong>Height</strong></td><td><?= $height_disp; ?></td><td><span class="status-badge badge-secondary"><?= $height_val !== null ? 'Recorded' : '--'; ?></span></td></tr>
+                <tr>
+                    <td><strong>Height</strong></td>
+                    <td>
+                        <?= $height_disp ?>
+                        <?php if ($height_val !== null): ?>
+                            <span class="text-muted" style="font-size:0.85em;">&nbsp;(<?= $height_ft_disp ?>)</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><span class="status-badge badge-secondary"><?= $height_status ?></span></td>
+                </tr>
                 <tr><td><strong>BMI</strong></td><td><?= $bmi_disp; ?></td><td><span class="status-badge <?= $bmi_class; ?>"><?= $bmi_status; ?></span></td></tr>
             </tbody>
         </table>
@@ -696,14 +831,14 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
 
 </div>
 
-<!-- INPUT MODAL -->
-<div class="modal fade no-print" id="familyPlanningModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
+<!-- INPUT MODAL (Fixed Structure & Direct Children) -->
+<div class="modal fade no-print" id="familyPlanningModal" tabindex="-1" aria-labelledby="familyPlanningModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <form method="POST" class="modal-content shadow-lg">
 
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title fw-bold">
+                    <h5 class="modal-title fw-bold" id="familyPlanningModalLabel">
                         <i class="bi bi-clipboard2-pulse text-primary me-2"></i> Family Planning Record
                     </h5>
                     <small class="text-muted">Patient: <?= e($patient_name); ?></small>
@@ -711,157 +846,271 @@ $safe_filename = 'Family_Planning_Record_PT' . str_pad($patient['id'], 4, '0', S
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form method="POST">
-                <div class="modal-body">
-                    <div class="row g-3">
+            <div class="modal-body">
+                <div class="row g-3">
 
-                        <div class="col-12">
-                            <h6 class="fw-bold text-primary border-bottom pb-2">Reproductive History</h6>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Gravida</label>
-                            <input type="number" name="gravida" class="form-control" min="0" value="<?= e($fp['gravida']); ?>">
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Para</label>
-                            <input type="number" name="para_count" class="form-control" min="0" value="<?= e($fp['para_count']); ?>">
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Living Children</label>
-                            <input type="number" name="living_children" class="form-control" min="0" value="<?= e($fp['living_children']); ?>">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Partner Name</label>
-                            <input type="text" name="partner_name" class="form-control" value="<?= e($fp['partner_name']); ?>">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Occupation</label>
-                            <input type="text" name="occupation" class="form-control" value="<?= e($fp['occupation']); ?>">
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Last Menstrual Period</label>
-                            <input type="date" name="lmp" class="form-control" value="<?= e($fp['lmp']); ?>">
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Menstrual Cycle</label>
-                            <select name="menstrual_cycle" class="form-select">
-                                <option value="">Select</option>
-                                <option value="Regular" <?= $fp['menstrual_cycle'] === 'Regular' ? 'selected' : ''; ?>>Regular</option>
-                                <option value="Irregular" <?= $fp['menstrual_cycle'] === 'Irregular' ? 'selected' : ''; ?>>Irregular</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 mt-4">
-                            <h6 class="fw-bold text-primary border-bottom pb-2">Family Planning Assessment</h6>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Pregnancy Status</label>
-                            <select name="pregnancy_status" class="form-select">
-                                <option value="">Select</option>
-                                <option value="Not Pregnant" <?= $fp['pregnancy_status'] === 'Not Pregnant' ? 'selected' : ''; ?>>Not Pregnant</option>
-                                <option value="Pregnant" <?= $fp['pregnancy_status'] === 'Pregnant' ? 'selected' : ''; ?>>Pregnant</option>
-                                <option value="Unknown" <?= $fp['pregnancy_status'] === 'Unknown' ? 'selected' : ''; ?>>Unknown</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Medical Eligibility</label>
-                            <select name="eligibility_status" class="form-select">
-                                <option value="">Select</option>
-                                <option value="Eligible" <?= $fp['eligibility_status'] === 'Eligible' ? 'selected' : ''; ?>>Eligible</option>
-                                <option value="Not Eligible" <?= $fp['eligibility_status'] === 'Not Eligible' ? 'selected' : ''; ?>>Not Eligible</option>
-                                <option value="Pending Assessment" <?= $fp['eligibility_status'] === 'Pending Assessment' ? 'selected' : ''; ?>>Pending Assessment</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label">Counseling Provided</label>
-                            <select name="counseling_status" class="form-select">
-                                <option value="">Select</option>
-                                <option value="Yes" <?= $fp['counseling_status'] === 'Yes' ? 'selected' : ''; ?>>Yes</option>
-                                <option value="No" <?= $fp['counseling_status'] === 'No' ? 'selected' : ''; ?>>No</option>
-                            </select>
-                        </div>
-
-                        <div class="col-12 mt-4">
-                            <h6 class="fw-bold text-primary border-bottom pb-2">Family Planning Method</h6>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Selected Method</label>
-                            <select name="fp_method" class="form-select" required>
-                                <option value="">Select Method</option>
-                                <option value="DMPA Injectable" <?= $fp['fp_method'] === 'DMPA Injectable' ? 'selected' : ''; ?>>DMPA Injectable</option>
-                                <option value="Combined Oral Contraceptive Pills" <?= $fp['fp_method'] === 'Combined Oral Contraceptive Pills' ? 'selected' : ''; ?>>Combined Oral Contraceptive Pills</option>
-                                <option value="Progestin-Only Pills" <?= $fp['fp_method'] === 'Progestin-Only Pills' ? 'selected' : ''; ?>>Progestin-Only Pills</option>
-                                <option value="Condom" <?= $fp['fp_method'] === 'Condom' ? 'selected' : ''; ?>>Condom</option>
-                                <option value="IUD" <?= $fp['fp_method'] === 'IUD' ? 'selected' : ''; ?>>IUD</option>
-                                <option value="Implant" <?= $fp['fp_method'] === 'Implant' ? 'selected' : ''; ?>>Implant</option>
-                                <option value="Natural Family Planning" <?= $fp['fp_method'] === 'Natural Family Planning' ? 'selected' : ''; ?>>Natural Family Planning</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Date Started</label>
-                            <input type="date" name="date_started" class="form-control" value="<?= e($fp['date_started']); ?>">
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label">Next Schedule</label>
-                            <input type="date" name="next_schedule" class="form-control" value="<?= e($fp['next_schedule']); ?>">
-                        </div>
-
-                        <div class="col-12 mt-4">
-                            <h6 class="fw-bold text-primary border-bottom pb-2">Service Provider</h6>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Provider Name</label>
-                            <input type="text" name="provider_name" class="form-control" value="<?= e($fp['provider_name']); ?>" placeholder="e.g. Nurse Maria Santos">
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label">Remarks</label>
-                            <textarea name="remarks" class="form-control" rows="3" placeholder="Enter counseling notes, recommendations, or other remarks..."><?= e($fp['remarks']); ?></textarea>
-                        </div>
-
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary border-bottom pb-2">Reproductive History</h6>
                     </div>
-                </div>
 
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="save_family_planning" class="btn btn-primary fw-bold">
-                        <i class="bi bi-save me-1"></i> Save Family Planning Record
-                    </button>
-                </div>
-            </form>
+                    <div class="col-md-4">
+                        <label class="form-label">Gravida</label>
+                        <input type="number" name="gravida" class="form-control" min="0" value="<?= e($fp['gravida']); ?>">
+                    </div>
 
-        </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Para</label>
+                        <input type="number" name="para_count" class="form-control" min="0" value="<?= e($fp['para_count']); ?>">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Living Children</label>
+                        <input type="number" name="living_children" class="form-control" min="0" value="<?= e($fp['living_children']); ?>">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Partner Name</label>
+                        <input type="text" name="partner_name" class="form-control" value="<?= e($fp['partner_name']); ?>">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Occupation</label>
+                        <input type="text" name="occupation" class="form-control" value="<?= e($fp['occupation']); ?>">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Last Menstrual Period</label>
+                        <input type="date" name="lmp" class="form-control" value="<?= e($fp['lmp']); ?>">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Menstrual Cycle</label>
+                        <select name="menstrual_cycle" class="form-select">
+                            <option value="">Select</option>
+                            <option value="Regular" <?= $fp['menstrual_cycle'] === 'Regular' ? 'selected' : ''; ?>>Regular</option>
+                            <option value="Irregular" <?= $fp['menstrual_cycle'] === 'Irregular' ? 'selected' : ''; ?>>Irregular</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-primary border-bottom pb-2">Family Planning Assessment</h6>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Pregnancy Status</label>
+                        <select name="pregnancy_status" class="form-select">
+                            <option value="">Select</option>
+                            <option value="Not Pregnant" <?= $fp['pregnancy_status'] === 'Not Pregnant' ? 'selected' : ''; ?>>Not Pregnant</option>
+                            <option value="Pregnant" <?= $fp['pregnancy_status'] === 'Pregnant' ? 'selected' : ''; ?>>Pregnant</option>
+                            <option value="Unknown" <?= $fp['pregnancy_status'] === 'Unknown' ? 'selected' : ''; ?>>Unknown</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Medical Eligibility</label>
+                        <select name="eligibility_status" class="form-select">
+                            <option value="">Select</option>
+                            <option value="Eligible" <?= $fp['eligibility_status'] === 'Eligible' ? 'selected' : ''; ?>>Eligible</option>
+                            <option value="Not Eligible" <?= $fp['eligibility_status'] === 'Not Eligible' ? 'selected' : ''; ?>>Not Eligible</option>
+                            <option value="Pending Assessment" <?= $fp['eligibility_status'] === 'Pending Assessment' ? 'selected' : ''; ?>>Pending Assessment</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Counseling Provided</label>
+                        <select name="counseling_status" class="form-select">
+                            <option value="">Select</option>
+                            <option value="Yes" <?= $fp['counseling_status'] === 'Yes' ? 'selected' : ''; ?>>Yes</option>
+                            <option value="No" <?= $fp['counseling_status'] === 'No' ? 'selected' : ''; ?>>No</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-primary border-bottom pb-2">Family Planning Method</h6>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Selected Method</label>
+                        <select name="fp_method" class="form-select" required>
+                            <option value="">Select Method</option>
+                            <option value="DMPA Injectable" <?= $fp['fp_method'] === 'DMPA Injectable' ? 'selected' : ''; ?>>DMPA Injectable</option>
+                            <option value="Combined Oral Contraceptive Pills" <?= $fp['fp_method'] === 'Combined Oral Contraceptive Pills' ? 'selected' : ''; ?>>Combined Oral Contraceptive Pills</option>
+                            <option value="Progestin-Only Pills" <?= $fp['fp_method'] === 'Progestin-Only Pills' ? 'selected' : ''; ?>>Progestin-Only Pills</option>
+                            <option value="Condom" <?= $fp['fp_method'] === 'Condom' ? 'selected' : ''; ?>>Condom</option>
+                            <option value="IUD" <?= $fp['fp_method'] === 'IUD' ? 'selected' : ''; ?>>IUD</option>
+                            <option value="Implant" <?= $fp['fp_method'] === 'Implant' ? 'selected' : ''; ?>>Implant</option>
+                            <option value="Natural Family Planning" <?= $fp['fp_method'] === 'Natural Family Planning' ? 'selected' : ''; ?>>Natural Family Planning</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Date Started</label>
+                        <input type="date" name="date_started" class="form-control" value="<?= e($fp['date_started']); ?>">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Next Schedule</label>
+                        <input type="date" name="next_schedule" class="form-control" value="<?= e($fp['next_schedule']); ?>">
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-primary border-bottom pb-2">Service Provider</h6>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Provider Name</label>
+                        <input type="text" name="provider_name" class="form-control" value="<?= e($fp['provider_name']); ?>" placeholder="e.g. Nurse Maria Santos">
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="3" placeholder="Enter counseling notes, recommendations, or other remarks..."><?= e($fp['remarks']); ?></textarea>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" name="save_family_planning" class="btn btn-primary fw-bold">
+                    <i class="bi bi-save me-1"></i> Save Family Planning Record
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
+<?php if ($current_mid > 0): ?>
+<!-- EDIT VITALS MODAL -->
+<div class="modal fade no-print" id="editVitalsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil-square me-1"></i> Edit Vital Signs</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning py-2 small mb-3">
+          Use this only to correct sensor errors or inaccurate readings. Leave a field blank to clear it.
+        </div>
+        <div id="evError" class="alert alert-danger py-2 small d-none"></div>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label small fw-bold">Systolic (mmHg)</label>
+            <input type="number" id="ev_systolic" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Diastolic (mmHg)</label>
+            <input type="number" id="ev_diastolic" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Heart Rate (BPM)</label>
+            <input type="number" id="ev_heart_rate" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">SpO2 (%)</label>
+            <input type="number" id="ev_spo2" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Temperature (°C)</label>
+            <input type="number" step="0.1" id="ev_temperature" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Weight (kg)</label>
+            <input type="number" step="0.1" id="ev_weight" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Height (cm)</label>
+            <input type="number" step="0.1" id="ev_height" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">BMI (automatic)</label>
+            <input type="text" id="ev_bmi" class="form-control form-control-sm bg-light" readonly></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success btn-sm fw-bold" id="evSaveBtn" onclick="saveVitals()">
+          <i class="bi bi-check-lg me-1"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <script>
 const defaultFileName = <?= json_encode($safe_filename); ?>;
+
+// ---- Edit Vitals ----
+const CURRENT_MID = <?= (int)$current_mid; ?>;
+const PATIENT_ID  = <?= (int)$patient_id; ?>;
+const CSRF_TOKEN  = <?= json_encode($_SESSION['csrf_token']); ?>;
+const VITALS      = <?= $vitals_js; ?>;
+const evFields = ['temperature','weight','height','heart_rate','spo2','systolic','diastolic'];
+
+function openEditVitals() {
+    evFields.forEach(f => {
+        document.getElementById('ev_' + f).value = VITALS[f] ?? '';
+    });
+    document.getElementById('evError').classList.add('d-none');
+    updateBmiPreview();
+    new bootstrap.Modal(document.getElementById('editVitalsModal')).show();
+}
+
+// Live automatic BMI
+function updateBmiPreview() {
+    const w = parseFloat(document.getElementById('ev_weight').value);
+    const h = parseFloat(document.getElementById('ev_height').value);
+    const out = document.getElementById('ev_bmi');
+    if (w > 0 && h > 0) {
+        const m = h / 100;
+        out.value = (w / (m * m)).toFixed(2);
+    } else {
+        out.value = '--';
+    }
+}
+
+async function saveVitals() {
+    const btn = document.getElementById('evSaveBtn');
+    const err = document.getElementById('evError');
+    err.classList.add('d-none');
+
+    const payload = { measurement_id: CURRENT_MID, patient_id: PATIENT_ID, csrf: CSRF_TOKEN };
+    evFields.forEach(f => payload[f] = document.getElementById('ev_' + f).value.trim());
+
+    btn.disabled = true;
+    try {
+        const res  = await fetch('update_vital.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            err.textContent = 'Server replied (HTTP ' + res.status + '): ' + text.substring(0, 300);
+            err.classList.remove('d-none');
+            btn.disabled = false;
+            return;
+        }
+        if (data.success) {
+            // GET reload (plain location.reload() would re-submit the Family Planning form
+            // if this page was opened right after saving it)
+            window.location.replace(window.location.href);
+            return;
+        }
+        err.textContent = data.message || 'Unable to save.';
+        err.classList.remove('d-none');
+    } catch (e) {
+        err.textContent = 'Could not reach update_vital.php: ' + e.message;
+        err.classList.remove('d-none');
+    }
+    btn.disabled = false;
+}
 
 document.addEventListener("DOMContentLoaded", function() {
     if (localStorage.getItem("theme") === "dark" || localStorage.getItem("staff_theme") === "dark") {
         document.body.classList.add("dark-mode");
     }
+    ['ev_weight', 'ev_height'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateBmiPreview);
+    });
 });
 
 const remarksInput = document.querySelector('textarea[name="remarks"]');
 if (remarksInput) {
     const adjustHeight = () => {
         remarksInput.style.height = 'auto';
-        remarksInput.style.height = Math.max(110, remarksInput.scrollHeight + 4) + 'px';
+        remarksInput.style.height = Math.max(90, remarksInput.scrollHeight + 4) + 'px';
     };
     remarksInput.addEventListener('input', adjustHeight);
     const modalEl = document.getElementById('familyPlanningModal');
@@ -908,6 +1157,9 @@ async function saveAsWord() {
     const element = document.getElementById('document-wrapper');
     const clone = element.cloneNode(true);
 
+    // Remove the Edit Vitals button from the Word export
+    clone.querySelectorAll('[data-html2canvas-ignore]').forEach(e => e.remove());
+
     const clinicHeader = clone.querySelector('.clinic-header');
     if (clinicHeader) {
         const logoImg = clinicHeader.querySelector('.clinic-logo');
@@ -949,7 +1201,7 @@ async function saveAsWord() {
         const items = Array.from(grid.querySelectorAll('.info-item'));
         const table = document.createElement('table');
         table.style.cssText = 'width:100%; border-collapse:collapse; background-color:#f8fafc; border:1px solid #dbe3ef; border-radius:6px; margin-bottom:10px; font-size:11px;';
-        
+
         let currentRow = document.createElement('tr');
         let colCount = 0;
 
@@ -1108,6 +1360,7 @@ function fallbackDownload(blob, filename) {
     URL.revokeObjectURL(url);
 }
 </script>
+
 <!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
 <script>
 (function applySystemSettings() {
@@ -1126,11 +1379,26 @@ function fallbackDownload(blob, filename) {
         });
     }
 
-    // 2. Brightness
+    // 2. Brightness (Uses non-intrusive overlay; prevents CSS filter from breaking position:fixed modals)
     const savedBrightness = localStorage.getItem("brightness");
-    if (savedBrightness) {
-        document.body.style.filter = `brightness(${savedBrightness}%)`;
+    if (savedBrightness && savedBrightness !== "100") {
+        let brightnessOverlay = document.getElementById("brightnessOverlay");
+        if (!brightnessOverlay) {
+            brightnessOverlay = document.createElement("div");
+            brightnessOverlay.id = "brightnessOverlay";
+            brightnessOverlay.style.cssText = "position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:99998;transition:background-color 0.2s;";
+            document.body.appendChild(brightnessOverlay);
+        }
+        const bVal = parseInt(savedBrightness, 10);
+        if (!isNaN(bVal) && bVal < 100) {
+            const alpha = (100 - bVal) / 100;
+            brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha * 0.7})`;
+        } else {
+            brightnessOverlay.style.backgroundColor = "transparent";
+        }
     }
+    // Explicitly reset any filter on body to guarantee modals stay fixed to the viewport
+    document.body.style.filter = "none";
 
     // 3. Night Light
     const savedNightLight = localStorage.getItem("nightLight");

@@ -11,60 +11,63 @@ if (
     exit();
 }
 
-    $conn = mysqli_connect("localhost", "root", "", "vitalcore_db");
+$conn = mysqli_connect("localhost", "root", "", "vitalcore_db");
 
-    if (!$conn) {
-        die("Connection Failed: " . mysqli_connect_error());
-    }
-    /* TOTAL PATIENTS */
-    $count_query = mysqli_query(
-        $conn,
-        "SELECT COUNT(*) AS total FROM users WHERE role='patient'"
-    );
+if (!$conn) {
+    die("Connection Failed: " . mysqli_connect_error());
+}
 
-    $count_row = mysqli_fetch_assoc($count_query);
-    $patient_count = $count_row['total'];
+/* TOTAL PATIENTS */
+$count_query = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS total FROM users WHERE role='patient'"
+);
 
-    /* PATIENT LIST */
-    $patients = mysqli_query(
-        $conn,
-        "SELECT * FROM users WHERE role='patient' ORDER BY id DESC"
-    );
+$count_row = mysqli_fetch_assoc($count_query);
+$patient_count = (int) $count_row['total'];
 
-    if (!$patients) {
-        die("Patient Query Error: " . mysqli_error($conn));
-    }
+/* PATIENT LIST */
+$patients = mysqli_query(
+    $conn,
+    "SELECT * FROM users WHERE role='patient' ORDER BY id DESC"
+);
 
-    // NEW: Get the first patient's ID for the sidebar link
-    $first_patient_id = null;
-    if (mysqli_num_rows($patients) > 0) {
-        // Read the first row (the most recent patient)
-        $first_row = mysqli_fetch_assoc($patients);
-        $first_patient_id = $first_row['id'];
-        
-        // Reset database cursor back to the beginning so our loop can print all patients
-        mysqli_data_seek($patients, 0);
-    }
-    ?>
+if (!$patients) {
+    die("Patient Query Error: " . mysqli_error($conn));
+}
 
-    <!DOCTYPE html>
-   <html lang="en" translate="no">
-    <head>
-    <!-- PRE-LOAD STAFF INDEPENDENT DARK MODE (PREVENTS SCREEN FLASH) -->
+function e($value)
+{
+    return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
+}
+?>
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+
+    <!-- PRE-LOAD SETTINGS (prevents flicker). Reads the same keys as setting.php -->
     <script>
-        (function() {
-            const savedTheme = localStorage.getItem('staff_theme');
-            if (savedTheme === 'dark') {
-                document.documentElement.classList.add('dark-mode');
-                document.documentElement.setAttribute('data-bs-theme', 'dark');
+    (function () {
+        try {
+            // "theme" (setting.php) wins; fall back to the old "staff_theme" key
+            var theme = localStorage.getItem('theme') || localStorage.getItem('staff_theme');
+            var root = document.documentElement;
+            if (theme === 'dark') {
+                root.classList.add('dark-mode');
+                root.setAttribute('data-bs-theme', 'dark');
             } else {
-                document.documentElement.classList.remove('dark-mode');
-                document.documentElement.setAttribute('data-bs-theme', 'light');
+                root.classList.remove('dark-mode');
+                root.setAttribute('data-bs-theme', 'light');
             }
-        })();
+
+            var sizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
+            var size = localStorage.getItem('textSize');
+            if (size && sizes[size]) root.style.fontSize = sizes[size];
+        } catch (e) { /* localStorage unavailable */ }
+    })();
     </script>
 
-    <meta name="google" content="notranslate">    
+    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -75,8 +78,18 @@ if (
     <link rel="stylesheet" href="../css/patient-list.css">
     <link rel="stylesheet" href="../css/theme.css">
 
-    <!-- STAFF DARK MODE OVERRIDE STYLES -->
     <style>
+        /* Night Light Warm Amber Overlay (controlled by setting.php) */
+        #nightLightOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: rgba(255, 140, 0, 0.18);
+            pointer-events: none;
+            z-index: 99999;
+            display: none;
+        }
+
+        /* Dark mode overrides */
         html.dark-mode, html[data-bs-theme="dark"],
         body.dark-mode, body[data-bs-theme="dark"] {
             background-color: #121824 !important;
@@ -127,12 +140,15 @@ if (
             background-color: #334155 !important;
         }
     </style>
-    </head>
+</head>
 
-    <body>
+<body>
 
-    <div class="container-fluid">
-        <div class="row">
+<!-- Night Light Filter Overlay -->
+<div id="nightLightOverlay"></div>
+
+<div class="container-fluid">
+    <div class="row">
 
         <!-- SIDEBAR -->
         <nav class="col-md-3 col-lg-2 d-md-flex sidebar p-3 flex-column justify-content-between">
@@ -144,24 +160,24 @@ if (
                 </div>
 
                 <div class="sidebar-menu-wrapper">
-                
+
                     <!-- SECTION: CLINICAL SERVICES & PATIENTS -->
-                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                    <small class="text-uppercase text-muted fw-bold px-3 d-block mb-2" style="font-size: 0.7rem; letter-spacing: 0.5px;" data-i18n="section_clinical">
                         Clinical Services
                     </small>
 
                     <ul class="nav flex-column mb-3">
-                        <!-- Patients / Patient Management (Active on Patient List) -->
+                        <!-- Patient Management (Active on Patient List) -->
                         <li class="nav-item">
                             <a class="nav-link active sidebar-collapse-link active-parent d-flex justify-content-between align-items-center"
-                            data-bs-toggle="collapse"
-                            href="#patientsMenu"
-                            role="button"
-                            aria-expanded="true"
-                            aria-controls="patientsMenu">
+                               data-bs-toggle="collapse"
+                               href="#patientsMenu"
+                               role="button"
+                               aria-expanded="true"
+                               aria-controls="patientsMenu">
                                 <span>
                                     <i class="bi bi-people-fill me-2 text-primary"></i>
-                                    Patient Management
+                                    <span data-i18n="nav_patient_mgmt">Patient Management</span>
                                 </span>
                                 <i class="bi bi-chevron-down collapse-chevron"></i>
                             </a>
@@ -171,13 +187,13 @@ if (
                                     <li class="py-1">
                                         <a href="patient-list.php" class="sidebar-submenu-link active text-decoration-none">
                                             <i class="bi bi-list-ul me-2"></i>
-                                            All Patients Services
+                                            <span data-i18n="nav_all_patients">All Patients Services</span>
                                         </a>
                                     </li>
                                     <li class="py-1">
                                         <a href="admin-dashboard.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-person-plus-fill me-2"></i>
-                                            Add Patient
+                                            <span data-i18n="nav_add_patient">Add Patient</span>
                                         </a>
                                     </li>
                                 </ul>
@@ -187,14 +203,14 @@ if (
                         <!-- Patient Records -->
                         <li class="nav-item">
                             <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                            data-bs-toggle="collapse"
-                            href="#recordsMenu"
-                            role="button"
-                            aria-expanded="false"
-                            aria-controls="recordsMenu">
+                               data-bs-toggle="collapse"
+                               href="#recordsMenu"
+                               role="button"
+                               aria-expanded="false"
+                               aria-controls="recordsMenu">
                                 <span>
                                     <i class="bi bi-folder2-open me-2 text-warning"></i>
-                                    Patient Records
+                                    <span data-i18n="nav_patient_records">Patient Records</span>
                                 </span>
                                 <i class="bi bi-chevron-down collapse-chevron"></i>
                             </a>
@@ -204,43 +220,45 @@ if (
                                     <li class="py-1">
                                         <a href="patient-history.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-clock-history me-2"></i>
-                                            Patient Records
+                                            <span data-i18n="nav_records_history">Patient Records</span>
                                         </a>
                                     </li>
                                     <li class="py-1">
                                         <a href="reports.php" class="sidebar-submenu-link text-decoration-none">
                                             <i class="bi bi-file-earmark-bar-graph me-2"></i>
-                                            Reports
+                                            <span data-i18n="nav_reports">Reports</span>
                                         </a>
                                     </li>
                                 </ul>
                             </div>
                         </li>
-                        <li class="nav-item">
-                        <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
-                        data-bs-toggle="collapse"
-                        href="#adminMenu"
-                        role="button"
-                        aria-expanded="false"
-                        aria-controls="adminMenu">
-                            <span>
-                                <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
-                                Administration
-                            </span>
-                            <i class="bi bi-chevron-down collapse-chevron"></i>
-                        </a>
 
-                        <div class="collapse" id="adminMenu">
-                            <ul class="sidebar-submenu list-unstyled ps-4 py-1">
-                                <li class="py-1">
-                                    <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
-                                        <i class="bi bi-sliders me-2"></i>
-                                        Settings
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
+                        <!-- Administration -->
+                        <li class="nav-item">
+                            <a class="nav-link sidebar-collapse-link d-flex justify-content-between align-items-center"
+                               data-bs-toggle="collapse"
+                               href="#adminMenu"
+                               role="button"
+                               aria-expanded="false"
+                               aria-controls="adminMenu">
+                                <span>
+                                    <i class="bi bi-shield-lock-fill me-2 text-danger"></i>
+                                    <span data-i18n="nav_admin">Administration</span>
+                                </span>
+                                <i class="bi bi-chevron-down collapse-chevron"></i>
+                            </a>
+
+                            <div class="collapse" id="adminMenu">
+                                <ul class="sidebar-submenu list-unstyled ps-4 py-1">
+                                    <li class="py-1">
+                                        <a href="setting.php" class="sidebar-submenu-link text-decoration-none">
+                                            <i class="bi bi-sliders me-2"></i>
+                                            <span data-i18n="nav_settings">Settings</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
                     </ul>
 
                 </div>
@@ -250,22 +268,20 @@ if (
             <div class="logout-section pt-3 px-2 border-top border-secondary border-opacity-25">
                 <a href="../login.php" class="text-decoration-none text-danger fw-semibold d-flex align-items-center gap-2">
                     <i class="bi bi-box-arrow-left fs-5"></i>
-                    Log out
+                    <span data-i18n="nav_logout">Log out</span>
                 </a>
             </div>
         </nav>
 
-            <!-- MAIN CONTENT -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+        <!-- MAIN CONTENT -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
 
-               <div class="d-flex align-items-center justify-content-between flex-wrap mb-4 page-header gap-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap mb-4 page-header gap-3">
 
-                <!-- PATIENT GRID HEADER WITH CATEGORIES & DARK MODE ALIGNED SIDE-BY-SIDE -->
+                <!-- PATIENT GRID HEADER -->
                 <div class="patient-grid-header d-flex align-items-center gap-2">
 
-                    <h4 class="fw-bold mb-0 patient-title me-2">
-                        Patient Grid
-                    </h4>
+                    <h4 class="fw-bold mb-0 patient-title me-2" data-i18n="page_title">Patient Grid</h4>
 
                     <!-- CATEGORIES DROPDOWN -->
                     <div class="dropdown">
@@ -274,38 +290,38 @@ if (
                                 data-bs-toggle="dropdown"
                                 aria-expanded="false">
                             <i class="bi bi-list"></i>
-                            <span>Categories</span>
+                            <span data-i18n="categories">Categories</span>
                         </button>
 
                         <ul class="dropdown-menu patient-dropdown shadow border-0">
                             <li>
                                 <a class="dropdown-item" href="Service/vital-screening.php">
                                     <i class="bi bi-clipboard2-pulse-fill text-warning me-2"></i>
-                                    Vital Screening Grid
+                                    <span data-i18n="cat_vital">Vital Screening Grid</span>
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="Service/prenatal.php">
                                     <i class="bi bi-heart-pulse-fill text-danger me-2"></i>
-                                    Prenatal Grid
+                                    <span data-i18n="cat_prenatal">Prenatal Grid</span>
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="Service/child-immunization.php">
                                     <i class="bi bi-shield-check text-success me-2"></i>
-                                    Child Immunization Grid
+                                    <span data-i18n="cat_immunization">Child Immunization Grid</span>
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-item" href="Service/family-planning.php">
                                     <i class="bi bi-people-fill text-primary me-2"></i>
-                                    Family Planning Grid
+                                    <span data-i18n="cat_family">Family Planning Grid</span>
                                 </a>
                             </li>
                         </ul>
                     </div>
 
-                    <!-- DARK MODE BUTTON ALIGNED SIDE-BY-SIDE WITH CATEGORIES -->
+                    <!-- DARK MODE BUTTON (syncs with setting.php) -->
                     <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" id="staffThemeToggleBtn" type="button">
                         <i class="bi bi-moon-stars-fill" id="staffThemeIcon"></i>
                         <span id="staffThemeText">Dark Mode</span>
@@ -315,246 +331,301 @@ if (
 
                 <div class="d-flex align-items-center gap-2">
 
+                    <!-- Live clock (uses the Date & Time Format setting) -->
+                    <span class="badge bg-info text-dark" id="clockLivePreview">--:--</span>
+
                     <div class="position-relative">
                         <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                        <input type="text" id="patientSearchInput" class="form-control rounded-pill ps-5 bg-light border-light-subtle" placeholder="Search patient name..." style="font-size: 0.85rem; width: 230px;">
+                        <input type="text"
+                               id="patientSearchInput"
+                               class="form-control rounded-pill ps-5 bg-light border-light-subtle"
+                               placeholder="Search patient name..."
+                               data-i18n-placeholder="search_placeholder"
+                               style="font-size: 0.85rem; width: 230px;">
                     </div>
 
                     <span class="badge bg-primary">
-                        Total Patients : <?= $patient_count ?>
+                        <span data-i18n="total_patients">Total Patients</span> : <?= $patient_count ?>
                     </span>
 
                 </div>
 
             </div>
 
-                <div class="row g-4">
+            <div class="row g-4">
 
-                    <?php while($row = mysqli_fetch_assoc($patients)): ?>
+                <?php while ($row = mysqli_fetch_assoc($patients)): ?>
 
-                    <div class="col-12 col-sm-6 col-xl-4">
+                <div class="col-12 col-sm-6 col-xl-4">
 
-                        <div class="card patient-card h-100">
+                    <div class="card patient-card h-100">
 
-                            <div class="card-body">
+                        <div class="card-body">
 
-                                <div class="d-flex justify-content-between">
+                            <div class="d-flex justify-content-between">
 
-                                    <div>
-                                        <h6 class="fw-bold mb-1">
-                                            <?= htmlspecialchars($row['fullname']) ?>
-                                        </h6>
+                                <div>
+                                    <h6 class="fw-bold mb-1">
+                                        <?= e($row['fullname']) ?>
+                                    </h6>
 
-                                        <small class="text-muted">
-                                            <?= $row['age'] ?? '--' ?>,
-                                            <?= $row['gender'] ?? 'N/A' ?>
-                                        </small>
-                                    </div>
-
-                                    <a href="patient-view.php?id=<?= $row['id'] ?>">
-                                        <i class="bi bi-person-lines-fill"></i>
-                                    </a>
-
+                                    <small class="text-muted">
+                                        <?= e($row['age'] ?? '--') ?>,
+                                        <?= e($row['gender'] ?? 'N/A') ?>
+                                    </small>
                                 </div>
 
-                                <hr>
-
-                                <p class="small text-muted mb-2">
-                                    <i class="bi bi-person-badge"></i>
-                                    Patient Code:
-                                    <?= htmlspecialchars($row['code_number']) ?>
-                                </p>
-
-                                <p class="small text-muted mb-0">
-                                    <i class="bi bi-geo-alt"></i>
-                                    <?= $row['address'] ?? 'No Address' ?>
-                                </p>
+                                <a href="patient-view.php?id=<?= (int) $row['id'] ?>">
+                                    <i class="bi bi-person-lines-fill"></i>
+                                </a>
 
                             </div>
+
+                            <hr>
+
+                            <p class="small text-muted mb-2">
+                                <i class="bi bi-person-badge"></i>
+                                <span data-i18n="patient_code">Patient Code:</span>
+                                <?= e($row['code_number']) ?>
+                            </p>
+
+                            <p class="small text-muted mb-0">
+                                <i class="bi bi-geo-alt"></i>
+                                <?= e($row['address'] ?? 'No Address') ?>
+                            </p>
 
                         </div>
 
                     </div>
 
-                    <?php endwhile; ?>
-
                 </div>
-            </main>
 
-        </div>
+                <?php endwhile; ?>
+
+            </div>
+        </main>
+
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</div>
 
-<!-- INDEPENDENT STAFF DARK MODE LOGIC -->
-<script>
-function applyStaffThemeUI() {
-    const isDark = document.documentElement.classList.contains('dark-mode') || 
-                   document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    const icon = document.getElementById('staffThemeIcon');
-    const text = document.getElementById('staffThemeText');
-    
-    if (isDark) {
-        if (icon) icon.className = 'bi bi-sun-fill text-warning';
-        if (text) text.textContent = 'Light Mode';
-    } else {
-        if (icon) icon.className = 'bi bi-moon-stars-fill';
-        if (text) text.textContent = 'Dark Mode';
-    }
-}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-function toggleStaffTheme() {
-    const isDark = document.documentElement.classList.contains('dark-mode') || 
-                   document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    const newIsDark = !isDark;
-    
-    if (newIsDark) {
-        document.documentElement.classList.add('dark-mode');
-        if (document.body) document.body.classList.add('dark-mode');
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
-        if (document.body) document.body.setAttribute('data-bs-theme', 'dark');
-        localStorage.setItem('staff_theme', 'dark');
-    } else {
-        document.documentElement.classList.remove('dark-mode');
-        if (document.body) document.body.classList.remove('dark-mode');
-        document.documentElement.setAttribute('data-bs-theme', 'light');
-        if (document.body) document.body.setAttribute('data-bs-theme', 'light');
-        localStorage.setItem('staff_theme', 'light');
-    }
-    applyStaffThemeUI();
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-    // Sync body tag on page ready
-    const savedTheme = localStorage.getItem('staff_theme');
-    if (savedTheme === 'dark') {
-        if (document.body) {
-            document.body.classList.add('dark-mode');
-            document.body.setAttribute('data-bs-theme', 'dark');
-        }
-    }
-    applyStaffThemeUI();
-    
-    const btn = document.getElementById('staffThemeToggleBtn');
-    if (btn) {
-        btn.onclick = toggleStaffTheme;
-    }
-});
-</script>
-
+<!-- PATIENT SEARCH -->
 <script>
 document.getElementById('patientSearchInput').addEventListener('input', function () {
-
     const searchValue = this.value.toLowerCase().trim();
-
-    const patientCards = document.querySelectorAll(
-        '.row.g-4 > .col-12.col-sm-6.col-xl-4'
-    );
+    const patientCards = document.querySelectorAll('.row.g-4 > .col-12.col-sm-6.col-xl-4');
 
     patientCards.forEach(function (card) {
-
-        const patientName = card
-            .querySelector('h6')
-            .textContent
-            .toLowerCase();
-
-        if (patientName.includes(searchValue)) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
-
+        const patientName = card.querySelector('h6').textContent.toLowerCase();
+        card.style.display = patientName.includes(searchValue) ? '' : 'none';
     });
-
 });
 </script>
+
+<!-- SETTINGS ENGINE (reads the preferences saved by setting.php) -->
 <script>
-(function applySystemSettings() {
-    // 1. Theme / Dark Mode
-    const darkModeToggleBtn = document.getElementById("darkModeToggle");
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-        document.body.classList.add("dark-mode");
-        document.documentElement.classList.add("dark-mode");
-    }
-    if (darkModeToggleBtn) {
-        darkModeToggleBtn.addEventListener("click", function() {
-            const isDark = document.body.classList.toggle("dark-mode");
-            document.documentElement.classList.toggle("dark-mode", isDark);
-            localStorage.setItem("theme", isDark ? "dark" : "light");
-        });
-    }
+(function () {
 
-    // 2. Brightness
-    const savedBrightness = localStorage.getItem("brightness");
-    if (savedBrightness) {
-        document.body.style.filter = `brightness(${savedBrightness}%)`;
-    }
-
-    // 3. Night Light
-    const savedNightLight = localStorage.getItem("nightLight");
-    const nightLightOverlay = document.getElementById("nightLightOverlay");
-    if (savedNightLight === "enabled" && nightLightOverlay) {
-        nightLightOverlay.style.display = "block";
-    }
-
-    // 4. Text Size
-    const savedTextSize = localStorage.getItem("textSize");
-    if (savedTextSize) {
-        const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
-        document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
-    }
-
-    // 5. Language Dictionary
-    const i18n = {
-        en: {
-            section_main: "Main", nav_dashboard: "Dashboard", section_clinical: "Clinical Services",
-            nav_patient_mgmt: "Patient Management", nav_all_patients: "All Patients Services", nav_add_patient: "Add Patient",
-            nav_patient_records: "Patient Records", nav_records_history: "Patient Records", nav_reports: "Reports",
-            section_system: "Hardware & System", nav_admin: "Administration", nav_user_mgmt: "User Management",
-            nav_settings: "Settings", nav_logout: "Log out", header_greeting: "Good Day, Admin",
-            header_desc: "System status overview and clinical intake telemetry.", avg_health_title: "Average Health",
-            avg_health_desc: "Average recorded vital measurements", tbl_measurement: "Measurement", tbl_average: "Average",
-            tbl_unit: "Unit", lbl_height: "Height", lbl_weight: "Weight", lbl_temp: "Temperature",
-            lbl_heart: "Heart Rate", lbl_bp: "Blood Pressure", title_new_patients: "New Patients",
-            title_patients_overview: "Patients Overview", title_services: "Service Categories",
-            title_recent_patients: "Recent Patient List", title_followup: "Follow-up Schedule", dark_mode_title: "Dark Mode"
+    // Safe localStorage helpers
+    const store = {
+        get(key, fallback = null) {
+            try {
+                const v = localStorage.getItem(key);
+                return v === null ? fallback : v;
+            } catch (e) { return fallback; }
         },
-        fil: {
-            section_main: "Pangunahin", nav_dashboard: "Dashboard", section_clinical: "Serbisyong Klinikal",
-            nav_patient_mgmt: "Pamamahala ng Pasyente", nav_all_patients: "Lahat ng Serbisyong Pasyente", nav_add_patient: "Magdagdag ng Pasyente",
-            nav_patient_records: "Mga Rekord ng Pasyente", nav_records_history: "Kasaysayan ng Rekord", nav_reports: "Mga Ulat",
-            section_system: "Hardware at Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pamamahala ng Gumagamit",
-            nav_settings: "Mga Setting", nav_logout: "Mag-logout", header_greeting: "Magandang Araw, Admin",
-            header_desc: "Pangkalahatang-ideya ng estado ng sistema.", avg_health_title: "Gitarang Kalusugan",
-            avg_health_desc: "Karaniwang naitalang sukat ng vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Taas", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Bilis ng Puso", lbl_bp: "Presyon ng Dugo", title_new_patients: "Bagong Pasyente",
-            title_patients_overview: "Pangkalahatang-ideya ng Pasyente", title_services: "Kategorya ng Serbisyo",
-            title_recent_patients: "Kasalukuyang Listahan ng Pasyente", title_followup: "Iskedyul ng Follow-up", dark_mode_title: "Dark Mode"
-        },
-        ceb: {
-            section_main: "Pangunahing", nav_dashboard: "Dashboard", section_clinical: "Mga Serbisyong Klinikal",
-            nav_patient_mgmt: "Pagdumala sa Pasyente", nav_all_patients: "Tanan nga Serbisyong Pasyente", nav_add_patient: "Idugang ang Pasyente",
-            nav_patient_records: "Mga Rekord sa Pasyente", nav_records_history: "Kasaysayan sa Rekord", nav_reports: "Mga Report",
-            section_system: "Hardware ug Sistema", nav_admin: "Administrasyon", nav_user_mgmt: "Pagdumala sa Paggamit",
-            nav_settings: "Mga Setting", nav_logout: "Mo-logout", header_greeting: "Maayong Adlaw, Admin",
-            header_desc: "Kinatibuk-ang pagtan-aw sa estado sa sistema.", avg_health_title: "Kasagarang Panglawas",
-            avg_health_desc: "Kasagarang nahitala nga vital signs", tbl_measurement: "Sukat", tbl_average: "Average",
-            tbl_unit: "Yunit", lbl_height: "Gitas-on", lbl_weight: "Timbang", lbl_temp: "Temperatura",
-            lbl_heart: "Kusog sa Kasingkasing", lbl_bp: "Presyon sa Dugo", title_new_patients: "Bag-ong Pasyente",
-            title_patients_overview: "Kinatibuk-ang Pasyente", title_services: "Mga Kategorya sa Serbisyo",
-            title_recent_patients: "Bag-ong Listahan sa Pasyente", title_followup: "Iskedyul sa Follow-up", dark_mode_title: "Dark Mode"
+        set(key, value) {
+            try { localStorage.setItem(key, value); } catch (e) {}
         }
     };
-    const savedLang = localStorage.getItem("language");
-    if (savedLang && i18n[savedLang]) {
-        const dict = i18n[savedLang];
-        document.querySelectorAll("[data-i18n]").forEach(el => {
-            const key = el.getAttribute("data-i18n");
-            if (dict[key]) el.innerText = dict[key];
+
+    const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
+
+    // Same languages as setting.php, plus keys for this page
+    const i18n = {
+        en: {
+            section_clinical: "Clinical Services",
+            nav_patient_mgmt: "Patient Management",
+            nav_all_patients: "All Patients Services",
+            nav_add_patient: "Add Patient",
+            nav_patient_records: "Patient Records",
+            nav_records_history: "Patient Records",
+            nav_reports: "Reports",
+            nav_admin: "Administration",
+            nav_settings: "Settings",
+            nav_logout: "Log out",
+            page_title: "Patient Grid",
+            categories: "Categories",
+            cat_vital: "Vital Screening Grid",
+            cat_prenatal: "Prenatal Grid",
+            cat_immunization: "Child Immunization Grid",
+            cat_family: "Family Planning Grid",
+            dark_mode: "Dark Mode",
+            light_mode: "Light Mode",
+            search_placeholder: "Search patient name...",
+            total_patients: "Total Patients",
+            patient_code: "Patient Code:"
+        },
+        fil: {
+            section_clinical: "Serbisyong Klinikal",
+            nav_patient_mgmt: "Pamamahala ng Pasyente",
+            nav_all_patients: "Lahat ng Serbisyong Pasyente",
+            nav_add_patient: "Magdagdag ng Pasyente",
+            nav_patient_records: "Mga Rekord ng Pasyente",
+            nav_records_history: "Kasaysayan ng Rekord",
+            nav_reports: "Mga Ulat",
+            nav_admin: "Administrasyon",
+            nav_settings: "Mga Setting",
+            nav_logout: "Mag-logout",
+            page_title: "Grid ng Pasyente",
+            categories: "Mga Kategorya",
+            cat_vital: "Grid ng Vital Screening",
+            cat_prenatal: "Grid ng Prenatal",
+            cat_immunization: "Grid ng Bakuna ng Bata",
+            cat_family: "Grid ng Family Planning",
+            dark_mode: "Dark Mode",
+            light_mode: "Light Mode",
+            search_placeholder: "Maghanap ng pangalan ng pasyente...",
+            total_patients: "Kabuuang Pasyente",
+            patient_code: "Code ng Pasyente:"
+        },
+        ceb: {
+            section_clinical: "Mga Serbisyong Klinikal",
+            nav_patient_mgmt: "Pagdumala sa Pasyente",
+            nav_all_patients: "Tanan nga Serbisyong Pasyente",
+            nav_add_patient: "Idugang ang Pasyente",
+            nav_patient_records: "Mga Rekord sa Pasyente",
+            nav_records_history: "Kasaysayan sa Rekord",
+            nav_reports: "Mga Report",
+            nav_admin: "Administrasyon",
+            nav_settings: "Mga Setting",
+            nav_logout: "Mo-logout",
+            page_title: "Grid sa Pasyente",
+            categories: "Mga Kategorya",
+            cat_vital: "Grid sa Vital Screening",
+            cat_prenatal: "Grid sa Prenatal",
+            cat_immunization: "Grid sa Bakuna sa Bata",
+            cat_family: "Grid sa Family Planning",
+            dark_mode: "Dark Mode",
+            light_mode: "Light Mode",
+            search_placeholder: "Pangita og ngalan sa pasyente...",
+            total_patients: "Tibuok nga Pasyente",
+            patient_code: "Code sa Pasyente:"
+        }
+    };
+
+    function t(key) {
+        const lang = store.get("language", "en");
+        return (i18n[lang] && i18n[lang][key]) || i18n.en[key] || key;
+    }
+
+    // ---------- Theme ----------
+    function isDark() {
+        return document.documentElement.classList.contains("dark-mode");
+    }
+
+    function setDark(on) {
+        document.documentElement.classList.toggle("dark-mode", on);
+        document.body.classList.toggle("dark-mode", on);
+        document.documentElement.setAttribute("data-bs-theme", on ? "dark" : "light");
+        document.body.setAttribute("data-bs-theme", on ? "dark" : "light");
+        updateThemeButton();
+    }
+
+    function updateThemeButton() {
+        const icon = document.getElementById("staffThemeIcon");
+        const text = document.getElementById("staffThemeText");
+        if (isDark()) {
+            if (icon) icon.className = "bi bi-sun-fill text-warning";
+            if (text) text.textContent = t("light_mode");
+        } else {
+            if (icon) icon.className = "bi bi-moon-stars-fill";
+            if (text) text.textContent = t("dark_mode");
+        }
+    }
+
+    function applyTheme() {
+        const saved = store.get("theme") || store.get("staff_theme");
+        setDark(saved === "dark");
+    }
+
+    // The button on this page writes BOTH keys so setting.php and other staff pages stay in sync
+    const themeBtn = document.getElementById("staffThemeToggleBtn");
+    if (themeBtn) {
+        themeBtn.addEventListener("click", function () {
+            const next = !isDark();
+            setDark(next);
+            store.set("theme", next ? "dark" : "light");
+            store.set("staff_theme", next ? "dark" : "light");
         });
     }
+
+    // ---------- Night Light ----------
+    function applyNightLight() {
+        const overlay = document.getElementById("nightLightOverlay");
+        if (overlay) overlay.style.display = store.get("nightLight") === "enabled" ? "block" : "none";
+    }
+
+    // ---------- Text Size ----------
+    function applyTextSize() {
+        const size = store.get("textSize", "normal");
+        document.documentElement.style.fontSize = fontSizes[size] || "100%";
+    }
+
+    // ---------- Language ----------
+    function applyLanguage() {
+        const lang = store.get("language", "en");
+        const dict = i18n[lang] || i18n.en;
+        document.documentElement.lang = i18n[lang] ? lang : "en";
+
+        document.querySelectorAll("[data-i18n]").forEach(function (el) {
+            const key = el.getAttribute("data-i18n");
+            if (dict[key]) el.textContent = dict[key];
+        });
+
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+            const key = el.getAttribute("data-i18n-placeholder");
+            if (dict[key]) el.placeholder = dict[key];
+        });
+
+        updateThemeButton();
+    }
+
+    // ---------- Date & Time Format ----------
+    function updateClock() {
+        const el = document.getElementById("clockLivePreview");
+        if (!el) return;
+        const opts = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
+        if (store.get("dateTimeFormat", "24h") === "12h") {
+            opts.hour12 = true;
+        } else {
+            opts.hourCycle = "h23";
+        }
+        el.textContent = new Date().toLocaleTimeString("en-US", opts);
+    }
+
+    function applyAll() {
+        applyTheme();
+        applyNightLight();
+        applyTextSize();
+        applyLanguage();
+        updateClock();
+    }
+
+    applyAll();
+    setInterval(updateClock, 1000);
+
+    // If Settings is changed in another tab, update this page live
+    window.addEventListener("storage", applyAll);
+
 })();
 </script>
-    </body>
-    </html>
+
+</body>
+</html>
+<?php
+if ($conn) {
+    mysqli_close($conn);
+}
+?>

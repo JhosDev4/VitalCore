@@ -167,14 +167,6 @@ $prenatal_count = mysqli_fetch_assoc(mysqli_query(
      AND $whereMeasurements"
 ))['total'] ?? 0;
 
-$immunization_count = mysqli_fetch_assoc(mysqli_query(
-    $conn,
-    "SELECT COUNT(*) AS total
-     FROM measurements
-     WHERE (service_type LIKE '%immuniz%')
-     AND $whereMeasurements"
-))['total'] ?? 0;
-
 $family_count = mysqli_fetch_assoc(mysqli_query(
     $conn,
     "SELECT COUNT(*) AS total
@@ -883,10 +875,6 @@ if ($brgy_q) {
                     <tr>
                         <td style="padding: 6px; border: 1px solid #333;">Prenatal Check-up</td>
                         <td style="padding: 6px; border: 1px solid #333; text-align: right; font-weight: bold;"><?= number_format($prenatal_count); ?></td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 6px; border: 1px solid #333;">Child Immunization</td>
-                        <td style="padding: 6px; border: 1px solid #333; text-align: right; font-weight: bold;"><?= number_format($immunization_count); ?></td>
                     </tr>
                     <tr>
                         <td style="padding: 6px; border: 1px solid #333;">Family Planning</td>

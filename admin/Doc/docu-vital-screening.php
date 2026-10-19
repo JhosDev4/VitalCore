@@ -14,6 +14,11 @@ if (
     exit();
 }
 
+// CSRF token for the Edit Vitals save request
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die("Patient not found.");
 }
@@ -22,10 +27,7 @@ $patient_id     = (int)$_GET['id'];
 $measurement_id = isset($_GET['measurement_id']) && is_numeric($_GET['measurement_id']) ? (int)$_GET['measurement_id'] : 0;
 
 // 1. Fetch Patient Info
-$query = mysqli_query(
-    $conn,
-    "SELECT * FROM users WHERE id = $patient_id LIMIT 1"
-);
+$query = mysqli_query($conn, "SELECT * FROM users WHERE id = $patient_id LIMIT 1");
 $patient = mysqli_fetch_assoc($query);
 
 if (!$patient) {
@@ -43,22 +45,18 @@ $systolic   = '--';
 $diastolic  = '--';
 $last_visited = 'No visits recorded';
 $doc_date     = date('F d, Y');
+$current_mid  = 0;
 
 if ($measurement_id > 0) {
-    $measurementQuery = mysqli_query(
-        $conn,
-        "SELECT * FROM measurements WHERE id = $measurement_id LIMIT 1"
-    );
+    $measurementQuery = mysqli_query($conn, "SELECT * FROM measurements WHERE id = $measurement_id LIMIT 1");
 } else {
-    $measurementQuery = mysqli_query(
-        $conn,
-        "SELECT * FROM measurements WHERE user_id = $patient_id ORDER BY created_at DESC LIMIT 1"
-    );
+    $measurementQuery = mysqli_query($conn, "SELECT * FROM measurements WHERE user_id = $patient_id ORDER BY created_at DESC LIMIT 1");
 }
 
 if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
     $measurement = mysqli_fetch_assoc($measurementQuery);
 
+    $current_mid = (int)$measurement['id'];
     $temp       = $measurement['temperature'] ?? '--';
     $weight     = $measurement['weight'] ?? '--';
     $height     = $measurement['height'] ?? '--';
@@ -84,46 +82,71 @@ $spo2_val       = (is_numeric($spo2)       && (int)$spo2 > 0)         ? (int)$sp
 $systolic_val   = (is_numeric($systolic)   && (int)$systolic > 0)     ? (int)$systolic     : null;
 $diastolic_val  = (is_numeric($diastolic)  && (int)$diastolic > 0)    ? (int)$diastolic    : null;
 
+// Values passed to the Edit Vitals modal
+$vitals_js = json_encode([
+    'temperature' => $temp_val,
+    'weight'      => $weight_val,
+    'height'      => $height_val,
+    'heart_rate'  => $heart_rate_val,
+    'spo2'        => $spo2_val,
+    'systolic'    => $systolic_val,
+    'diastolic'   => $diastolic_val,
+]);
+
 // Display strings
 $temp_disp       = ($temp_val !== null)   ? number_format($temp_val, 1) . ' °C' : '--';
 $weight_disp     = ($weight_val !== null) ? number_format($weight_val, 1) . ' kg' : '--';
 $height_disp     = ($height_val !== null) ? number_format($height_val, 1) . ' cm' : '--';
-$bmi_disp        = ($bmi_val !== null)    ? number_format($bmi_val, 2)          : '--';
-$heart_rate_disp = ($heart_rate_val !== null) ? $heart_rate_val . ' BPM'        : '--';
-$spo2_disp       = ($spo2_val !== null)   ? $spo2_val . '%'                      : '--';
+
+// cm → feet & inches conversion
+if ($height_val !== null) {
+    $total_inches  = $height_val / 2.54;
+    $feet          = (int) floor($total_inches / 12);
+    $inches        = (int) round(fmod($total_inches, 12));
+    if ($inches === 12) { $feet++; $inches = 0; }
+    $height_ft_disp = "{$feet}'{$inches}\"";
+} else {
+    $height_ft_disp = '--';
+}
+$bmi_disp        = ($bmi_val !== null)    ? number_format($bmi_val, 2) : '--';
+$heart_rate_disp = ($heart_rate_val !== null) ? $heart_rate_val . ' BPM' : '--';
+$spo2_disp       = ($spo2_val !== null)   ? $spo2_val . '%' : '--';
 $bp_disp         = ($systolic_val !== null && $diastolic_val !== null) ? $systolic_val . '/' . $diastolic_val . ' mmHg' : '--';
 
-// Status Evaluations
-$temp_status = 'Normal';
-$temp_class  = 'badge-success';
+// Status Evaluations (show "--" when there is no value, instead of a false "Normal")
+$temp_status = '--';
+$temp_class  = 'badge-secondary';
 if ($temp_val !== null) {
-    if ($temp_val < 36.0) { $temp_status = 'Low Temp'; $temp_class = 'badge-info'; }
+    if ($temp_val < 36.0)                          { $temp_status = 'Low Temp';     $temp_class = 'badge-info'; }
+    elseif ($temp_val <= 37.5)                     { $temp_status = 'Normal';       $temp_class = 'badge-success'; }
     elseif ($temp_val > 37.5 && $temp_val <= 38.5) { $temp_status = 'Slight Fever'; $temp_class = 'badge-warning'; }
-    elseif ($temp_val > 38.5) { $temp_status = 'High Fever'; $temp_class = 'badge-danger'; }
+    else                                           { $temp_status = 'High Fever';   $temp_class = 'badge-danger'; }
 }
 
 $has_bmi = ($bmi_val !== null && $weight_val !== null);
 $bmi_status = '--';
 $bmi_class  = 'badge-secondary';
 if ($has_bmi) {
-    if ($bmi_val < 18.5) { $bmi_status = 'Underweight'; $bmi_class = 'badge-info'; }
-    elseif ($bmi_val <= 24.9) { $bmi_status = 'Normal'; $bmi_class = 'badge-success'; }
-    elseif ($bmi_val <= 29.9) { $bmi_status = 'Overweight'; $bmi_class = 'badge-warning'; }
-    else { $bmi_status = 'Obese'; $bmi_class = 'badge-danger'; }
+    if ($bmi_val < 18.5)      { $bmi_status = 'Underweight'; $bmi_class = 'badge-info'; }
+    elseif ($bmi_val <= 24.9) { $bmi_status = 'Normal';      $bmi_class = 'badge-success'; }
+    elseif ($bmi_val <= 29.9) { $bmi_status = 'Overweight';  $bmi_class = 'badge-warning'; }
+    else                      { $bmi_status = 'Obese';       $bmi_class = 'badge-danger'; }
 }
 
-$heart_status = 'Normal';
-$heart_class  = 'badge-success';
+$heart_status = '--';
+$heart_class  = 'badge-secondary';
 if ($heart_rate_val !== null) {
-    if ($heart_rate_val < 60) { $heart_status = 'Low (Bradycardia)'; $heart_class = 'badge-warning'; }
-    elseif ($heart_rate_val > 100) { $heart_status = 'High (Tachycardia)'; $heart_class = 'badge-danger'; }
+    if ($heart_rate_val < 60)       { $heart_status = 'Low (Bradycardia)';  $heart_class = 'badge-warning'; }
+    elseif ($heart_rate_val <= 100) { $heart_status = 'Normal';             $heart_class = 'badge-success'; }
+    else                            { $heart_status = 'High (Tachycardia)'; $heart_class = 'badge-danger'; }
 }
 
-$spo2_status = 'Normal';
-$spo2_class  = 'badge-success';
+$spo2_status = '--';
+$spo2_class  = 'badge-secondary';
 if ($spo2_val !== null) {
-    if ($spo2_val < 90) { $spo2_status = 'Critical Low'; $spo2_class = 'badge-danger'; }
-    elseif ($spo2_val < 95) { $spo2_status = 'Mild Low'; $spo2_class = 'badge-warning'; }
+    if ($spo2_val < 90)     { $spo2_status = 'Critical Low'; $spo2_class = 'badge-danger'; }
+    elseif ($spo2_val < 95) { $spo2_status = 'Mild Low';     $spo2_class = 'badge-warning'; }
+    else                    { $spo2_status = 'Normal';       $spo2_class = 'badge-success'; }
 }
 
 // Blood Pressure Status
@@ -166,7 +189,7 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Clinical Record - #PT<?= str_pad($patient['id'], 4, '0', STR_PAD_LEFT); ?></title>
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../css/document.css">
@@ -242,16 +265,12 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
 
             <div class="info-item">
                 <span class="info-label">Patient ID:</span>
-                <span class="info-value">
-                    #PT<?= str_pad($patient['id'], 4, '0', STR_PAD_LEFT); ?>
-                </span>
+                <span class="info-value">#PT<?= str_pad($patient['id'], 4, '0', STR_PAD_LEFT); ?></span>
             </div>
 
             <div class="info-item">
                 <span class="info-label">Full Name:</span>
-                <span class="info-value">
-                    <?= htmlspecialchars($patient['fullname']); ?>
-                </span>
+                <span class="info-value"><?= htmlspecialchars($patient['fullname']); ?></span>
             </div>
 
             <div class="info-item">
@@ -266,54 +285,46 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
             <div class="info-item">
                 <span class="info-label">Birth Date:</span>
                 <span class="info-value">
-                    <?php
-                        if (!empty($patient['birth_date'])) {
-                            echo date('F d, Y', strtotime($patient['birth_date']));
-                        } else {
-                            echo '--';
-                        }
-                    ?>
+                    <?= !empty($patient['birth_date']) ? date('F d, Y', strtotime($patient['birth_date'])) : '--'; ?>
                 </span>
             </div>
 
             <div class="info-item">
                 <span class="info-label">Blood Type:</span>
                 <span class="info-value">
-                    <?= !empty($patient['blood_type'])
-                        ? htmlspecialchars($patient['blood_type'])
-                        : '--'; ?>
+                    <?= !empty($patient['blood_type']) ? htmlspecialchars($patient['blood_type']) : '--'; ?>
                 </span>
             </div>
 
             <div class="info-item">
                 <span class="info-label">Contact No:</span>
                 <span class="info-value">
-                    <?= !empty($patient['contact_number'])
-                        ? htmlspecialchars($patient['contact_number'])
-                        : '--'; ?>
+                    <?= !empty($patient['contact_number']) ? htmlspecialchars($patient['contact_number']) : '--'; ?>
                 </span>
             </div>
 
             <div class="info-item" style="grid-column: span 2;">
                 <span class="info-label">Address:</span>
                 <span class="info-value">
-                    <?= !empty($patient['address'])
-                        ? htmlspecialchars($patient['address'])
-                        : '--'; ?>
+                    <?= !empty($patient['address']) ? htmlspecialchars($patient['address']) : '--'; ?>
                 </span>
             </div>
 
             <div class="info-item" style="grid-column: span 2;">
                 <span class="info-label">Visit Date/Time:</span>
-                <span class="info-value text-primary">
-                    <?= htmlspecialchars($last_visited); ?>
-                </span>
+                <span class="info-value text-primary"><?= htmlspecialchars($last_visited); ?></span>
             </div>
         </div>
 
         <!-- VITAL SIGNS BREAKDOWN TABLE -->
-        <div class="section-header">
-            <i class="bi bi-heart-pulse-fill text-danger"></i> Vital Signs & Physical Measurements
+        <div class="section-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-heart-pulse-fill text-danger"></i> Vital Signs & Physical Measurements</span>
+            <?php if ($current_mid > 0): ?>
+            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2 fw-bold no-print"
+                    data-html2canvas-ignore="true" onclick="openEditVitals()" style="font-size:0.7rem;">
+                <i class="bi bi-pencil-square me-1"></i> Edit Vitals
+            </button>
+            <?php endif; ?>
         </div>
 
         <table class="vitals-table">
@@ -352,7 +363,12 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
                 </tr>
                 <tr>
                     <td><strong>Height</strong></td>
-                    <td><?= $height_disp ?></td>
+                    <td>
+                        <?= $height_disp ?>
+                        <?php if ($height_val !== null): ?>
+                            <span class="text-muted" style="font-size:0.85em;">&nbsp;(<?= $height_ft_disp ?>)</span>
+                        <?php endif; ?>
+                    </td>
                     <td><span class="status-badge badge-secondary"><?= $height_status ?></span></td>
                 </tr>
                 <tr>
@@ -392,19 +408,135 @@ $safe_filename = 'Patient_Report_PT' . str_pad($patient['id'], 4, '0', STR_PAD_L
     </div>
 </div>
 
+<?php if ($current_mid > 0): ?>
+<!-- EDIT VITALS MODAL -->
+<div class="modal fade no-print" id="editVitalsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-bold"><i class="bi bi-pencil-square me-1"></i> Edit Vital Signs</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning py-2 small mb-3">
+          Use this only to correct sensor errors or inaccurate readings. Leave a field blank to clear it.
+        </div>
+        <div id="evError" class="alert alert-danger py-2 small d-none"></div>
+        <div class="row g-2">
+          <div class="col-6"><label class="form-label small fw-bold">Systolic (mmHg)</label>
+            <input type="number" id="ev_systolic" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Diastolic (mmHg)</label>
+            <input type="number" id="ev_diastolic" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Heart Rate (BPM)</label>
+            <input type="number" id="ev_heart_rate" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">SpO2 (%)</label>
+            <input type="number" id="ev_spo2" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Temperature (°C)</label>
+            <input type="number" step="0.1" id="ev_temperature" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Weight (kg)</label>
+            <input type="number" step="0.1" id="ev_weight" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">Height (cm)</label>
+            <input type="number" step="0.1" id="ev_height" class="form-control form-control-sm"></div>
+          <div class="col-6"><label class="form-label small fw-bold">BMI (automatic)</label>
+            <input type="text" id="ev_bmi" class="form-control form-control-sm bg-light" readonly></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success btn-sm fw-bold" id="evSaveBtn" onclick="saveVitals()">
+          <i class="bi bi-check-lg me-1"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php endif; ?>
+
 <script>
 const defaultFileName = '<?= $safe_filename; ?>';
+
+// ---- Edit Vitals ----
+const CURRENT_MID = <?= (int)$current_mid; ?>;
+const PATIENT_ID  = <?= (int)$patient_id; ?>;
+const CSRF_TOKEN  = '<?= $_SESSION['csrf_token']; ?>';
+const VITALS      = <?= $vitals_js; ?>;
+const evFields = ['temperature','weight','height','heart_rate','spo2','systolic','diastolic'];
+
+function openEditVitals() {
+    evFields.forEach(f => {
+        document.getElementById('ev_' + f).value = VITALS[f] ?? '';
+    });
+    document.getElementById('evError').classList.add('d-none');
+    updateBmiPreview();
+    new bootstrap.Modal(document.getElementById('editVitalsModal')).show();
+}
+
+// Live automatic BMI
+function updateBmiPreview() {
+    const w = parseFloat(document.getElementById('ev_weight').value);
+    const h = parseFloat(document.getElementById('ev_height').value);
+    const out = document.getElementById('ev_bmi');
+    if (w > 0 && h > 0) {
+        const m = h / 100;
+        out.value = (w / (m * m)).toFixed(2);
+    } else {
+        out.value = '--';
+    }
+}
+
+async function saveVitals() {
+    const btn = document.getElementById('evSaveBtn');
+    const err = document.getElementById('evError');
+    err.classList.add('d-none');
+
+    const payload = { measurement_id: CURRENT_MID, patient_id: PATIENT_ID, csrf: CSRF_TOKEN };
+    evFields.forEach(f => payload[f] = document.getElementById('ev_' + f).value.trim());
+
+    btn.disabled = true;
+    try {
+        const res  = await fetch('update_vital.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const text = await res.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            err.textContent = 'Server replied (HTTP ' + res.status + '): ' + text.substring(0, 300);
+            err.classList.remove('d-none');
+            btn.disabled = false;
+            return;
+        }
+        if (data.success) {
+            location.reload();   // reloads values, BMI and all status badges from the database
+            return;
+        }
+        err.textContent = data.message || 'Unable to save.';
+        err.classList.remove('d-none');
+    } catch (e) {
+        err.textContent = 'Could not reach update_vital.php: ' + e.message;
+        err.classList.remove('d-none');
+    }
+    btn.disabled = false;
+}
 
 document.addEventListener("DOMContentLoaded", function() {
     if (localStorage.getItem("theme") === "dark" || localStorage.getItem("staff_theme") === "dark") {
         document.body.classList.add("dark-mode");
     }
+    ['ev_weight', 'ev_height'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateBmiPreview);
+    });
 });
 
 // 1. Opens Windows "Save As" File Picker Dialog for PDF
 async function saveAsPDF() {
     const element = document.getElementById('document-wrapper');
-    
+
     const pdfBlob = await html2pdf().set({
         margin: [6, 6, 6, 6],
         image: { type: 'jpeg', quality: 0.98 },
@@ -438,6 +570,9 @@ async function saveAsPDF() {
 async function saveAsWord() {
     const element = document.getElementById('document-wrapper');
     const clone = element.cloneNode(true);
+
+    // Remove the Edit Vitals button from the Word export
+    clone.querySelectorAll('[data-html2canvas-ignore]').forEach(e => e.remove());
 
     const clinicHeader = clone.querySelector('.clinic-header');
     if (clinicHeader) {
@@ -480,7 +615,7 @@ async function saveAsWord() {
         const items = Array.from(grid.querySelectorAll('.info-item'));
         const table = document.createElement('table');
         table.style.cssText = 'width:100%; border-collapse:collapse; background-color:#f8fafc; border:1px solid #dbe3ef; border-radius:6px; margin-bottom:10px; font-size:11px;';
-        
+
         let currentRow = document.createElement('tr');
         let colCount = 0;
 

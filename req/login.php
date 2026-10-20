@@ -281,7 +281,7 @@ if (isset($_POST['login_type']) && $_POST['login_type'] === 'staff') {
 
             if ($staff['role'] === 'Staff') {
 
-                header("Location: ../healthcare_staff/admin-dashboard.php");
+                header("Location: ../healthcare_staff/patient-list.php");
                 exit();
             }
 

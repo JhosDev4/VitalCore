@@ -106,8 +106,23 @@ $avg_systolic = $average_health['avg_systolic'] ?? 0;
 $avg_diastolic = $average_health['avg_diastolic'] ?? 0;
 
 /* =========================
-   FOLLOW-UP SCHEDULES
+   FOLLOW-UP SCHEDULES (Family Planning + Prenatal / Immunization)
 ========================= */
+// Ensure prenatal_records table exists
+if ($conn) {
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `prenatal_records` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `user_id` INT NOT NULL,
+        `measurement_id` INT DEFAULT NULL,
+        `next_schedule` DATE DEFAULT NULL,
+        `remarks` VARCHAR(255) DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX (`user_id`),
+        INDEX (`next_schedule`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
 $followup_rows = [];
 $followup_query = $conn ? mysqli_query($conn, "
     SELECT
@@ -121,6 +136,21 @@ $followup_query = $conn ? mysqli_query($conn, "
       AND f.next_schedule >= CURDATE()
       AND u.role = 'patient'
     GROUP BY f.user_id, u.id, u.fullname
+
+    UNION ALL
+
+    SELECT
+        u.id,
+        u.fullname,
+        'prenatal' AS service_type,
+        MIN(p.next_schedule) AS follow_up_date
+    FROM prenatal_records p
+    INNER JOIN users u ON u.id = p.user_id
+    WHERE p.next_schedule IS NOT NULL
+      AND p.next_schedule >= CURDATE()
+      AND u.role = 'patient'
+    GROUP BY p.user_id, u.id, u.fullname
+
     ORDER BY follow_up_date ASC
     LIMIT 20
 ") : false;
@@ -132,7 +162,6 @@ if ($followup_query) {
 }
 
 $followup_total = count($followup_rows);
-
 ?>
 <!DOCTYPE html>
 <html lang="en" translate="no">
@@ -877,41 +906,73 @@ $followup_total = count($followup_rows);
     </div>
 </div>
 
-<!-- Sensor Status Modal -->
-<div class="modal fade" id="sensorModal" tabindex="-1">
+
+<!-- Live Sensor Status Modal -->
+<div class="modal fade" id="sensorModal" tabindex="-1"
+     aria-labelledby="sensorModalTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h4 class="modal-title fw-bold">
-                    <i class="bi bi-cpu me-2"></i> <span data-i18n="sensor_title">Sensor Status</span>
+                <h4 class="modal-title fw-bold" id="sensorModalTitle">
+                    <i class="bi bi-cpu me-2"></i>
+                    <span data-i18n="sensor_title">Sensor Status</span>
                 </h4>
-                <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
             <div class="modal-body">
-                <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+                    <small id="dashboardSensorCheckedAt" class="text-muted">
+                        Not checked yet
+                    </small>
+                    <button type="button" class="btn btn-outline-primary btn-sm"
+                            id="dashboardRefreshSensors">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    </button>
+                </div>
+
+                <div id="dashboardSensorError"
+                     class="alert alert-danger d-none" role="alert"></div>
+
+                <div class="d-flex justify-content-between align-items-center gap-3 py-3 border-bottom">
                     <div><i class="bi bi-rulers me-2 text-primary"></i> TF-Luna Height Sensor</div>
-                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
+                    <span id="dashboard-sensor-height"
+                          class="badge bg-secondary">Not checked</span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+
+                <div class="d-flex justify-content-between align-items-center gap-3 py-3 border-bottom">
                     <div><i class="bi bi-speedometer2 me-2 text-primary"></i> HX711 Weight Sensor</div>
-                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
+                    <span id="dashboard-sensor-weight"
+                          class="badge bg-secondary">Not checked</span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
+
+                <div class="d-flex justify-content-between align-items-center gap-3 py-3 border-bottom">
                     <div><i class="bi bi-thermometer-half me-2 text-primary"></i> MLX90614 Temperature Sensor</div>
-                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
+                    <span id="dashboard-sensor-temperature"
+                          class="badge bg-secondary">Not checked</span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center py-3 border-bottom">
-                    <div><i class="bi bi-heart-pulse me-2 text-danger"></i> MAX30102 Heart Rate Sensor</div>
-                    <span class="badge bg-danger" data-i18n="status_disconnected">Disconnected</span>
+
+                <div class="d-flex justify-content-between align-items-center gap-3 py-3 border-bottom">
+                    <div><i class="bi bi-heart-pulse me-2 text-danger"></i> MAX30102 Heart Rate / SpO₂ Sensor</div>
+                    <span id="dashboard-sensor-heart_spo2"
+                          class="badge bg-secondary">Not checked</span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center py-3">
-                    <div><i class="bi bi-activity me-2 text-primary"></i> Blood Pressure Monitor</div>
-                    <span class="badge bg-success" data-i18n="status_connected">Connected</span>
+
+                <div class="d-flex justify-content-between align-items-center gap-3 py-3">
+                    <div><i class="bi bi-activity me-2 text-primary"></i> Contec O8A Blood Pressure Monitor</div>
+                    <span id="dashboard-sensor-blood_pressure"
+                          class="badge bg-secondary">Not checked</span>
                 </div>
+
+                <small class="text-muted d-block mt-3">
+                    USB detection confirms the device adapter is present; it does not guarantee a successful measurement.
+                </small>
             </div>
         </div>
     </div>
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -1186,7 +1247,184 @@ $followup_total = count($followup_rows);
 </script>
 
 <script>
-const sensorModal = new bootstrap.Modal(document.getElementById('sensorModal'));
+
+const sensorModalElement = document.getElementById("sensorModal");
+const sensorModal = new bootstrap.Modal(sensorModalElement);
+
+const sensorPill = document.getElementById("openSensorStatus");
+const sensorRefreshButton = document.getElementById("dashboardRefreshSensors");
+const sensorError = document.getElementById("dashboardSensorError");
+const sensorCheckedAt = document.getElementById("dashboardSensorCheckedAt");
+
+const dashboardSensors = {
+    height: "dashboard-sensor-height",
+    weight: "dashboard-sensor-weight",
+    temperature: "dashboard-sensor-temperature",
+    heart_spo2: "dashboard-sensor-heart_spo2",
+    blood_pressure: "dashboard-sensor-blood_pressure"
+};
+
+function updateDashboardSensorBadge(key, sensor) {
+    const badge = document.getElementById(dashboardSensors[key]);
+    if (!badge) return;
+
+    badge.className = "badge";
+
+    if (!sensor || !sensor.status) {
+        badge.classList.add("bg-warning", "text-dark");
+        badge.textContent = "Unknown";
+        badge.title = "No status received";
+        return;
+    }
+
+    if (sensor.status === "detected") {
+        badge.classList.add("bg-success");
+        badge.textContent = "Detected";
+    } else if (sensor.status === "disconnected") {
+        badge.classList.add("bg-danger");
+        badge.textContent = "Disconnected";
+    } else {
+        badge.classList.add("bg-warning", "text-dark");
+        badge.textContent = "Error / Unknown";
+    }
+
+    badge.title = sensor.message || "";
+}
+
+function updateDashboardSensorPill(sensors) {
+    const values = Object.values(sensors);
+    const allDetected =
+        values.length === Object.keys(dashboardSensors).length &&
+        values.every(sensor => sensor && sensor.status === "detected");
+
+    const icon = sensorPill.querySelector("i");
+    const label = sensorPill.querySelector("[data-i18n='sensors_status']");
+
+    sensorPill.classList.remove("success", "warning", "danger");
+
+    if (allDetected) {
+        sensorPill.classList.add("success");
+        sensorPill.style.backgroundColor = "#d1e7dd";
+        sensorPill.style.color = "#0f5132";
+        sensorPill.style.borderColor = "#a3cfbb";
+
+        if (icon) icon.className = "bi bi-check-circle-fill";
+        if (label) label.textContent = "Sensors Detected";
+    } else {
+        sensorPill.classList.add("warning");
+        sensorPill.style.backgroundColor = "#fff3cd";
+        sensorPill.style.color = "#664d03";
+        sensorPill.style.borderColor = "#ffecb5";
+
+        if (icon) icon.className = "bi bi-exclamation-triangle-fill";
+        if (label) label.textContent = "Check Sensors";
+    }
+
+    sensorPill.title = allDetected
+        ? "All sensor devices were detected. This does not guarantee successful measurements."
+        : "One or more sensor devices are disconnected or could not be checked.";
+}
+
+async function refreshDashboardSensors() {
+    if (sensorRefreshButton) sensorRefreshButton.disabled = true;
+
+    const refreshIcon = sensorRefreshButton?.querySelector("i");
+    if (refreshIcon) refreshIcon.classList.add("spin");
+
+    if (sensorError) {
+        sensorError.classList.add("d-none");
+        sensorError.textContent = "";
+    }
+
+    if (sensorCheckedAt) sensorCheckedAt.textContent = "Checking sensors...";
+
+    try {
+        const response = await fetch("sensor_status_proxy.php", {
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin",
+            headers: { "Accept": "application/json" }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.success !== true || !data.sensors) {
+            throw new Error(data.error || `Request failed (${response.status})`);
+        }
+
+        Object.keys(dashboardSensors).forEach(key => {
+            updateDashboardSensorBadge(key, data.sensors[key]);
+        });
+
+        updateDashboardSensorPill(data.sensors);
+
+        if (sensorCheckedAt) {
+            const date = data.checked_at
+                ? new Date(data.checked_at)
+                : new Date();
+
+            sensorCheckedAt.textContent =
+                "Last checked: " + date.toLocaleString();
+        }
+    } catch (error) {
+        Object.keys(dashboardSensors).forEach(key => {
+            updateDashboardSensorBadge(key, null);
+        });
+
+        sensorPill.classList.remove("success", "danger");
+        sensorPill.classList.add("warning");
+        sensorPill.style.backgroundColor = "#fff3cd";
+        sensorPill.style.color = "#664d03";
+        sensorPill.style.borderColor = "#ffecb5";
+
+        const icon = sensorPill.querySelector("i");
+        const label = sensorPill.querySelector("[data-i18n='sensors_status']");
+
+        if (icon) icon.className = "bi bi-exclamation-triangle-fill";
+        if (label) label.textContent = "Status Unavailable";
+
+        if (sensorCheckedAt) sensorCheckedAt.textContent = "Status check failed";
+
+        if (sensorError) {
+            sensorError.textContent =
+                "Unable to retrieve sensor status. " +
+                (error.message || "Check the Raspberry Pi connection.");
+            sensorError.classList.remove("d-none");
+        }
+    } finally {
+        if (sensorRefreshButton) sensorRefreshButton.disabled = false;
+        if (refreshIcon) refreshIcon.classList.remove("spin");
+    }
+}
+
+sensorPill.addEventListener("click", function (event) {
+    event.preventDefault();
+    sensorModal.show();
+});
+
+sensorModalElement.addEventListener("shown.bs.modal", function () {
+    refreshDashboardSensors();
+});
+
+if (sensorRefreshButton) {
+    sensorRefreshButton.addEventListener("click", refreshDashboardSensors);
+}
+
+// Check the sensor status when the dashboard loads.
+refreshDashboardSensors();
+
+// Live Search Filter for Patient List
+document.getElementById("patientSearchInput").addEventListener("keyup", function() {
+    const filter = this.value.toLowerCase();
+    const rows = document.querySelectorAll("#patientTable tbody tr");
+
+    rows.forEach(row => {
+        const nameElement = row.querySelector(".patient-name");
+        const name = nameElement ? nameElement.textContent.toLowerCase() : "";
+        row.style.display = name.includes(filter) ? "" : "none";
+    });
+});
+
 
 document.getElementById('openSensorStatus').addEventListener('click', function(e){
     e.preventDefault();

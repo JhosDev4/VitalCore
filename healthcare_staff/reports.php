@@ -167,19 +167,41 @@ $family_count = mysqli_fetch_assoc(mysqli_query(
      AND $whereMeasurements"
 ))['total'] ?? 0;
 
-/* FOLLOW-UPS — deduplicated per patient */
+/* ==================================================================
+   FOLLOW-UPS — deduplicated per patient (Family Planning + Prenatal / Immunization)
+================================================================== */
+if ($conn) {
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `prenatal_records` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `user_id` INT NOT NULL,
+        `measurement_id` INT DEFAULT NULL,
+        `next_schedule` DATE DEFAULT NULL,
+        `remarks` VARCHAR(255) DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX (`user_id`),
+        INDEX (`next_schedule`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
 $upcoming_schedules = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COUNT(DISTINCT user_id) AS total
-     FROM family_planning_records
-     WHERE next_schedule IS NOT NULL
-       AND next_schedule >= CURDATE()"
+     FROM (
+        SELECT user_id, next_schedule FROM family_planning_records WHERE next_schedule IS NOT NULL
+        UNION ALL
+        SELECT user_id, next_schedule FROM prenatal_records WHERE next_schedule IS NOT NULL
+     ) AS all_schedules
+     WHERE next_schedule >= CURDATE()"
 ))['total'] ?? 0;
 
 $overdue_schedules = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COUNT(DISTINCT user_id) AS total
-     FROM family_planning_records
-     WHERE next_schedule IS NOT NULL
-       AND next_schedule < CURDATE()"
+     FROM (
+        SELECT user_id, next_schedule FROM family_planning_records WHERE next_schedule IS NOT NULL
+        UNION ALL
+        SELECT user_id, next_schedule FROM prenatal_records WHERE next_schedule IS NOT NULL
+     ) AS all_schedules
+     WHERE next_schedule < CURDATE()"
 ))['total'] ?? 0;
 
 // Total = only active (upcoming) schedules, NOT a raw row count
@@ -209,7 +231,7 @@ $roster_count = $patient_roster_q ? mysqli_num_rows($patient_roster_q) : 0;
 
 /* ==========================================================
    INITIALIZE ALL 35 BARANGAYS WITH 0 COUNTS
-========================================================= */
+========================================================== */
 $barangay_counts = array_fill_keys($all_barangays, 0);
 
 $brgy_q = mysqli_query($conn, "SELECT
@@ -273,18 +295,15 @@ if ($brgy_q) {
 
     <!-- PRINT & DOCUMENT EXPORT STYLING -->
     <style>
-        /* Suppress browser automatic headers & footers */
         @page {
             size: A4 portrait;
             margin: 0;
         }
 
-        /* On regular screen, hide the printable document template */
         .simple-print-document {
             display: none;
         }
 
-        /* ---------- Fallback Dark Mode Styles (same approach as setting.php) ---------- */
         body.dark-mode, html.dark-mode body {
             background-color: #121824 !important;
             color: #e2e8f0 !important;
@@ -328,7 +347,6 @@ if ($brgy_q) {
         html.dark-mode tfoot tr { background: #172033 !important; }
         html.dark-mode .progress { background: #0f172a !important; }
 
-        /* Night Light Warm Amber Filter Overlay */
         #nightLightOverlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -338,13 +356,11 @@ if ($brgy_q) {
             display: none;
         }
 
-        /* When printing or exporting to PDF */
         @media print {
             .sidebar, .dashboard-web-view, .btn-print-action, .date-pill, .no-print {
                 display: none !important;
             }
 
-            /* Printed reports stay white, regardless of Dark Mode / Night Light */
             #nightLightOverlay { display: none !important; }
 
             html.dark-mode, html.dark-mode body, body.dark-mode {
@@ -497,7 +513,6 @@ if ($brgy_q) {
                 <div class="date-pill">
                     <i class="bi bi-calendar3 text-accent-primary"></i>
                     <form method="GET" class="row g-2 align-items-center m-0">
-                        <!-- Filter Type Selector -->
                         <div class="col-auto">
                             <select name="type" class="form-select form-select-sm" onchange="this.form.submit()">
                                 <option value="day" <?= $filter_type=='day'?'selected':'' ?> data-i18n="opt_day">Day</option>
@@ -506,7 +521,6 @@ if ($brgy_q) {
                             </select>
                         </div>
 
-                        <!-- Date / Month / Year Selector -->
                         <div class="col-auto">
                             <?php if ($filter_type == 'year'): ?>
                                 <select name="date" class="form-select form-select-sm">
@@ -728,7 +742,6 @@ if ($brgy_q) {
                                 </tfoot>
                             </table>
                         </div>
-                        <!-- Legend -->
                         <div class="mt-2 d-flex gap-3" style="font-size: 0.75rem;">
                             <span><i class="bi bi-circle-fill text-primary me-1" style="font-size: 0.5rem;"></i> <span data-i18n="legend_male">Male</span></span>
                             <span><i class="bi bi-circle-fill text-danger me-1" style="font-size: 0.5rem;"></i> <span data-i18n="legend_female">Female</span></span>
@@ -787,8 +800,6 @@ if ($brgy_q) {
 
         <!-- ========================================================
              3. SIMPLE PRINT / PDF DOCUMENT TEMPLATE
-             (Visible ONLY when printing / converting to PDF)
-             Official clinic record: always printed in English.
         ======================================================== -->
         <div class="simple-print-document">
 
@@ -965,7 +976,7 @@ if ($brgy_q) {
                 <div style="width: 45%;">
                     <p style="margin-bottom: 45px;">Prepared by:</p>
                     <div style="border-top: 1px solid #000; width: 90%;">
-                        <p style="margin: 4px 0 0 0; font-weight: bold;">VitalCore System Administrator</p>
+                        <p style="margin: 4px 0 0 0; font-weight: bold;">VitalCore Healthcare Staff</p>
                         <small style="color: #555;">Medical Records &amp; Intake Officer</small>
                     </div>
                 </div>
@@ -987,11 +998,10 @@ if ($brgy_q) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../assets/js/theme.js"></script>
 
-<!-- SYSTEM SETTINGS ENGINE (applies the preferences saved in setting.php) -->
+<!-- SYSTEM SETTINGS ENGINE -->
 <script>
 (function applySystemSettings() {
 
-    // Safe localStorage helper
     const store = {
         get(key, fallback = null) {
             try {
@@ -1001,33 +1011,21 @@ if ($brgy_q) {
         }
     };
 
-    // ---------------------------------------------------------------
-    // 1. Theme / Dark Mode
-    // ---------------------------------------------------------------
-    const isDark = store.get("theme") === "dark";
+    const isDark = store.get("theme") === "dark" || store.get("staff_theme") === "dark";
     document.body.classList.toggle("dark-mode", isDark);
     document.documentElement.classList.toggle("dark-mode", isDark);
 
-    // ---------------------------------------------------------------
-    // 2. Night Light
-    // ---------------------------------------------------------------
+    const savedNightLight = localStorage.getItem("nightLight");
     const nightLightOverlay = document.getElementById("nightLightOverlay");
     if (nightLightOverlay) {
         nightLightOverlay.style.display =
             store.get("nightLight") === "enabled" ? "block" : "none";
     }
 
-    // ---------------------------------------------------------------
-    // 3. Text Size
-    // ---------------------------------------------------------------
     const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
     document.documentElement.style.fontSize =
         fontSizes[store.get("textSize", "normal")] || "100%";
 
-    // ---------------------------------------------------------------
-    // 4. Language (English is the server-rendered default, so only
-    //    Filipino / Cebuano need to be applied)
-    // ---------------------------------------------------------------
     const i18n = {
         fil: {
             section_main: "Pangunahin",
@@ -1154,7 +1152,6 @@ if ($brgy_q) {
             let text = dict[el.getAttribute("data-i18n")];
             if (!text) return;
 
-            // Fill {placeholders} from data-vars (counts, period label, ...)
             if (el.dataset.vars) {
                 try {
                     const vars = JSON.parse(el.dataset.vars);
@@ -1165,9 +1162,6 @@ if ($brgy_q) {
         });
     }
 
-    // ---------------------------------------------------------------
-    // 5. Date & Time Format (live clock + "Date Generated" on the printout)
-    // ---------------------------------------------------------------
     const TZ = "Asia/Manila";
     function timeString(withSeconds) {
         const opts = { hour: "2-digit", minute: "2-digit", timeZone: TZ };
@@ -1197,9 +1191,6 @@ if ($brgy_q) {
     }
     updatePrintStamp();
 
-    // ---------------------------------------------------------------
-    // 6. Print: clean title + fresh timestamp
-    // ---------------------------------------------------------------
     window.addEventListener("beforeprint", () => {
         document._origTitle = document.title;
         document.title = "";

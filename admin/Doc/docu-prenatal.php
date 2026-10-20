@@ -14,11 +14,12 @@ if (
     exit();
 }
 
-// CSRF token for the Edit Vitals save request
+// CSRF token for save requests
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// 1. Validate & Extract Patient ID (MUST COME BEFORE ANY DATABASE QUERIES)
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     die("Patient not found.");
 }
@@ -26,12 +27,93 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $patient_id     = (int)$_GET['id'];
 $measurement_id = isset($_GET['measurement_id']) && is_numeric($_GET['measurement_id']) ? (int)$_GET['measurement_id'] : 0;
 
-// 1. Fetch Patient Info
+// 2. Ensure prenatal_records table exists
+if ($conn) {
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `prenatal_records` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `user_id` INT NOT NULL,
+        `measurement_id` INT DEFAULT NULL,
+        `next_schedule` DATE DEFAULT NULL,
+        `remarks` VARCHAR(255) DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX (`user_id`),
+        INDEX (`next_schedule`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
+// 3. Handle AJAX Save for Next Follow-up Schedule (Tetanus, Pregnancy Visits, Immunization)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_prenatal_schedule') {
+    header('Content-Type: application/json');
+
+    $token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        echo json_encode(['success' => false, 'message' => 'Security token invalid.']);
+        exit();
+    }
+
+    $pid = isset($_POST['patient_id']) ? (int)$_POST['patient_id'] : $patient_id;
+    $mid = isset($_POST['measurement_id']) ? (int)$_POST['measurement_id'] : $measurement_id;
+    $raw_schedule = trim($_POST['next_schedule'] ?? '');
+    $remarks = trim($_POST['remarks'] ?? '');
+    $remarks_sql = !empty($remarks) ? "'" . mysqli_real_escape_string($conn, $remarks) . "'" : "NULL";
+
+    if ($pid <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid patient ID.']);
+        exit();
+    }
+
+    $formatted_date = null;
+    $sql_date = null;
+
+    if ($raw_schedule !== '') {
+        $ts = strtotime($raw_schedule);
+        if ($ts !== false) {
+            $sql_date = date('Y-m-d', $ts);
+            $formatted_date = date('M d, Y', $ts);
+        }
+    }
+
+    $val_clause = ($sql_date !== null) ? "'$sql_date'" : "NULL";
+
+    $check = mysqli_query($conn, "SELECT id FROM prenatal_records WHERE user_id = $pid ORDER BY id DESC LIMIT 1");
+    if ($check && mysqli_num_rows($check) > 0) {
+        $rec = mysqli_fetch_assoc($check);
+        $rec_id = (int)$rec['id'];
+        mysqli_query($conn, "UPDATE prenatal_records SET next_schedule = $val_clause, remarks = $remarks_sql WHERE id = $rec_id");
+    } else {
+        mysqli_query($conn, "INSERT INTO prenatal_records (user_id, measurement_id, next_schedule, remarks) VALUES ($pid, " . ($mid > 0 ? $mid : "NULL") . ", $val_clause, $remarks_sql)");
+    }
+
+    $is_active = ($sql_date !== null && strtotime($sql_date) >= strtotime('today'));
+
+    echo json_encode([
+        'success'        => true,
+        'sql_date'       => $sql_date,
+        'formatted_date' => $formatted_date,
+        'is_active'      => $is_active
+    ]);
+    exit();
+}
+
+// 4. Fetch Patient Info
 $query = mysqli_query($conn, "SELECT * FROM users WHERE id = $patient_id LIMIT 1");
 $patient = mysqli_fetch_assoc($query);
 if (!$patient) { die("Patient not found."); }
 
-// 2. Fetch Vital Measurements for This Visit
+// 5. Fetch Existing Next Schedule & Remarks for this Patient
+$prenatal_next_schedule = null;
+$prenatal_remarks = '';
+if ($patient_id > 0) {
+    $sched_q = mysqli_query($conn, "SELECT next_schedule, remarks FROM prenatal_records WHERE user_id = $patient_id AND next_schedule IS NOT NULL ORDER BY id DESC LIMIT 1");
+    if ($sched_q && mysqli_num_rows($sched_q) > 0) {
+        $sched_data = mysqli_fetch_assoc($sched_q);
+        $prenatal_next_schedule = $sched_data['next_schedule'];
+        $prenatal_remarks = $sched_data['remarks'] ?? '';
+    }
+}
+
+// 6. Fetch Vital Measurements for This Visit
 $temp = $weight = $height = $bmi = $heart_rate = $spo2 = $systolic = $diastolic = '--';
 $last_visited = 'No visits recorded';
 $doc_date     = date('F d, Y');
@@ -60,7 +142,7 @@ if ($measurementQuery && mysqli_num_rows($measurementQuery) > 0) {
     }
 }
 
-// 3. Data Processing & Formatting
+// 7. Data Processing & Formatting
 $temp_val       = (is_numeric($temp)       && (float)$temp > 0)     ? (float)$temp       : null;
 $weight_val     = (is_numeric($weight)     && (float)$weight > 0)   ? (float)$weight     : null;
 $height_val     = (is_numeric($height)     && (float)$height > 0)   ? (float)$height     : null;
@@ -84,15 +166,12 @@ $vitals_js = json_encode([
 // Display strings
 $temp_disp       = ($temp_val !== null)   ? number_format($temp_val, 1) . ' °C' : '--';
 $weight_disp     = ($weight_val !== null) ? number_format($weight_val, 1) . ' kg' : '--';
-// cm display
-$height_disp = ($height_val !== null) ? number_format($height_val, 1) . ' cm' : '--';
+$height_disp     = ($height_val !== null) ? number_format($height_val, 1) . ' cm' : '--';
 
-// cm → feet & inches conversion
 if ($height_val !== null) {
     $total_inches  = $height_val / 2.54;
     $feet          = (int) floor($total_inches / 12);
     $inches        = (int) round(fmod($total_inches, 12));
-    // handle edge case where inches rounds up to 12
     if ($inches === 12) { $feet++; $inches = 0; }
     $height_ft_disp = "{$feet}'{$inches}\"";
 } else {
@@ -206,7 +285,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             margin-bottom: 10px;
         }
 
-        /* Table Cell Text Styling — force dark text always (document is white paper) */
+        /* Table Cell Text Styling — force dark text always */
         .pn-table th,
         .pn-table td {
             border: 1px solid #aaa;
@@ -250,24 +329,10 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             color: #2c3e50 !important;
         }
 
-        /* Force Pure Dark Text on Pink, Blue & Peach Highlight Rows */
-        .row-pink,
-        .row-pink td,
-        .row-pink th,
-        .row-blue,
-        .row-blue td,
-        .row-blue th,
-        .row-peach,
-        .row-peach td,
-        .row-peach th {
-            color: #000000 !important;
-        }
-
         .row-pink { background-color: #f7b0a7 !important; }
         .row-blue { background-color: #b0c6e8 !important; }
         .row-peach { background-color: #fce4b4 !important; }
 
-        /* Black Dot Circle */
         .dot-circle {
             display: inline-block !important;
             width: 10px !important;
@@ -279,7 +344,6 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             vertical-align: middle !important;
         }
 
-        /* Check Icon Styling */
         .check-icon {
             display: inline-block !important;
             font-size: 0.85rem !important;
@@ -292,7 +356,6 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         .row-pink .check-icon { color: #842029 !important; }
         .row-blue .check-icon { color: #0a49c4 !important; }
 
-        /* Editable Blank Lines & Table Cells */
         .blank-line {
             display: inline-block;
             border-bottom: 1px solid #333;
@@ -366,7 +429,6 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         }
         .pp-item label { font-weight: 600; white-space: nowrap; }
 
-        /* Prevent individual table rows and signatures from slicing horizontally mid-text */
         tr {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
@@ -433,6 +495,17 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             <div class="mt-1 text-muted" style="font-size: 0.75rem;">
                 <strong>Document Date:</strong> <?= htmlspecialchars($doc_date); ?>
             </div>
+            <!-- Header Live Follow-up Badge -->
+            <div class="mt-1" style="font-size: 0.75rem;">
+                <strong>Next Schedule:</strong>
+                <span class="sched-badge-live badge <?= !empty($prenatal_next_schedule) && strtotime($prenatal_next_schedule) >= strtotime('today') ? 'bg-success' : 'bg-secondary' ?>">
+                    <?php if (!empty($prenatal_next_schedule)): ?>
+                        <?= date('M d, Y', strtotime($prenatal_next_schedule)); ?><?= !empty($prenatal_remarks) ? ' (' . htmlspecialchars($prenatal_remarks) . ')' : '' ?>
+                    <?php else: ?>
+                        None
+                    <?php endif; ?>
+                </span>
+            </div>
         </div>
     </div>
 
@@ -476,9 +549,14 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </div>
     </div>
 
-    <!-- SECTION 2 — TETANUS TOXOID -->
+    <!-- SECTION 2 — TETANUS TOXOID (DATE GIVEN AUTO-SYNCS) -->
     <div class="pn-section mt-3">
-        <div class="pn-header">TETANUS TOXOID</div>
+        <div class="pn-header d-flex justify-content-between align-items-center">
+            <span>TETANUS TOXOID</span>
+            <span class="badge bg-light text-dark fw-bold no-print" style="font-size: 0.68rem;">
+                <i class="bi bi-shield-check text-success me-1"></i> Auto-synced to Follow-up Schedule
+            </span>
+        </div>
         <table class="pn-table" style="border-top:none;">
             <thead>
                 <tr>
@@ -493,14 +571,14 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
             <tbody>
                 <tr>
                     <td class="text-start"><strong>Date Given</strong></td>
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true"></td>
+                    <td contenteditable="true" class="sched-cell tetanus-cell" data-section="Tetanus Toxoid" data-label="Tetanus Toxoid Dose 1"></td>
+                    <td contenteditable="true" class="sched-cell tetanus-cell" data-section="Tetanus Toxoid" data-label="Tetanus Toxoid Dose 2"></td>
+                    <td contenteditable="true" class="sched-cell tetanus-cell" data-section="Tetanus Toxoid" data-label="Tetanus Toxoid Dose 3"></td>
+                    <td contenteditable="true" class="sched-cell tetanus-cell" data-section="Tetanus Toxoid" data-label="Tetanus Toxoid Dose 4"></td>
+                    <td contenteditable="true" class="sched-cell tetanus-cell" data-section="Tetanus Toxoid" data-label="Tetanus Toxoid Dose 5"></td>
                 </tr>
                 <tr>
-                    <td class="text-start"><strong>Age:</strong> <?= htmlspecialchars($patient['age']); ?> yrs</td>
+                    <td class="text-start"><strong>Age:</strong> <?= htmlspecialchars($patient['age'] ?? ''); ?> yrs</td>
                     <td colspan="2" contenteditable="true">Below 18</td>
                     <td colspan="2" contenteditable="true">18-34</td>
                     <td contenteditable="true">35+</td>
@@ -524,7 +602,6 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         <div class="pn-header">OBSTETRICAL HISTORY</div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
 
-            <!-- G_ L_ P_ O_ ( _ _ _ _ ) with TPAL underneath -->
             <div style="font-size:0.85rem; font-weight:700; margin-bottom:8px; padding-left:4px;">
                 G <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;
                 L <span contenteditable="true" class="blank-line blank-line-sm"></span> &nbsp;
@@ -625,14 +702,12 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         <div class="legend-box px-2 pb-2">
             <div>
                 <span class="legend-square" style="background:#b0c6e8;"></span>Refer to Physician/RHU (and follow-up)
-
                 <span class="legend-square" style="background:#f7b0a7;"></span>Close observation or action by midwife/nurse
-
-                <span class="dot-circle" style="width:12px; height:12px; margin-right:4px;"></span>Hospital delivery recommeded</div>
+                <span class="dot-circle" style="width:12px; height:12px; margin-right:4px;"></span>Hospital delivery recommended
+            </div>
         </div>
         <div style="font-size:0.65rem; color:#666; padding-left:8px; margin-top:-4px;" class="mb-2">
-            <em>*You may wish to consider a</em><br>
-            <em>permanent method of Family Planning*</em>
+            <em>*You may wish to consider a permanent method of Family Planning*</em>
         </div>
     </div>
 
@@ -708,9 +783,14 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </table>
     </div>
 
-    <!-- SECTION 5 — PRESENT PREGNANCY (LMP & EDC) -->
+    <!-- SECTION 5 — PRESENT PREGNANCY (DATE OF VISIT AUTO-SYNCS) -->
     <div class="pn-section mt-3">
-        <div class="pn-header">PRESENT PREGNANCY</div>
+        <div class="pn-header d-flex justify-content-between align-items-center">
+            <span>PRESENT PREGNANCY</span>
+            <span class="badge bg-light text-dark fw-bold no-print" style="font-size: 0.68rem;">
+                <i class="bi bi-shield-check text-success me-1"></i> Auto-synced to Follow-up Schedule
+            </span>
+        </div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
 
             <!-- LMP and EDC Row with Header Badges -->
@@ -754,8 +834,10 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                     </tr>
                     <tr>
                         <td class="text-start">Date of Visit</td>
-                        <?php for ($i = 1; $i <= 1; $i++): ?><td contenteditable="true"></td><?php endfor; ?>
-                        <?php for ($i = 2; $i <= 12; $i++): ?><td class="row-blue" contenteditable="true"></td><?php endfor; ?>
+                        <td contenteditable="true" class="sched-cell pregnancy-cell" data-section="Prenatal Visit" data-label="Prenatal Visit 1"></td>
+                        <?php for ($i = 2; $i <= 12; $i++): ?>
+                        <td class="row-blue sched-cell pregnancy-cell" contenteditable="true" data-section="Prenatal Visit" data-label="Prenatal Visit <?= $i ?>"></td>
+                        <?php endfor; ?>
                     </tr>
                     <tr>
                         <td class="text-start">Vaginal Bleeding (Y/N)</td>
@@ -831,7 +913,7 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
         </div>
     </div>
 
-    <!-- SECTION 6 — ACTION -->
+    <!-- SECTION 6 — ACTION (DATE OF NEXT VISIT AUTO-SYNCS) -->
     <div class="pn-section mt-3">
         <div class="pn-header">ACTION</div>
         <table class="pn-table" style="border-top:none;">
@@ -856,10 +938,14 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                     'Risk? (Y/N)',
                     'Date of next visit',
                 ];
-                foreach ($action_rows as $row): ?>
+                foreach ($action_rows as $row): 
+                    $isNextVisit = ($row === 'Date of next visit');
+                ?>
                 <tr>
                     <td class="text-start"><?= $row ?></td>
-                    <?php for ($i = 1; $i <= 9; $i++): ?><td style="height:18px;" contenteditable="true"></td><?php endfor; ?>
+                    <?php for ($i = 1; $i <= 9; $i++): ?>
+                    <td style="height:18px;" contenteditable="true" <?= $isNextVisit ? 'class="sched-cell action-cell" data-section="Next Visit" data-label="Follow-up Visit ' . $i . '"' : '' ?>></td>
+                    <?php endfor; ?>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -973,17 +1059,22 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
 
         <!-- Name, Mother's Name, Birthdate Bar -->
         <div class="d-flex justify-content-between align-items-center py-2 px-1 border-top mt-2" style="font-size:0.75rem; font-weight:bold;">
-            <div>NAME: <span class="text-primary"><?= htmlspecialchars($patient['fullname']); ?></span></div>
-            <div>MOTHER'S NAME: <span contenteditable="true" class="blank-line blank-line-lg"></span></div>
-            <div>BIRTHDATE: <span><?= !empty($patient['birth_date']) ? date('F d, Y', strtotime($patient['birth_date'])) : '--'; ?></span></div>
+            <div>MOTHER'S NAME: <span contenteditable="true" class="blank-line blank-line-lg"></span></div> 
+            <div>NAME: <span contenteditable="true" class="blank-line blank-line-lg"></span></div>
+            <div>BIRTHDATE: <span contenteditable="true" class="blank-line blank-line-lg"></span></div>
         </div>
     </div>
 
-    <!-- SECTION 9 — IMMUNIZATION RECORD -->
+    <!-- SECTION 9 — IMMUNIZATION RECORD (VACCINES AUTO-SYNC) -->
     <div class="pn-section mt-3">
-        <div class="pn-header">IMMUNIZATION RECORD</div>
+        <div class="pn-header d-flex justify-content-between align-items-center">
+            <span>IMMUNIZATION RECORD</span>
+            <span class="badge bg-light text-dark fw-bold no-print" style="font-size: 0.68rem;">
+                <i class="bi bi-shield-check me-1 text-success"></i> Auto-synced to Follow-up Schedule
+            </span>
+        </div>
         <div style="border:1px solid #aaa; border-top:none; padding:8px; border-radius:0 0 4px 4px;">
-            <table class="pn-table mb-0">
+            <table class="pn-table mb-2" id="immunizationTable">
                 <thead>
                     <tr>
                         <th class="text-start" style="width:30%;">VACCINES</th>
@@ -999,14 +1090,31 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
                     foreach ($vaccines as $v): ?>
                     <tr>
                         <td class="text-start" style="font-weight:700;"><?= $v ?></td>
-                        <td style="height:20px;" contenteditable="true"></td>
-                        <td style="height:20px;" contenteditable="true"></td>
-                        <td style="height:20px;" contenteditable="true"></td>
-                        <td style="height:20px;" contenteditable="true"></td>
+                        <td style="height:20px;" contenteditable="true" class="sched-cell immu-cell" data-section="Immunization" data-vaccine="<?= $v ?>" data-col="1" data-label="<?= $v ?> Dose 1"></td>
+                        <td style="height:20px;" contenteditable="true" class="sched-cell immu-cell" data-section="Immunization" data-vaccine="<?= $v ?>" data-col="2" data-label="<?= $v ?> Dose 2"></td>
+                        <td style="height:20px;" contenteditable="true" class="sched-cell immu-cell" data-section="Immunization" data-vaccine="<?= $v ?>" data-col="3" data-label="<?= $v ?> Dose 3"></td>
+                        <td style="height:20px;" contenteditable="true" class="sched-cell immu-cell" data-section="Immunization" data-vaccine="<?= $v ?>" data-col="remarks" data-label="<?= $v ?> (Remarks)"></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
+
+            <!-- LIVE SCHEDULE SYNC INDICATOR -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center pt-2 border-top" style="font-size: 0.75rem;">
+                <div>
+                    <strong>Follow-up Schedule:</strong>
+                    <span id="immuSchedBadge" class="badge <?= !empty($prenatal_next_schedule) && strtotime($prenatal_next_schedule) >= strtotime('today') ? 'bg-success' : 'bg-secondary' ?> ms-1">
+                        <?php if (!empty($prenatal_next_schedule)): ?>
+                            <i class="bi bi-calendar-check me-1"></i> Active: <?= date('M d, Y', strtotime($prenatal_next_schedule)); ?><?= !empty($prenatal_remarks) ? ' (' . htmlspecialchars($prenatal_remarks) . ')' : '' ?>
+                        <?php else: ?>
+                            No date set
+                        <?php endif; ?>
+                    </span>
+                </div>
+                <div id="immuSyncStatus" class="text-muted" style="font-size: 0.7rem;">
+                    <em>Typing a date (e.g. 8/10/26) in Tetanus, Visit, or Immunization auto-activates Follow-up Schedule.</em>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1083,10 +1191,10 @@ $safe_filename = 'Prenatal_PT' . str_pad($patient['id'], 4, '0', STR_PAD_LEFT)
 
 <script>
 const defaultFileName = '<?= $safe_filename; ?>';
-const storageKey = 'prenatal_chart_draft_v7_<?= $patient_id; ?>_<?= $measurement_id; ?>';
+const storageKey = 'prenatal_chart_draft_v8_<?= $patient_id; ?>_<?= $measurement_id; ?>';
 let saveTimeout = null;
 
-// ---- Edit Vitals ----
+// ---- Global JS Constants (available even if measurement_id == 0) ----
 const CURRENT_MID = <?= (int)$current_mid; ?>;
 const PATIENT_ID  = <?= (int)$patient_id; ?>;
 const CSRF_TOKEN  = '<?= $_SESSION['csrf_token']; ?>';
@@ -1102,7 +1210,6 @@ function openEditVitals() {
     new bootstrap.Modal(document.getElementById('editVitalsModal')).show();
 }
 
-// Live automatic BMI
 function updateBmiPreview() {
     const w = parseFloat(document.getElementById('ev_weight').value);
     const h = parseFloat(document.getElementById('ev_height').value);
@@ -1132,7 +1239,7 @@ async function saveVitals() {
         });
         const data = await res.json();
         if (data.success) {
-            location.reload();   // reloads values, BMI and all status badges from the database
+            location.reload();
             return;
         }
         err.textContent = data.message || 'Unable to save.';
@@ -1175,7 +1282,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.add("dark-mode");
     }
 
-    // Live BMI preview in modal
     ['ev_weight', 'ev_height'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updateBmiPreview);
@@ -1205,6 +1311,158 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveTimeout = setTimeout(saveDraft, 100);
             }
         });
+    });
+});
+
+// --- ROBUST DATE PARSER (Supports M/D/YY, M/D/YYYY, M-D-YY, YYYY-MM-DD, Month Words) ---
+function parseTypedDate(str) {
+    if (!str) return null;
+    const clean = str.replace(/<[^>]*>/g, '').trim();
+    if (!clean) return null;
+
+    // Matches M/D/YY or M/D/YYYY or M-D-YY (e.g. 8/10/26, 9/10/26, 08/10/2026)
+    const m = clean.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m) {
+        let month = parseInt(m[1], 10);
+        let day   = parseInt(m[2], 10);
+        let year  = parseInt(m[3], 10);
+        if (year < 100) year += 2000;
+
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            const mStr = String(month).padStart(2, '0');
+            const dStr = String(day).padStart(2, '0');
+            return `${year}-${mStr}-${dStr}`;
+        }
+    }
+
+    // Matches YYYY-MM-DD
+    const m2 = clean.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (m2) {
+        let year  = parseInt(m2[1], 10);
+        let month = parseInt(m2[2], 10);
+        let day   = parseInt(m2[3], 10);
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }
+    }
+
+    // Natural date parsing fallback
+    const parsedTs = Date.parse(clean);
+    if (!isNaN(parsedTs)) {
+        const dObj = new Date(parsedTs);
+        const y = dObj.getFullYear();
+        if (y >= 2000 && y <= 2100) {
+            const m = String(dObj.getMonth() + 1).padStart(2, '0');
+            const d = String(dObj.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+    }
+
+    return null;
+}
+
+// --- SCAN ALL CELLS: TETANUS TOXOID, PREGNANCY VISITS, NEXT VISIT, IMMUNIZATION ---
+let syncTimeout = null;
+
+function scanAndSyncAllSchedules() {
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(async () => {
+        const cells = document.querySelectorAll('.sched-cell, .immu-cell, .tetanus-cell, .pregnancy-cell, .action-cell');
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        let targetSchedule = null;
+        let upcomingList = [];
+        let allDatesList = [];
+
+        cells.forEach(td => {
+            const text = td.innerText.trim();
+            const sqlDate = parseTypedDate(text);
+            if (sqlDate) {
+                let label = td.getAttribute('data-label');
+                if (!label) {
+                    const vaccine = td.getAttribute('data-vaccine');
+                    const col = td.getAttribute('data-col');
+                    if (vaccine) {
+                        label = col === 'remarks' ? `${vaccine} (Remarks)` : `${vaccine} Dose ${col}`;
+                    } else {
+                        label = td.getAttribute('data-section') || 'Prenatal Schedule';
+                    }
+                }
+                const entry = { sqlDate, label };
+
+                allDatesList.push(entry);
+                if (sqlDate >= todayStr) {
+                    upcomingList.push(entry);
+                }
+            }
+        });
+
+        // 1. Prioritize earliest upcoming future date
+        if (upcomingList.length > 0) {
+            upcomingList.sort((a, b) => a.sqlDate.localeCompare(b.sqlDate));
+            targetSchedule = upcomingList[0];
+        } else if (allDatesList.length > 0) {
+            // 2. Or latest entered date if all are in past
+            allDatesList.sort((a, b) => b.sqlDate.localeCompare(a.sqlDate));
+            targetSchedule = allDatesList[0];
+        }
+
+        const badges = document.querySelectorAll('#immuSchedBadge, .sched-badge-live');
+        const statusTexts = document.querySelectorAll('#immuSyncStatus, .sched-status-live');
+
+        const dateVal  = targetSchedule ? targetSchedule.sqlDate : '';
+        const labelVal = targetSchedule ? targetSchedule.label   : '';
+
+        statusTexts.forEach(st => {
+            st.innerHTML = '<span class="text-primary"><i class="bi bi-arrow-repeat"></i> Saving schedule...</span>';
+        });
+
+        const formData = new FormData();
+        formData.append('action', 'save_prenatal_schedule');
+        formData.append('patient_id', PATIENT_ID);
+        formData.append('measurement_id', CURRENT_MID);
+        formData.append('next_schedule', dateVal);
+        formData.append('remarks', labelVal);
+        formData.append('csrf_token', CSRF_TOKEN);
+
+        try {
+            const res = await fetch(window.location.href, { method: 'POST', body: formData });
+            const data = await res.json();
+            if (data.success) {
+                if (data.sql_date) {
+                    badges.forEach(b => {
+                        b.className = (b.id === 'immuSchedBadge') 
+                            ? (data.is_active ? 'badge bg-success ms-1' : 'badge bg-secondary ms-1')
+                            : (data.is_active ? 'sched-badge-live badge bg-success' : 'sched-badge-live badge bg-secondary');
+                        b.innerHTML = (b.id === 'immuSchedBadge')
+                            ? `<i class="bi bi-calendar-check me-1"></i> Active: ${data.formatted_date} (${labelVal})`
+                            : `${data.formatted_date} (${labelVal})`;
+                    });
+                    statusTexts.forEach(st => {
+                        st.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> Saved: ${data.formatted_date} (${labelVal}) &mdash; Visible in Dashboard Follow-up Schedule.</span>`;
+                    });
+                } else {
+                    badges.forEach(b => {
+                        b.className = (b.id === 'immuSchedBadge') ? 'badge bg-secondary ms-1' : 'sched-badge-live badge bg-secondary';
+                        b.textContent = (b.id === 'immuSchedBadge') ? 'No date set' : 'None';
+                    });
+                    statusTexts.forEach(st => {
+                        st.innerHTML = '<em>Typing a date (e.g. 8/10/26) in Tetanus, Visit, or Immunization auto-activates Follow-up Schedule.</em>';
+                    });
+                }
+            }
+        } catch (e) {
+            console.error('Error syncing schedule:', e);
+        }
+    }, 400); // 400ms debounce
+}
+
+// Attach event listeners to all schedule-eligible cells
+document.addEventListener('DOMContentLoaded', () => {
+    const schedCells = document.querySelectorAll('.sched-cell, .immu-cell, .tetanus-cell, .pregnancy-cell, .action-cell');
+    schedCells.forEach(cell => {
+        cell.addEventListener('input', scanAndSyncAllSchedules);
+        cell.addEventListener('blur', scanAndSyncAllSchedules);
     });
 });
 
@@ -1249,7 +1507,6 @@ async function saveAsWord() {
     const element = document.getElementById('document-wrapper');
     const clone = element.cloneNode(true);
 
-    // Remove the Edit Vitals button from the Word export
     clone.querySelectorAll('[data-html2canvas-ignore]').forEach(e => e.remove());
 
     const clinicHeader = clone.querySelector('.clinic-header');
@@ -1428,10 +1685,9 @@ function fallbackDownload(blob, filename) {
 }
 </script>
 
-<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, Brightness, NightLight, TextSize, Language) -->
+<!-- SYSTEM SETTINGS ENGINE SCRIPT (Applies Theme, NightLight, TextSize, Language) -->
 <script>
 (function applySystemSettings() {
-    // 1. Theme / Dark Mode
     const darkModeToggleBtn = document.getElementById("darkModeToggle");
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "dark") {
@@ -1446,21 +1702,18 @@ function fallbackDownload(blob, filename) {
         });
     }
 
-    // 3. Night Light
     const savedNightLight = localStorage.getItem("nightLight");
     const nightLightOverlay = document.getElementById("nightLightOverlay");
     if (savedNightLight === "enabled" && nightLightOverlay) {
         nightLightOverlay.style.display = "block";
     }
 
-    // 4. Text Size
     const savedTextSize = localStorage.getItem("textSize");
     if (savedTextSize) {
         const fontSizes = { xsmall: "80%", small: "85%", normal: "100%", large: "115%", xlarge: "130%" };
         document.documentElement.style.fontSize = fontSizes[savedTextSize] || "100%";
     }
 
-    // 5. Language Dictionary
     const i18n = {
         en: {
             section_main: "Main", nav_dashboard: "Dashboard", section_clinical: "Clinical Services",

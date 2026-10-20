@@ -336,10 +336,11 @@ if (!$conn) {
                 </div>
             </div>
 
-            <!-- Sensor Connection Status -->
+            
+            <!-- Live Sensor Connection Status -->
             <div class="card mb-3 shadow-sm">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center gap-3">
                         <div>
                             <h6 class="fw-bold mb-1">
                                 <i class="bi bi-cpu-fill me-2 text-primary"></i>
@@ -348,9 +349,13 @@ if (!$conn) {
                             <small class="text-muted" data-i18n="sensor_desc">
                                 View the current status of connected medical sensors.
                             </small>
+                            <div id="staffSensorCheckedAt" class="text-muted small mt-1">
+                                Not checked yet
+                            </div>
                         </div>
 
-                        <button type="button" class="btn btn-outline-primary btn-sm" id="refreshSensorsBtn">
+                        <button type="button" class="btn btn-outline-primary btn-sm flex-shrink-0"
+                                id="refreshSensorsBtn">
                             <i class="bi bi-arrow-clockwise me-1"></i>
                             <span data-i18n="sensor_refresh">Refresh</span>
                         </button>
@@ -358,32 +363,41 @@ if (!$conn) {
 
                     <hr>
 
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                         <span>Temperature Sensor (MLX90614)</span>
-                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
+                        <span id="staff-sensor-temperature" class="badge bg-secondary">Not checked</span>
                     </div>
 
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                         <span>Weight Sensor (HX711)</span>
-                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
+                        <span id="staff-sensor-weight" class="badge bg-secondary">Not checked</span>
                     </div>
 
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                         <span>Height Sensor (TF-Luna)</span>
-                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
+                        <span id="staff-sensor-height" class="badge bg-secondary">Not checked</span>
                     </div>
 
-                    <div class="d-flex justify-content-between mb-2">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                         <span>Heart Rate / SpO₂ (MAX30102)</span>
-                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
+                        <span id="staff-sensor-heart_spo2" class="badge bg-secondary">Not checked</span>
                     </div>
 
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
                         <span>Blood Pressure Monitor (Contec O8A)</span>
-                        <span class="badge bg-success sensor-badge" data-i18n="sensor_connected">Connected</span>
+                        <span id="staff-sensor-blood_pressure" class="badge bg-secondary">Not checked</span>
                     </div>
+
+                    <div id="staffSensorStatusError"
+                        class="alert alert-danger mt-3 mb-0 d-none"
+                        role="alert"></div>
+
+                    <small class="text-muted d-block mt-3">
+                        Device detection does not guarantee a successful measurement.
+                    </small>
                 </div>
             </div>
+
 
         </main>
     </div>
@@ -596,16 +610,103 @@ dateTimeFormatSelect.addEventListener("change", function () {
 });
 setInterval(updateClockPreview, 1000);
 
-// 9. Sensor Refresh (UI only - statuses are static until a backend endpoint is wired in)
-refreshSensorsBtn.addEventListener("click", function () {
-    const icon = this.querySelector("i");
+
+/* 9. Live Sensor Connection Status */
+
+const staffSensorCheckedAt = document.getElementById("staffSensorCheckedAt");
+const staffSensorError = document.getElementById("staffSensorStatusError");
+
+const staffSensorBadges = {
+    temperature: "staff-sensor-temperature",
+    weight: "staff-sensor-weight",
+    height: "staff-sensor-height",
+    heart_spo2: "staff-sensor-heart_spo2",
+    blood_pressure: "staff-sensor-blood_pressure"
+};
+
+function updateStaffSensorBadge(key, sensor) {
+    const badge = document.getElementById(staffSensorBadges[key]);
+    if (!badge) return;
+
+    badge.className = "badge";
+
+    if (!sensor || !sensor.status) {
+        badge.classList.add("bg-warning", "text-dark");
+        badge.textContent = "Unknown";
+        badge.title = sensor?.message || "No sensor status received.";
+        return;
+    }
+
+    if (sensor.status === "detected") {
+        badge.classList.add("bg-success");
+        badge.textContent = "Detected";
+    } else if (sensor.status === "disconnected") {
+        badge.classList.add("bg-danger");
+        badge.textContent = "Disconnected";
+    } else {
+        badge.classList.add("bg-warning", "text-dark");
+        badge.textContent = "Error / Unknown";
+    }
+
+    badge.title = sensor.message || "";
+}
+
+async function refreshStaffSensorStatuses() {
+    const icon = refreshSensorsBtn.querySelector("i");
+
+    refreshSensorsBtn.disabled = true;
     icon.classList.add("spin");
-    this.disabled = true;
-    setTimeout(() => {
+
+    staffSensorError.classList.add("d-none");
+    staffSensorError.textContent = "";
+    staffSensorCheckedAt.textContent = "Checking sensors...";
+
+    Object.keys(staffSensorBadges).forEach(key => {
+        updateStaffSensorBadge(key, null);
+    });
+
+    try {
+        const response = await fetch("sensor_status_proxy.php", {
+            method: "GET",
+            cache: "no-store",
+            credentials: "same-origin",
+            headers: { "Accept": "application/json" }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || data.success !== true || !data.sensors) {
+            throw new Error(data.error || `Request failed (${response.status})`);
+        }
+
+        Object.keys(staffSensorBadges).forEach(key => {
+            updateStaffSensorBadge(key, data.sensors[key] || null);
+        });
+
+        const checkedDate = data.checked_at
+            ? new Date(data.checked_at)
+            : new Date();
+
+        staffSensorCheckedAt.textContent =
+            "Last checked: " + checkedDate.toLocaleString();
+
+    } catch (error) {
+        staffSensorCheckedAt.textContent = "Status check failed";
+        staffSensorError.textContent =
+            "Unable to retrieve sensor status. " +
+            (error.message || "Check the Raspberry Pi connection.");
+        staffSensorError.classList.remove("d-none");
+    } finally {
         icon.classList.remove("spin");
-        this.disabled = false;
-    }, 800);
-});
+        refreshSensorsBtn.disabled = false;
+    }
+}
+
+refreshSensorsBtn.addEventListener("click", refreshStaffSensorStatuses);
+
+// Automatically check when staff opens the settings page.
+refreshStaffSensorStatuses();
+
 
 // 10. INITIALIZE ALL SAVED PREFERENCES ON LOAD
 (function initSettings() {

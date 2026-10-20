@@ -175,20 +175,43 @@ $family_count = mysqli_fetch_assoc(mysqli_query(
      AND $whereMeasurements"
 ))['total'] ?? 0;
 
-/* FOLLOW-UPS — deduplicated per patient */
+/* FOLLOW-UPS — deduplicated per patient (Family Planning + Prenatal / Immunization) */
+if ($conn) {
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `prenatal_records` (
+        `id` INT AUTO_INCREMENT PRIMARY KEY,
+        `user_id` INT NOT NULL,
+        `measurement_id` INT DEFAULT NULL,
+        `next_schedule` DATE DEFAULT NULL,
+        `remarks` VARCHAR(255) DEFAULT NULL,
+        `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX (`user_id`),
+        INDEX (`next_schedule`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+}
+
 $upcoming_schedules = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COUNT(DISTINCT user_id) AS total
-     FROM family_planning_records
-     WHERE next_schedule IS NOT NULL
-       AND next_schedule >= CURDATE()"
+     FROM (
+        SELECT user_id, next_schedule FROM family_planning_records WHERE next_schedule IS NOT NULL
+        UNION ALL
+        SELECT user_id, next_schedule FROM prenatal_records WHERE next_schedule IS NOT NULL
+     ) AS all_schedules
+     WHERE next_schedule >= CURDATE()"
 ))['total'] ?? 0;
 
 $overdue_schedules = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COUNT(DISTINCT user_id) AS total
-     FROM family_planning_records
-     WHERE next_schedule IS NOT NULL
-       AND next_schedule < CURDATE()"
+     FROM (
+        SELECT user_id, next_schedule FROM family_planning_records WHERE next_schedule IS NOT NULL
+        UNION ALL
+        SELECT user_id, next_schedule FROM prenatal_records WHERE next_schedule IS NOT NULL
+     ) AS all_schedules
+     WHERE next_schedule < CURDATE()"
 ))['total'] ?? 0;
+
+// Total = only active (upcoming) schedules, NOT a raw row count
+$total_schedules = $upcoming_schedules;
 
 // Total = only active (upcoming) schedules, NOT a raw row count
 $total_schedules = $upcoming_schedules;
